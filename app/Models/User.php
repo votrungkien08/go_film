@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
-    use Notifiable,HasApiTokens;
+    use HasApiTokens, Notifiable, HasFactory;
     protected $table = 'user';
     public $timestamps = false;
     protected $fillable = [
@@ -32,16 +32,20 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    public function comments() {
-        return $this->hasMany(Comment::class,'user_id');
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'user_id');
     }
-    public function favorites() {
-        return $this->hasMany(Favorite::class,'user_id');
+    public function favorites()
+    {
+        return $this->hasMany(Favorite::class, 'user_id');
     }
-    public function ratings(){
-        return $this->hasMany(Rating::class,'user_id');
+    public function ratings()
+    {
+        return $this->hasMany(Rating::class, 'user_id');
     }
-    public function watch_histories() {
-        return $this->hasMany(Watch_histories::class,'user_id');
+    public function watch_histories()
+    {
+        return $this->hasMany(Watch_histories::class, 'user_id');
     }
 }
