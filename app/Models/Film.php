@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Film extends Model
 {
     protected $table = 'Film';
-
+    public $timestamps = false;
     protected $fillable = [
         'slug',
         'title_film',

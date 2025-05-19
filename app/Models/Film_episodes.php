@@ -14,6 +14,7 @@ protected $table = 'film_episodes';
         'episode_url',
         'duration',
     ];
+    public $timestamps = false;
 
     public function films()
     {

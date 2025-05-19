@@ -24,10 +24,10 @@ public function uploadVideo(Request $request)
     Log::info('🚀 Nhận request uploadVideo', $request->all());
 
     $request->validate([
-        'ten_phim'   => 'required|string',
-        'so_tap'     => 'required|string',
-        'ten_tap'    => 'required|string',
-        'thoi_luong' => 'required|string',
+        'title_film'   => 'required|string',
+        'episode_number'     => 'required|string',
+        'episode_title'    => 'required|string',
+        'duration' => 'required|string',
         'video'      => 'required|file|mimetypes:video/mp4,video/*',
     ]);
 
@@ -41,9 +41,9 @@ public function uploadVideo(Request $request)
         'filesize_mb' => $filesize / 1024 / 1024,
         'file_exists' => file_exists($path),
     ]);
-    $tenphimslug = Str::slug($request->ten_phim, '-'); 
-    $tentapslug = Str::slug($request->ten_tap, '-');
-    $public_id = $tentapslug;
+    $titile_film_slug = Str::slug($request->title_film, '-'); 
+    $titleslug = Str::slug($request->episode_title, '-');
+    $public_id = $titleslug;
     try {
         $cloudinary = new \Cloudinary\Cloudinary([
             'cloud' => [
@@ -63,17 +63,17 @@ public function uploadVideo(Request $request)
             'resource_type' => 'video',
             'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
             'public_id' => $public_id,
-            'folder' => "videos/{$tenphimslug}",
+            'folder' => "videos/{$titile_film_slug}",
             'context' => $context  // Thêm metadata vào đây
         ]);
     
         Log::info('✅ Upload video thành công', ['response' => $upload]);
         return response()->json([
-            'ten_phim'   => $request->ten_phim,
-            'so_tap'     => $request->so_tap,
-            'ten_tap'    => $request->ten_tap,
-            'thoi_luong' => $request->thoi_luong,
-            'link_tap'   => $upload['secure_url'],
+            'title_film'   => $request->title_film,
+            'episode_number'     => $request->episode_number,
+            'episode_title'    => $request->episode_title,
+            'duration' => $request->duration,
+            'episode_url'   => $upload['secure_url'],
         ]);
     } catch (\Exception $e) {
         Log::error('❌ Upload video lỗi', ['message' => $e->getMessage()]);

@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 
 use App\Http\Controllers\CloudinaryController;
+use App\Http\Controllers\FilmController;
 use Illuminate\Support\Facades\Log;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -21,3 +22,9 @@ Route::post('/test-file', function (Request $request) {
     return response()->json(['ok' => true]);
 });
 Route::get('/cloudinary-test', [CloudinaryController::class, 'testCloudinary']);
+
+Route::post('/store-film', [CloudinaryController::class, 'uploadVideo']);
+Route::get('/get-videos', [CloudinaryController::class, 'getVideosByPhim']);
+
+
+Route::post('addPhim', [FilmController::class, 'store']);
