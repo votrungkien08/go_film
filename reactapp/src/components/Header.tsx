@@ -14,8 +14,6 @@ const Header = () => {
         password: '',
         confirmPassword: ''
     });
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const navigate = useNavigate();
 
     // Đặt lại formData khi panel mở để input luôn trống
@@ -35,9 +33,8 @@ const Header = () => {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setUser(response.data.user);
-                    setError('');
                 } catch (err: any) {
-                    setError('Không thể tải thông tin người dùng');
+                    window.alert('Không thể tải thông tin người dùng');
                     setUser(null);
                 }
             };
@@ -56,8 +53,7 @@ const Header = () => {
                 email: formData.email,
                 password: formData.password
             });
-            setSuccess('Đăng nhập thành công!');
-            setError('');
+            window.alert('Đăng nhập thành công!');
             localStorage.setItem('token', response.data.token);
             setUser(response.data.user);
             setIsLoggedIn(true);
@@ -70,19 +66,19 @@ const Header = () => {
                 }
             }, 1000);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Đăng nhập thất bại');
-            setSuccess('');
+            const message = err.response?.data?.message || 'Đăng nhập thất bại';
+            window.alert(message);
         }
     };
 
     const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
-            setError('Mật khẩu xác nhận không khớp');
+            window.alert('Mật khẩu xác nhận không khớp');
             return;
         }
         if (formData.password.length < 8) {
-            setError('Mật khẩu phải có ít nhất 8 ký tự');
+            window.alert('Mật khẩu phải có ít nhất 8 ký tự');
             return;
         }
         try {
@@ -92,13 +88,12 @@ const Header = () => {
                 password: formData.password,
                 password_confirmation: formData.confirmPassword
             });
-            setSuccess('Đăng ký thành công! Vui lòng đăng nhập.');
-            setError('');
+            window.alert('Đăng ký thành công! Vui lòng đăng nhập.');
             setIsLoginForm(true);
             setFormData({ name: '', email: '', password: '', confirmPassword: '' });
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Đăng ký thất bại');
-            setSuccess('');
+            const message = err.response?.data?.message || 'Đăng ký thất bại';
+            window.alert(message);
         }
     };
 
@@ -111,15 +106,13 @@ const Header = () => {
             localStorage.removeItem('token');
             setIsLoggedIn(false);
             setUser(null);
-            setSuccess('Đăng xuất thành công!');
-            setError('');
+            window.alert('Đăng xuất thành công!');
             setTimeout(() => {
                 setIsPanelOpen(false);
                 navigate('/');
             }, 1000);
         } catch (err: any) {
-            setError('Đăng xuất thất bại');
-            setSuccess('');
+            window.alert('Đăng xuất thất bại');
         }
     };
 
@@ -177,9 +170,6 @@ const Header = () => {
                         ✕
                     </button>
                 </div>
-
-                {error && <p className="text-red-400 mb-4">{error}</p>}
-                {success && <p className="text-green-400 mb-4">{success}</p>}
 
                 {isLoggedIn && user ? (
                     <div className="text-white">
@@ -284,8 +274,6 @@ const Header = () => {
                             className="text-[#ff4c00] ml-1 hover:underline cursor-pointer"
                             onClick={() => {
                                 setIsLoginForm(!isLoginForm);
-                                setError('');
-                                setSuccess('');
                                 setFormData({ name: '', email: '', password: '', confirmPassword: '' });
                             }}
                         >
