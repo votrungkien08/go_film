@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import React from 'react';
 import {
     PlusCircleIcon,
     CalendarIcon,
@@ -31,11 +30,30 @@ interface Genre {
     genre_name: string;
 }
 
+interface Film {
+    id: number;
+    slug: string;
+    title_film: string;
+    thumb: string;
+    film_type: boolean;
+    year: { id: number; release_year: number } | null;
+    country: { id: number; country_name: string } | null;
+    genres: { id: number; genre_name: string }[];
+    actor: string;
+    director: string;
+    content: string;
+    view: number;
+    is_premium: boolean;
+    point_required: number | null;
+    film_episodes: Episode[];
+}
+
 const AdminPage = () => {
     const [user, setUser] = useState<{ name: string; role: string } | null>(null);
     const [error, setError] = useState('');
     const [activeSection, setActiveSection] = useState('dashboard');
     const [showAddFilmForm, setShowAddFilmForm] = useState(false);
+    const [films, setFilms] = useState<Film[]>([]);
     const navigate = useNavigate();
 
     // State cho form thêm phim
@@ -43,7 +61,7 @@ const AdminPage = () => {
         slug: '',
         title_film: '',
         thumb: '',
-        film_type: true, // true = phim lẻ, false = phim bộ
+        film_type: true,
         year_id: '',
         country_id: '',
         actor: '',
@@ -51,6 +69,8 @@ const AdminPage = () => {
         content: '',
         view: 0,
         genre_id: [] as number[],
+        is_premium: false,
+        point_required: '',
     });
     const [episodes, setEpisodes] = useState<Episode[]>([
         { episode_number: 1, episode_title: '', episode_url: '', duration: '' }
@@ -63,25 +83,40 @@ const AdminPage = () => {
     const [countries, setCountries] = useState<Country[]>([]);
     const [genres, setGenres] = useState<Genre[]>([]);
 
-    // Lấy danh sách năm, quốc gia, và thể loại từ API
+    // Lấy danh sách năm, quốc gia, thể loại và phim từ API
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [yearsResponse, countriesResponse, genresResponse] = await Promise.all([
-                    axios.get('http://localhost:8000/api/years'),
-                    axios.get('http://localhost:8000/api/countries'),
-                    axios.get('http://localhost:8000/api/genres')
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    navigate('/');
+                    return;
+                }
+                const [yearsResponse, countriesResponse, genresResponse, filmsResponse] = await Promise.all([
+                    axios.get('http://localhost:8000/api/years', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                    axios.get('http://localhost:8000/api/countries', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                    axios.get('http://localhost:8000/api/genres', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                    axios.get('http://localhost:8000/api/films', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    })
                 ]);
                 setYears(yearsResponse.data);
                 setCountries(countriesResponse.data);
                 setGenres(genresResponse.data);
+                setFilms(filmsResponse.data);
             } catch (err: any) {
                 console.error('Lỗi khi lấy dữ liệu:', err.response?.data || err.message);
-                setFormError('Không thể tải dữ liệu năm, quốc gia hoặc thể loại.');
+                setFormError('Không thể tải dữ liệu năm, quốc gia, thể loại hoặc phim.');
             }
         };
         fetchData();
-    }, []);
+    }, [navigate]);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -171,6 +206,10 @@ const AdminPage = () => {
             setFormError('Tất cả tập phim bộ cần số tập và URL hợp lệ.');
             return;
         }
+        if (filmData.is_premium && (!filmData.point_required || Number(filmData.point_required) < 0)) {
+            setFormError('Vui lòng nhập số điểm yêu cầu hợp lệ cho phim premium.');
+            return;
+        }
 
         const payload = {
             ...filmData,
@@ -178,6 +217,7 @@ const AdminPage = () => {
             country_id: Number(filmData.country_id),
             film_type: filmData.film_type,
             film_episodes: episodes,
+            point_required: filmData.is_premium ? Number(filmData.point_required) || null : null,
         };
         console.log('Payload gửi đi:', payload);
 
@@ -195,6 +235,8 @@ const AdminPage = () => {
             );
             setFormSuccess('Thêm phim thành công!');
             setShowAddFilmForm(false);
+            // Cập nhật danh sách phim sau khi thêm
+            setFilms([...films, response.data.data]);
             // Reset form
             setFilmData({
                 slug: '',
@@ -208,6 +250,8 @@ const AdminPage = () => {
                 content: '',
                 view: 0,
                 genre_id: [],
+                is_premium: false,
+                point_required: '',
             });
             setEpisodes([{ episode_number: 1, episode_title: '', episode_url: '', duration: '' }]);
         } catch (err: any) {
@@ -238,7 +282,7 @@ const AdminPage = () => {
                 </div>
                 <div className="bg-gray-800 p-4 rounded-lg shadow">
                     <h3 className="text-lg font-semibold text-gray-300">Tổng Số Phim</h3>
-                    <p className="text-3xl text-white mt-2">0</p>
+                    <p className="text-3xl text-white mt-2">{films.length}</p>
                 </div>
             </div>
         </div>
@@ -389,6 +433,29 @@ const AdminPage = () => {
                                 />
                             </div>
                             <div>
+                                <label className="block text-gray-300">Phim Premium</label>
+                                <input
+                                    type="checkbox"
+                                    name="is_premium"
+                                    checked={filmData.is_premium}
+                                    onChange={(e) => setFilmData(prev => ({ ...prev, is_premium: e.target.checked }))}
+                                    className="w-5 h-5 text-[#ff4c00] bg-gray-700 rounded"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-gray-300">Số Điểm Yêu Cầu</label>
+                                <input
+                                    type="number"
+                                    name="point_required"
+                                    value={filmData.point_required}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2 bg-gray-700 text-white rounded"
+                                    min={0}
+                                    placeholder="Nhập số điểm (nếu là phim premium)"
+                                    disabled={!filmData.is_premium}
+                                />
+                            </div>
+                            <div>
                                 <label className="block text-gray-300 mb-1">Thể Loại</label>
                                 <div className="bg-gray-700 rounded p-2 max-h-40 overflow-y-auto">
                                     {genres.length === 0 ? (
@@ -400,8 +467,8 @@ const AdminPage = () => {
                                                 type="button"
                                                 onClick={() => toggleGenre(genre.id)}
                                                 className={`block w-full text-left px-3 py-2 mb-1 rounded ${filmData.genre_id.includes(genre.id)
-                                                        ? 'bg-[#ff4c00] text-white'
-                                                        : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                                                    ? 'bg-[#ff4c00] text-white'
+                                                    : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
                                                     }`}
                                             >
                                                 {genre.genre_name}
@@ -499,20 +566,51 @@ const AdminPage = () => {
                     <thead className="bg-gray-800">
                         <tr>
                             <th className="p-3">Tiêu Đề Phim</th>
-                            <th className="p-3">Tên Phim</th>
                             <th className="p-3">Thể Loại</th>
                             <th className="p-3">Năm Phát Hành</th>
+                            <th className="p-3">Quốc Gia</th>
+                            <th className="p-3">Loại Phim</th>
                             <th className="p-3">Đạo Diễn</th>
                             <th className="p-3">Diễn Viên</th>
                             <th className="p-3">Nội Dung</th>
                             <th className="p-3">Số Lượt Xem</th>
+                            <th className="p-3">Phim Premium</th>
+                            <th className="p-3">Điểm Yêu Cầu</th>
                             <th className="p-3">Tác Vụ</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td colSpan={9} className="p-3 text-center">Chưa có phim nào</td>
-                        </tr>
+                        {films.length === 0 ? (
+                            <tr>
+                                <td colSpan={12} className="p-3 text-center">Chưa có phim nào</td>
+                            </tr>
+                        ) : (
+                            films.map(film => (
+                                <tr key={film.id} className="border-b border-gray-700">
+                                    <td className="p-3">{film.title_film}</td>
+                                    <td className="p-3">
+                                        {film.genres.map(genre => genre.genre_name).join(', ')}
+                                    </td>
+                                    <td className="p-3">{film.year?.release_year || 'N/A'}</td>
+                                    <td className="p-3">{film.country?.country_name || 'N/A'}</td>
+                                    <td className="p-3">{film.film_type ? 'Phim Lẻ' : 'Phim Bộ'}</td>
+                                    <td className="p-3">{film.director}</td>
+                                    <td className="p-3">{film.actor}</td>
+                                    <td className="p-3">{film.content}</td>
+                                    <td className="p-3">{film.view}</td>
+                                    <td className="p-3">{film.is_premium ? 'Có' : 'Không'}</td>
+                                    <td className="p-3">{film.is_premium ? film.point_required || '0' : 'N/A'}</td>
+                                    <td className="p-3">
+                                        <button className="bg-blue-500 text-white px-3 py-1 rounded mr-2 hover:bg-blue-600">
+                                            Sửa
+                                        </button>
+                                        <button className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+                                            Xóa
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>

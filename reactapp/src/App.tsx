@@ -1,14 +1,12 @@
-import { useState } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
-import './App.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import MainLayout from './layout/MainLayout';
 import Footer from './components/Footer';
 import Nominate from './pages/Nominate';
+import FilmDetail from './layout/FilmDetail';
 import AdminPage from './components/AdminPage';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
+import './App.css';
 
 function App() {
   return (
@@ -18,6 +16,7 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<div>Trang chủ</div>} />
           <Route path="nominate" element={<Nominate />} />
+          <Route path="film/:slug" element={<FilmDetail />} /> {/* Route mới cho FilmDetail */}
         </Route>
         {/* Route cho trang admin, không dùng MainLayout */}
         <Route element={<ProtectedAdminRoute />}>

@@ -32,3 +32,5 @@ Route::post('addPhim', [FilmController::class, 'store']);
 Route::get('/years', [YearController::class, 'index']);
 Route::get('/countries', [CountryController::class, 'index']);
 Route::get('/genres', [GenreController::class, 'index']); // Thêm dòng này
+Route::get('/films', [FilmController::class, 'index']);
+Route::get('/films/{slug}', [FilmController::class, 'show']);

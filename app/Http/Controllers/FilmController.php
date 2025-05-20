@@ -12,8 +12,32 @@ use Illuminate\Support\Facades\Log;
 
 class FilmController extends Controller
 {
-        public function store(FilmStoreRequest $request)
-        {
+
+    public function index()
+    {
+        try {
+            // Lấy tất cả phim cùng với thông tin năm, quốc gia, và thể loại
+            $films = Film::with(['year', 'country', 'genres', 'film_episodes'])->get();
+            return response()->json($films, 200);
+        } catch (\Exception $e) {
+            Log::error('❌ Error fetching films', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Không thể lấy danh sách phim'], 500);
+        }
+    }
+    public function show($slug)
+    {
+        try {
+            $film = Film::with(['year', 'country', 'genres', 'film_episodes'])
+                ->where('slug', $slug)
+                ->firstOrFail();
+            return response()->json($film, 200);
+        } catch (\Exception $e) {
+            Log::error('❌ Error fetching film', ['slug' => $slug, 'message' => $e->getMessage()]);
+            return response()->json(['error' => 'Không tìm thấy phim'], 404);
+        }
+    }
+    public function store(FilmStoreRequest $request)
+    {
         try {
             DB::beginTransaction();
 
@@ -55,7 +79,8 @@ class FilmController extends Controller
                 'director' => $request->director,
                 'content' => $request->content,
                 'view' => $request->view,
-
+                'is_premium' => $request->is_premium ?? false, // Mặc định là false nếu không gửi
+                'point_required' => $request->point_required ?? null, // Mặc định là null nếu không gửi
             ];
 
             // Lưu phim vào database
@@ -77,9 +102,9 @@ class FilmController extends Controller
                 // Tạo tập phim dựa trên dữ liệu client gửi lên
                 $created = $film->film_episodes()->create([
                     'episode_number' => $episode['episode_number'],
-                    'episode_title'  => $episode['episode_title'] ?? 'N/A',
-                    'episode_url'    => $episode['episode_url'] ?? '',
-                    'duration'       => $episode['duration'] ?? 'N/A',
+                    'episode_title' => $episode['episode_title'] ?? 'N/A',
+                    'episode_url' => $episode['episode_url'] ?? '',
+                    'duration' => $episode['duration'] ?? 'N/A',
                     // 'film_id' sẽ tự động được chèn vì bạn dùng relation film_episodes()
                 ]);
 
@@ -88,7 +113,7 @@ class FilmController extends Controller
 
             $newTheLoai = $request->genre_id; // Thể loại mới từ request
             $currentTheLoaiIds = $film->genres()->pluck('genre_id')->toArray(); // Lấy ID các thể loại hiện tại
-    
+
             // Lặp qua từng thể loại mới, kiểm tra và chỉ cập nhật nếu cần
             foreach ($newTheLoai as $theLoaiId) {
                 if (!in_array($theLoaiId, $currentTheLoaiIds)) {
@@ -103,7 +128,7 @@ class FilmController extends Controller
             Log::info('Data loaded', [
                 'episodes' => $film->film_episodes->toArray(),
                 'genres' => $film->genres->toArray(),
-                
+
             ]);
 
             DB::commit();
