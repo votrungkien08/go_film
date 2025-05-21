@@ -124,19 +124,19 @@ const Header = () => {
                 </div>
                 <div className="col-span-6 flex items-center justify-start h-full">
                     <div tabIndex={0} className="group flex items-center justify-center cursor-pointer">
-                        <h2 className="p-4 text-white group-hover:text-[#ff4c00]">THỂ LOẠI</h2>
+                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">THỂ LOẠI</h2>
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
-                        <h2 className="p-4 text-white group-hover:text-[#ff4c00]">QUỐC GIA</h2>
+                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">QUỐC GIA</h2>
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
-                        <h2 className="p-4 text-white group-hover:text-[#ff4c00]">NĂM</h2>
+                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">NĂM</h2>
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
-                        <h2 className="p-4 text-white group-hover:text-[#ff4c00]">PHIM LẺ</h2>
+                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">PHIM LẺ</h2>
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
-                        <h2 className="p-4 text-white group-hover:text-[#ff4c00]">PHIM BỘ</h2>
+                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">PHIM BỘ</h2>
                     </div>
                 </div>
                 <div tabIndex={0} className="group col-span-3 h-full flex items-center relative cursor-pointer">

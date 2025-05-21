@@ -1,16 +1,24 @@
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Nominate from "../pages/Nominate";
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Update from "../pages/Update";
 
 const MainLayout = () => {
+    // hook useLocation() để lấy thông tin URL hiện tại
+    const location = useLocation();  
+    // kiểm tra xem URL có bắt đầu bằng '/film/' hay không  
+    const isFilmDetail = location.pathname.startsWith('/film/');
    return ( 
     <>
         <div className="bg-[#333333] px-4">
             <Header />
-            <Nominate/>
-            <Update/>
+            {!isFilmDetail && (
+                <>
+                    <Nominate />
+                    <Update />
+                </>
+            )}
             <main>
                 <Outlet />
             </main>

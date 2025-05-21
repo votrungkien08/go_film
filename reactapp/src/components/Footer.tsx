@@ -3,14 +3,14 @@ import { PhoneIcon, EnvelopeIcon} from '@heroicons/react/24/solid';
 const Footer = () => {
     return (
         <>
-            <div className="bg-[#333333] h-[240px] w-full">
+            <div className="bg-[#333333] h-[240px] w-full mt-8">
                 <div className="grid grid-cols-12 gap-2 h-full ">
                     <div className='col-span-2'>
 
                     </div>
                     <div className='col-span-8'>
                         <div className='grid grid-cols-3 gap-2  h-full '>
-                            <div className='pl-4'>
+                            <div className=''>
                                 <div className='flex pb-4'>
                                     <h2 className="text-red-600">
                                         GO FILM
@@ -27,7 +27,7 @@ const Footer = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className='pl-4 text-white'>
+                            <div className=' text-white'>
                                 <div  className='mb-4'>
                                     <h2 className='flex items-center'>
                                         HỔ TRỢ
@@ -55,7 +55,7 @@ const Footer = () => {
 
                                 </div>
                             </div>
-                            <div className='pl-4 text-white'>
+                            <div className=' text-white'>
                                 <div className='mb-4'>
                                     <h2 className='flex items-center'>
                                         LIÊN HỆ

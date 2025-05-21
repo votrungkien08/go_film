@@ -5,6 +5,7 @@ import Footer from './components/Footer';
 import Nominate from './pages/Nominate';
 import FilmDetail from './layout/FilmDetail';
 import AdminPage from './components/AdminPage';
+import FilmDetail from './pages/FilmDetail';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import './App.css';
 
@@ -16,12 +17,15 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<div>Trang chủ</div>} />
           <Route path="nominate" element={<Nominate />} />
-          <Route path="film/:slug" element={<FilmDetail />} /> {/* Route mới cho FilmDetail */}
+          <Route path="film/:id" element={<FilmDetail />} />
+
         </Route>
         {/* Route cho trang admin, không dùng MainLayout */}
         <Route element={<ProtectedAdminRoute />}>
           <Route path="/admin" element={<AdminPage />} />
         </Route>
+
+
       </Routes>
     </Router>
   );

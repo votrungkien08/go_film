@@ -93,6 +93,12 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
+            // if(!$user) {
+            //     return response()->json([
+            //         'message' => 'not login',
+            //         'user'=>null
+            //     ]);
+            // }
             return response()->json([
                 'message' => 'User details fetched successfully',
                 'user' => $user->only(['id', 'name', 'email', 'points', 'role']),

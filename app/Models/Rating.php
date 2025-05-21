@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Rating extends Model
 {
-    protected $table = 'ratings';
+    protected $table = 'rating';
+    public $timestamps = false;
     protected $fillable = [
         'user_id',
         'film_id',

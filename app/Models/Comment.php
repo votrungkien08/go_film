@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Comment extends Model
 {
     protected $table = 'comment';
+    public $timestamps = false;
     protected $fillable = [
         'user_id',
         'film_id',
@@ -18,6 +19,7 @@ class Comment extends Model
     {
         return $this->belongsTo(User::class,'user_id');
     }
+
 
     public function film()
     {

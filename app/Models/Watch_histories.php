@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Watch_histories extends Model
 {
-  protected $table = 'watch_histories';
+    protected $table = 'watch_histories';
+    public $timestamps = false;
     protected $fillable = [
         'user_id',
         'film_id',
