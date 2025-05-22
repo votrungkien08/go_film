@@ -66,7 +66,15 @@ const Nominate = () => {
                 </div>
                 <div className="grid grid-cols-8 gap-4">
                     <div
-                        className="col-span-4 relative group aspect-[16/9] cursor-pointer"
+                        className="col-span-4 relative group aspect-[16/9] cursor-pointer before:content-none after:content-none"
+                        style={{
+                            content: 'none',
+                            counterReset: 'none',
+                            counterIncrement: 'none',
+                            fontSize: '0px',
+                            lineHeight: '0',
+                            overflow: 'hidden'
+                        }}
                         onClick={() => films[0] && navigate(`/film/${films[0].slug}`)}
                     >
                         {films[0] ? (
@@ -77,6 +85,11 @@ const Nominate = () => {
                                     className="w-full h-full object-cover rounded-lg"
                                     loading="lazy"
                                 />
+                                {films[0].is_premium && (
+                                    <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                                        Premium
+                                    </div>
+                                )}
                                 <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
                                     <h2 className="text-white text-lg font-semibold text-center px-2">
                                         {films[0].title_film}
@@ -93,7 +106,15 @@ const Nominate = () => {
                         {[1, 2, 3, 4].map(index => (
                             <div
                                 key={index}
-                                className="relative group aspect-[16/9] cursor-pointer"
+                                className="relative group aspect-[16/9] cursor-pointer before:content-none after:content-none"
+                                style={{
+                                    content: 'none',
+                                    counterReset: 'none',
+                                    counterIncrement: 'none',
+                                    fontSize: '0px',
+                                    lineHeight: '0',
+                                    overflow: 'hidden'
+                                }}
                                 onClick={() => films[index] && navigate(`/film/${films[index].slug}`)}
                             >
                                 {films[index] ? (
@@ -104,6 +125,11 @@ const Nominate = () => {
                                             className="w-full h-full object-cover rounded-lg"
                                             loading="lazy"
                                         />
+                                        {films[index].is_premium && (
+                                            <div className="absolute top-1 right-1 bg-orange-500 text-white text-xs font-semibold px-1.5 py-0.5 rounded text-center">
+                                                Premium
+                                            </div>
+                                        )}
                                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
                                             <h2 className="text-white text-sm font-semibold text-center px-2">
                                                 {films[index].title_film}
@@ -123,7 +149,15 @@ const Nominate = () => {
                     {[5, 6, 7, 8].map(index => (
                         <div
                             key={index}
-                            className="col-span-2 relative group aspect-[16/9] cursor-pointer"
+                            className="col-span-2 relative group aspect-[16/9] cursor-pointer before:content-none after:content-none"
+                            style={{
+                                content: 'none',
+                                counterReset: 'none',
+                                counterIncrement: 'none',
+                                fontSize: '0px',
+                                lineHeight: '0',
+                                overflow: 'hidden'
+                            }}
                             onClick={() => films[index] && navigate(`/film/${films[index].slug}`)}
                         >
                             {films[index] ? (
@@ -134,6 +168,11 @@ const Nominate = () => {
                                         className="w-full h-full object-cover rounded-lg"
                                         loading="lazy"
                                     />
+                                    {films[index].is_premium && (
+                                        <div className="absolute top-1 right-1 bg-orange-500 text-white text-xs font-semibold px-1.5 py-0.5 rounded text-center">
+                                            Premium
+                                        </div>
+                                    )}
                                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
                                         <h2 className="text-white text-sm font-semibold text-center px-2">
                                             {films[index].title_film}

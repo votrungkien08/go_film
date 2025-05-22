@@ -2,17 +2,17 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
+import { useAuthPanel } from '../utils/auth';
 
 const Header = () => {
-    const [isPanelOpen, setIsPanelOpen] = useState(false);
-    const [isLoginForm, setIsLoginForm] = useState(true);
+    const { isPanelOpen, setIsPanelOpen, isLoginForm, setIsLoginForm } = useAuthPanel();
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
     const [user, setUser] = useState<{ name: string; points: number; role: string } | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
     });
     const navigate = useNavigate();
 
@@ -30,7 +30,7 @@ const Header = () => {
                 try {
                     const token = localStorage.getItem('token');
                     const response = await axios.get('http://localhost:8000/api/user', {
-                        headers: { Authorization: `Bearer ${token}` }
+                        headers: { Authorization: `Bearer ${token}` },
                     });
                     setUser(response.data.user);
                 } catch (err: any) {
@@ -51,7 +51,7 @@ const Header = () => {
         try {
             const response = await axios.post('http://localhost:8000/api/login', {
                 email: formData.email,
-                password: formData.password
+                password: formData.password,
             });
             window.alert('Đăng nhập thành công!');
             localStorage.setItem('token', response.data.token);
@@ -61,9 +61,8 @@ const Header = () => {
                 setIsPanelOpen(false);
                 if (response.data.user.role === 'admin') {
                     navigate('/admin');
-                } else {
-                    navigate('/');
                 }
+                window.dispatchEvent(new Event('loginSuccess'));
             }, 1000);
         } catch (err: any) {
             const message = err.response?.data?.message || 'Đăng nhập thất bại';
@@ -86,7 +85,7 @@ const Header = () => {
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,
-                password_confirmation: formData.confirmPassword
+                password_confirmation: formData.confirmPassword,
             });
             window.alert('Đăng ký thành công! Vui lòng đăng nhập.');
             setIsLoginForm(true);
@@ -100,16 +99,20 @@ const Header = () => {
     const handleLogout = async () => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:8000/api/logout', {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await axios.post(
+                'http://localhost:8000/api/logout',
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
             localStorage.removeItem('token');
             setIsLoggedIn(false);
             setUser(null);
             window.alert('Đăng xuất thành công!');
             setTimeout(() => {
                 setIsPanelOpen(false);
-                navigate('/');
+                window.dispatchEvent(new Event('logoutSuccess'));
             }, 1000);
         } catch (err: any) {
             window.alert('Đăng xuất thất bại');
@@ -120,8 +123,11 @@ const Header = () => {
         <div className="bg-[#333333] h-[60px] w-full">
             <div className="grid grid-cols-12 gap-2 h-full items-center">
                 <div className="col-span-2 flex items-center cursor-pointer h-full">
-                    <img src="/img/gofilm.png" alt="logo" className="mt-[10px] h-[50px] object-contain" />
+                    <Link to="/" className="flex items-center h-full">
+                        <img src="/img/gofilm.png" alt="logo" className="mt-[10px] h-[50px] object-contain" />
+                    </Link>
                 </div>
+
                 <div className="col-span-6 flex items-center justify-start h-full">
                     <div tabIndex={0} className="group flex items-center justify-center cursor-pointer">
                         <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">THỂ LOẠI</h2>
@@ -161,7 +167,7 @@ const Header = () => {
             >
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-white">
-                        {isLoggedIn ? 'Thông Tin Người Dùng' : (isLoginForm ? 'Đăng Nhập' : 'Đăng Ký')}
+                        {isLoggedIn ? 'Thông Tin Người Dùng' : isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
                     </h2>
                     <button
                         onClick={() => setIsPanelOpen(false)}
@@ -175,11 +181,11 @@ const Header = () => {
                     <div className="text-white">
                         <div className="mb-4 relative">
                             <label className="text-sm text-gray-300">Họ và tên</label>
-                            <p className="w-full p-2 pl-4 bg-gray-700 border border-gray-600 rounded text-white">{user.name}</p>
+                            <p className="w-full p-2 pl-4 bg-[#3A3A3A] border border-gray-600 rounded text-white">{user.name}</p>
                         </div>
                         <div className="mb-4 relative">
                             <label className="text-sm text-gray-300">Điểm</label>
-                            <p className="w-full p-2 pl-4 bg-gray-700 border border-gray-600 rounded text-white">{user.points}</p>
+                            <p className="w-full p-2 pl-4 bg-[#3A3A3A] border border-gray-600 rounded text-white">{user.points}</p>
                         </div>
                         <button
                             onClick={handleLogout}
@@ -192,10 +198,7 @@ const Header = () => {
                     <form onSubmit={isLoginForm ? handleLogin : handleRegister}>
                         {!isLoginForm && (
                             <div className="mb-4 relative">
-                                <label
-                                    htmlFor="name"
-                                    className="absolute -top-2 left-2 text-sm text-gray-300"
-                                >
+                                <label htmlFor="name" className="absolute -top-2 left-2 text-sm text-gray-300">
                                     Họ và tên
                                 </label>
                                 <input
@@ -203,16 +206,13 @@ const Header = () => {
                                     name="name"
                                     value={formData.name}
                                     onChange={handleInputChange}
-                                    className="w-full p-2 pl-4 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#ff4c00]"
+                                    className="w-full p-2 pl-4 bg-[#3A3A3A] border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#ff4c00]"
                                     required
                                 />
                             </div>
                         )}
                         <div className="mb-4 relative">
-                            <label
-                                htmlFor="email"
-                                className="absolute -top-2 left-2 text-sm text-gray-300"
-                            >
+                            <label htmlFor="email" className="absolute -top-2 left-2 text-sm text-gray-300">
                                 Email
                             </label>
                             <input
@@ -220,15 +220,12 @@ const Header = () => {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleInputChange}
-                                className="w-full p-2 pl-4 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#ff4c00]"
+                                className="w-full p-2 pl-4 bg-[#3A3A3A] border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#ff4c00]"
                                 required
                             />
                         </div>
                         <div className="mb-4 relative">
-                            <label
-                                htmlFor="password"
-                                className="absolute -top-2 left-2 text-sm text-gray-300"
-                            >
+                            <label htmlFor="password" className="absolute -top-2 left-2 text-sm text-gray-300">
                                 Mật khẩu
                             </label>
                             <input
@@ -236,16 +233,13 @@ const Header = () => {
                                 name="password"
                                 value={formData.password}
                                 onChange={handleInputChange}
-                                className="w-full p-2 pl-4 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#ff4c00]"
+                                className="w-full p-2 pl-4 bg-[#3A3A3A] border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#ff4c00]"
                                 required
                             />
                         </div>
                         {!isLoginForm && (
                             <div className="mb-4 relative">
-                                <label
-                                    htmlFor="confirmPassword"
-                                    className="absolute -top-2 left-2 text-sm text-gray-300"
-                                >
+                                <label htmlFor="confirmPassword" className="absolute -top-2 left-2 text-sm text-gray-300">
                                     Nhập lại mật khẩu
                                 </label>
                                 <input
@@ -253,7 +247,7 @@ const Header = () => {
                                     name="confirmPassword"
                                     value={formData.confirmPassword}
                                     onChange={handleInputChange}
-                                    className="w-full p-2 pl-4 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#ff4c00]"
+                                    className="w-full p-2 pl-4 bg-[#3A3A3A] border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-[#ff4c00]"
                                     required
                                 />
                             </div>

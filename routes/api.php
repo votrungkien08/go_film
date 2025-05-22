@@ -8,9 +8,9 @@ use App\Http\Controllers\YearController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\GenreController; // Thêm dòng này
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\CountryController;
-use App\Http\Controllers\GenreController;
-use App\Http\Controllers\YearController;
+// use App\Http\Controllers\CountryController;
+// use App\Http\Controllers\GenreController;
+// use App\Http\Controllers\YearController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\RatingController;
 use App\Http\Controllers\WatchHistoriesController;
@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/film/postComment', [CommentController::class, 'postComment']);
     Route::post('/film/postRating', [RatingController::class, 'postRating']);
     Route::post('/film/watch-history', [WatchHistoriesController::class, 'store']);
+    Route::get('/film/rating/{filmId}', [RatingController::class, 'getUserRating'])->middleware('auth:sanctum');
 
 });
 
@@ -46,6 +47,10 @@ Route::get('/get-videos', [CloudinaryController::class, 'getVideosByPhim']);
 Route::post('/addFilm', [FilmController::class, 'store']);
 Route::post('/delFilm/{id}', [FilmController::class, 'destroy']);
 Route::put('/updateFilm/{id}', [FilmController::class, 'update']);
+Route::get('/films', [FilmController::class, 'index']);
+Route::get('/film/{slug}', [FilmController::class, 'show']);
+
+
 
 Route::get('/countries', [CountryController::class, 'index']);
 Route::get('/genres', [GenreController::class, 'index']);
@@ -57,5 +62,6 @@ Route::get('/film/comments/{idFilm}', [CommentController::class, 'getCommentById
 Route::get('/film/comments/user/{idUser}', [CommentController::class, 'getUserComment']);
 
 
-Route::get('/film/{id}',[FilmController::class, 'getFilmById']);
->>>>>>> 0bf23a4 (commit detail film and comment)
+//Route::get('/film/{id}', [FilmController::class, 'getFilmById']);
+
+//>>>>>>> 0bf23a4 (commit detail film and comment)

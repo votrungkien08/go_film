@@ -3,9 +3,9 @@ import Header from './components/Header';
 import MainLayout from './layout/MainLayout';
 import Footer from './components/Footer';
 import Nominate from './pages/Nominate';
-import FilmDetail from './layout/FilmDetail';
+//import FilmDetail from './layout/FilmDetail';
 import AdminPage from './components/AdminPage';
-import FilmDetail from './pages/FilmDetail';
+import FilmDetail from './layout/FilmDetail';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import './App.css';
 
@@ -17,7 +17,7 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<div>Trang chủ</div>} />
           <Route path="nominate" element={<Nominate />} />
-          <Route path="film/:id" element={<FilmDetail />} />
+          <Route path="film/:slug" element={<FilmDetail />} />
 
         </Route>
         {/* Route cho trang admin, không dùng MainLayout */}
