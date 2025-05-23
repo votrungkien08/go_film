@@ -7,6 +7,7 @@
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
+        "@types/react-circular-progressbar": "^1.0.2",
         "axios": "^1.9.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^1.2.0",
@@ -15,6 +16,7 @@
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
-        "dayjs": "^1.11.13"
+        "dayjs": "^1.11.13",
+        "react-circular-progressbar": "^2.2.0"
     }
 }

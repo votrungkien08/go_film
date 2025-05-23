@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useFetcher } from 'react-router-dom';
 import axios from 'axios';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import { openAuthPanel } from '../utils/auth';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
 
 dayjs.extend(relativeTime);
+
+
 
 interface Episode {
     episode_number: number;
@@ -59,6 +63,15 @@ interface Comment {
     } | null;
 }
 
+interface Rating {
+    id: number;
+    user_id: number;
+    film_id: number;
+    rating: number;
+
+}
+
+
 const FilmDetail = () => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
@@ -73,7 +86,8 @@ const FilmDetail = () => {
     const [comments, setComments] = useState<Comment[]>([]);
     const [commentsLoading, setCommentsLoading] = useState(false);
     const [commentsError, setCommentsError] = useState('');
-
+    const [showRating,setShowRating] = useState<Rating[]>([]);
+    const [averageRating,setAverageRating] = useState<number>(0);
     // Hàm kiểm tra trạng thái đăng nhập
     const checkLoginStatus = async () => {
         const token = localStorage.getItem('token');
@@ -226,6 +240,30 @@ const FilmDetail = () => {
             alert('Có lỗi xảy ra khi gửi đánh giá.');
         }
     };
+    
+    // get rating film
+    useEffect(() => {
+        try {
+            if (!film?.id) return;
+            fetch(`http://127.0.0.1:8000/api/film/getRating/${film?.id}`)
+                .then(resposne => resposne.json())
+                .then(data => {
+                    console.log("Fetched rating data:", data); 
+                    if(data.rating) {
+                        setShowRating(data.rating);
+                        const total = data.rating.reduce((sum: number, r: Rating) => sum + r.rating, 0);
+                        const avg = data.rating.length ? total / data.rating.length : 0;
+                        setAverageRating(avg);
+                        console.log("Fetched rating avg:", avg); 
+                        
+                    }
+                })
+                .catch(err => console.error('Error fetching ratings:', err))
+
+        }catch(err:any) {
+            console.log("error get rating film", err.message);
+        }
+    },[film?.id]);
 
     if (error) {
         return (
@@ -339,7 +377,9 @@ const FilmDetail = () => {
                             {tab === 'comment' && (
                                 <div className="bg-[#444444] rounded-lg p-4">
                                     <div className="flex items-center gap-2 mb-4">
-                                        <UserCircleIcon className="h-10 w-10 text-gray-300" />
+                                        <div className='p-2'>
+                                            <UserCircleIcon className="h-10 w-10 text-gray-300" />
+                                        </div>
                                         <input
                                             type="text"
                                             value={comment}
@@ -389,18 +429,22 @@ const FilmDetail = () => {
                                         )}
                                         {!commentsLoading &&
                                             comments.map(comment => (
-                                                <div key={comment.id} className="flex items-start gap-3">
-                                                    <UserCircleIcon className="h-8 w-8 text-gray-300" />
-                                                    <div className="flex-1">
+                                                <div key={comment.id} className="border rounded-sm justify-center flex items-center gap-3">
+                                                    <div className=" h-full flex p-2  items-center">
+                                                        <UserCircleIcon className="inline-block h-10 w-10 text-gray-300" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 ">
                                                         <div className="flex items-center justify-between">
-                                                            <p className="font-semibold text-orange-500">
+                                                            <p className="pr-4 whitespace-nowrap font-semibold text-orange-500">
                                                                 {comment.user?.name || 'Ẩn danh'}
                                                             </p>
-                                                            <p className="text-sm text-gray-400">
+                                                            <p className="text-gray-200 break-words my-2  text-left w-96 mr-4">
+                                                                {comment.comment}
+                                                            </p>
+                                                            <p className="whitespace-nowrap text-left text-sm text-gray-400 mr-2">
                                                                 {dayjs(comment.created_at).fromNow()}
                                                             </p>
                                                         </div>
-                                                        <p className="text-gray-200">{comment.comment}</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -435,13 +479,51 @@ const FilmDetail = () => {
                     </div>
 
                     <div className="lg:col-span-1">
-                        <div className="bg-[#444444] rounded-lg p-4 shadow-lg">
+                        <div className="bg-[#444444] text-left rounded-lg p-4 shadow-lg">
                             <img
                                 src={film.thumb}
                                 alt={film.title_film}
-                                className="w-3/4 mx-auto rounded-md mb-4 object-cover aspect-square max-h-48"
+                                className=" mx-auto rounded-md mb-4 object-contain aspect-square max-h-48"
                             />
+                            <p></p>
                             <div className="space-y-2">
+                                <div className="flex items-center space-x-3 text-white mt-4">
+                                    {/* Vòng tròn phần trăm */}
+                                    <div className='w-[50px] h-[50px]'>
+                                        <CircularProgressbar
+                                            value={Number.isFinite(averageRating) ? averageRating/5 * 100 : 0}
+                                            text={
+                                                Number.isFinite(averageRating)
+                                                    ? `${Math.round((averageRating/5)*100)}%`
+                                                    : '0%'
+                                            }
+                                            styles={buildStyles({
+                                                textSize: '30px',
+                                                textColor: '#fff',
+                                                pathColor: '#FFD700',
+                                                trailColor: '#333',
+                                            })}
+                                        />
+                                    </div>
+
+                                    {/* Dãy sao và thông tin */}
+                                    <div>
+                                        {/* Hiển thị sao */}
+                                        <div className="text-yellow-400 text-lg">
+                                        {Array.from({ length: 5 }).map((_, index) => (
+                                            <span key={index}>
+                                            {averageRating >= index + 1 ? '★' : averageRating > index ? '★' : '☆'}
+                                            </span>
+                                        ))}
+                                        </div>
+
+                                        {/* Thông tin chi tiết */}
+                                        <div className="text-sm text-gray-300">
+                                        ({showRating.length} lượt, đánh giá: <span className="text-white font-bold">{averageRating.toFixed(1)}</span> trên 5)
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <p>
                                     <span className="font-semibold text-orange-500">Thể loại:</span>{' '}
                                     {film.genres.map(genre => genre.genre_name).join(', ') || 'N/A'}

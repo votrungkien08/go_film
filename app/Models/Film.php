@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Film extends Model
 {
-    protected $table = 'Film';
+    protected $table = 'film';
     public $timestamps = false;
     protected $fillable = [
         'slug',
         'title_film',
         'thumb',
+        'trailer',
         'film_type',
         'actor',
         'director',

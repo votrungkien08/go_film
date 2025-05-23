@@ -30,6 +30,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
+Route::get('/film/getRating/{filmId}', [RatingController::class, 'getRating']);
+
+
 Route::post('/test-file', function (Request $request) {
     Log::info('📂 File test upload', [
         'hasFile' => $request->hasFile('video'),

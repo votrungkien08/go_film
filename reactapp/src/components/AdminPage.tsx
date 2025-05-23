@@ -35,6 +35,7 @@ interface Film {
     slug: string;
     title_film: string;
     thumb: string;
+    trailer: string;
     film_type: boolean;
     year: { id: number; release_year: number } | null;
     country: { id: number; country_name: string } | null;
@@ -82,7 +83,9 @@ const AdminPage = () => {
     const [years, setYears] = useState<Year[]>([]);
     const [countries, setCountries] = useState<Country[]>([]);
     const [genres, setGenres] = useState<Genre[]>([]);
-
+    console.log("years",years);
+    console.log("countries",countries);
+    console.log("genres",genres);
     // Lấy danh sách năm, quốc gia, thể loại và phim từ API
     useEffect(() => {
         const fetchData = async () => {
@@ -106,9 +109,9 @@ const AdminPage = () => {
                         headers: { Authorization: `Bearer ${token}` }
                     })
                 ]);
-                setYears(yearsResponse.data);
-                setCountries(countriesResponse.data);
-                setGenres(genresResponse.data);
+                setYears(yearsResponse.data.years);
+                setCountries(countriesResponse.data.country);
+                setGenres(genresResponse.data.genres);
                 setFilms(filmsResponse.data);
             } catch (err: any) {
                 console.error('Lỗi khi lấy dữ liệu:', err.response?.data || err.message);
@@ -224,7 +227,7 @@ const AdminPage = () => {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.post(
-                'http://localhost:8000/api/addPhim',
+                'http://localhost:8000/api/addFilm',
                 payload,
                 {
                     headers: {
@@ -340,6 +343,17 @@ const AdminPage = () => {
                                     required
                                 />
                             </div>
+                                <div>
+                                <label className="block text-gray-300">Trailer url</label>
+                                <input
+                                    type="text"
+                                    name="trailer"
+                                    value={filmData.trailer}
+                                    onChange={handleInputChange}
+                                    className="w-full p-2 bg-gray-700 text-white rounded"
+                                    required
+                                />
+                            </div>
                             <div>
                                 <label className="block text-gray-300">Loại Phim</label>
                                 <select
@@ -363,7 +377,7 @@ const AdminPage = () => {
                                     required
                                 >
                                     <option value="">Chọn năm</option>
-                                    {years.map(year => (
+                                    {Array.isArray(years) && years.map(year => (
                                         <option key={year.id} value={year.id}>
                                             {year.release_year}
                                         </option>
@@ -380,7 +394,7 @@ const AdminPage = () => {
                                     required
                                 >
                                     <option value="">Chọn quốc gia</option>
-                                    {countries.map(country => (
+                                    {Array.isArray(countries) && countries.map(country => (
                                         <option key={country.id} value={country.id}>
                                             {country.country_name}
                                         </option>
@@ -461,7 +475,7 @@ const AdminPage = () => {
                                     {genres.length === 0 ? (
                                         <p className="text-gray-400">Không có thể loại</p>
                                     ) : (
-                                        genres.map(genre => (
+                                        Array.isArray(genres) && genres.map(genre => (
                                             <button
                                                 key={genre.id}
                                                 type="button"
@@ -474,6 +488,7 @@ const AdminPage = () => {
                                                 {genre.genre_name}
                                             </button>
                                         ))
+
                                     )}
                                 </div>
                             </div>
