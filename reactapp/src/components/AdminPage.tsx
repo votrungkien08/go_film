@@ -106,10 +106,10 @@ const AdminPage = () => {
                         headers: { Authorization: `Bearer ${token}` }
                     })
                 ]);
-                setYears(yearsResponse.data);
-                setCountries(countriesResponse.data);
-                setGenres(genresResponse.data);
-                setFilms(filmsResponse.data);
+                setYears(Array.isArray(yearsResponse.data.years) ? yearsResponse.data.years : []);
+                setCountries(Array.isArray(countriesResponse.data) ? countriesResponse.data : []);
+                setGenres(Array.isArray(genresResponse.data.genres) ? genresResponse.data.genres : []);
+                setFilms(Array.isArray(filmsResponse.data.films || filmsResponse.data) ? (filmsResponse.data.films || filmsResponse.data) : []);
             } catch (err: any) {
                 console.error('Lỗi khi lấy dữ liệu:', err.response?.data || err.message);
                 setFormError('Không thể tải dữ liệu năm, quốc gia, thể loại hoặc phim.');
@@ -224,7 +224,7 @@ const AdminPage = () => {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.post(
-                'http://localhost:8000/api/addPhim',
+                'http://localhost:8000/api/addFilm',
                 payload,
                 {
                     headers: {
@@ -684,6 +684,5 @@ const AdminPage = () => {
         </div>
     );
 };
-
 
 export default AdminPage;
