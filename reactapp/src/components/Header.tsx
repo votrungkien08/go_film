@@ -120,7 +120,7 @@ const Header = () => {
     };
 
     return (
-        <div className="bg-[#333333] h-[60px] w-full">
+        <div className="bg-[#333333] h-[60px] w-full fixed top-0 left-0 z-50 px-4">
             <div className="grid grid-cols-12 gap-2 h-full items-center">
                 <div className="col-span-2 flex items-center cursor-pointer h-full">
                     <Link to="/" className="flex items-center h-full">

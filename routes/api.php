@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 // use App\Http\Controllers\GenreController;
 // use App\Http\Controllers\YearController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\RatingController;
 use App\Http\Controllers\WatchHistoriesController;
 use App\Models\Film;
@@ -63,6 +64,10 @@ Route::get('/years', [YearController::class, 'index']);
 Route::get('/film/{id}/comments', [CommentController::class, 'index']);
 Route::get('/film/comments/{idFilm}', [CommentController::class, 'getCommentByIdFilm']);
 Route::get('/film/comments/user/{idUser}', [CommentController::class, 'getUserComment']);
+
+
+Route::get('/film/{idFilm}/favorite', [FavoriteController::class, 'getFavoriteByIdFilm']);
+Route::get('/favorite', [FavoriteController::class, 'getTopFavorite']);
 
 
 //Route::get('/film/{id}', [FilmController::class, 'getFilmById']);
