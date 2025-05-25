@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Rating;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class RatingController extends Controller
 {
@@ -70,6 +71,21 @@ class RatingController extends Controller
                 'error' => 'Error fetching rating',
                 'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+    public function getRating(Request $request, $filmId) {
+        try {
+            $rating = Rating::where('film_id',$filmId)->get();
+
+            return response()->json([
+                'message' => 'success',
+                'rating' => $rating
+            ],200);
+        }catch(\Exception $e) {
+            Log::error('Get rating error: ' . $e->getMessage());
+            return response()->json([
+                'message'=> $e->getMessage()
+            ],500);
         }
     }
 }

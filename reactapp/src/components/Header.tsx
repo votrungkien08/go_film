@@ -1,8 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import { useAuthPanel } from '../utils/auth';
+
+interface Genre {
+    id: number;
+    genre_name: string;
+}
+
+interface Year {
+    id: number;
+    release_year: number;
+}
+interface Country {
+    id: number;
+    country_name: string;
+}
 
 const Header = () => {
     const { isPanelOpen, setIsPanelOpen, isLoginForm, setIsLoginForm } = useAuthPanel();
@@ -14,16 +28,121 @@ const Header = () => {
         password: '',
         confirmPassword: '',
     });
+    const [genres, setGenres] = useState<Genre[]>([]);
+    const [showGenreDropdown, setShowGenreDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const [years, setYears] = useState<Year[]>([]);
+    const [showYearDropdown, setShowYearDropdown] = useState(false);
+    const yearDropdownRef = useRef<HTMLDivElement>(null);
+
+    const [countries, setCountries] = useState<Country[]>([]);
+    const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+    const countryDropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
-    // Đặt lại formData khi panel mở để input luôn trống
+    useEffect(() => {
+        const fetchGenres = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.get('http://localhost:8000/api/genres', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const genresData = response.data.genres || [];
+                console.log('Genres:', genresData); // Debug
+                const uniqueGenres = genresData.filter(
+                    (genre: Genre, index: number, self: Genre[]) =>
+                        genre.id != null && self.findIndex((g) => g.id === genre.id) === index
+                );
+                setGenres(uniqueGenres);
+            } catch (err: any) {
+                console.error('Lỗi khi lấy danh sách thể loại:', err.response?.data || err.message);
+                window.alert('Không thể tải danh sách thể loại');
+                setGenres([]);
+            }
+        };
+
+        const fetchYears = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.get('http://localhost:8000/api/years', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const yearsData = response.data.years || [];
+                console.log('Years:', yearsData); // Debug
+                const uniqueYears = yearsData.filter(
+                    (year: Year, index: number, self: Year[]) =>
+                        year.id != null && self.findIndex((y) => y.id === year.id) === index
+                );
+                setYears(uniqueYears);
+            } catch (err: any) {
+                console.error('Lỗi khi lấy danh sách năm:', err.response?.data || err.message);
+                window.alert('Không thể tải danh sách năm');
+                setYears([]);
+            }
+        };
+        const fetchCountries = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.get('http://localhost:8000/api/countries', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const countriesData = response.data.country || [];
+                console.log('Countries', countriesData);
+                const uniqueCountries = countriesData.filter(
+                    (country: Country, index: number, self: Country[]) =>
+                        country.id != null && self.findIndex((c) => c.id === country.id) === index
+                );
+                setCountries(uniqueCountries);
+            } catch (err: any) {
+                console.log('Lỗi khi lấy danh sách quốc gia:', err.response?.data || err.message);
+                window.alert('Không thể tải danh sách quốc gia');
+                setCountries([]);
+            }
+        };
+        fetchGenres();
+        fetchYears();
+        fetchCountries();
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowGenreDropdown(false);
+            }
+            if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target as Node)) {
+                setShowYearDropdown(false);
+            }
+            if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target as Node)) {
+                setShowCountryDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    const handleGenreSelect = (genre: Genre) => {
+        setShowGenreDropdown(false);
+        console.log('Thể loại được chọn:', genre);
+    };
+
+    const handleYearSelect = (year: Year) => {
+        setShowYearDropdown(false);
+        console.log('Năm được chọn:', year.release_year);
+    };
+    const handleCountrySelect = (country: Country) => {
+        setShowCountryDropdown(false);
+        console.log('Quốc gia được chọn', country.country_name);
+    }
+
     useEffect(() => {
         if (isPanelOpen && !isLoggedIn) {
             setFormData({ name: '', email: '', password: '', confirmPassword: '' });
         }
     }, [isPanelOpen, isLoggedIn]);
 
-    // Lấy thông tin người dùng khi panel mở và người dùng đã đăng nhập
     useEffect(() => {
         if (isPanelOpen && isLoggedIn) {
             const fetchUser = async () => {
@@ -99,13 +218,9 @@ const Header = () => {
     const handleLogout = async () => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post(
-                'http://localhost:8000/api/logout',
-                {},
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+            await axios.post('http://localhost:8000/api/logout', {}, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
             localStorage.removeItem('token');
             setIsLoggedIn(false);
             setUser(null);
@@ -129,14 +244,80 @@ const Header = () => {
                 </div>
 
                 <div className="col-span-6 flex items-center justify-start h-full">
-                    <div tabIndex={0} className="group flex items-center justify-center cursor-pointer">
-                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">THỂ LOẠI</h2>
+                    <div tabIndex={0} className="group relative flex items-center justify-center cursor-pointer" ref={dropdownRef}>
+                        <h2
+                            className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]"
+                            onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                        >
+                            THỂ LOẠI
+                        </h2>
+                        {showGenreDropdown && (
+                            <div className="absolute top-full left-0 bg-gray-800 rounded-lg shadow-lg w-64 z-[100] p-2 max-h-96 overflow-y-auto">
+                                {genres && genres.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {genres.map((genre) => (
+                                            <button
+                                                key={genre.id ?? `genre-${genres.indexOf(genre)}`}
+                                                className="block w-full text-left px-2 py-1 text-white hover:bg-[#ff4c00] rounded-lg text-sm"
+                                                onClick={() => handleGenreSelect(genre)}
+                                            >
+                                                {genre.genre_name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="p-2 text-gray-400">Không có thể loại</p>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
-                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">QUỐC GIA</h2>
+                    <div tabIndex={0} className="group relative  flex items-center justify-center cursor-pointer" ref={countryDropdownRef}>
+                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]"
+                            onClick={() => setShowCountryDropdown(!showCountryDropdown)}>QUỐC GIA</h2>
+                        {showCountryDropdown && (
+                            <div className='absolute top-full left-0 bg-gray-800 rounded-lg shadow-lg w-64 z-[100] p-2 max-h-96 overflow-y-auto'>
+                                {countries && countries.length > 0 ? (
+                                    <div className='grid grid-cols-2 gap-2'>
+                                        {countries.map((country) => (
+                                            <button key={country.id ?? `country-${countries.indexOf(country)}`}
+                                                className='block w-full text-left px-2 py-1 text-white hover:bg-[#ff4c00] rounded-lg text-sm'
+                                                onClick={() => handleCountrySelect(country)}>
+                                                {country.country_name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className='p-2 text-gray-400'>Không có quốc gia</p>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
-                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">NĂM</h2>
+                    <div tabIndex={0} className="group relative flex items-center justify-center cursor-pointer" ref={yearDropdownRef}>
+                        <h2
+                            className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]"
+                            onClick={() => setShowYearDropdown(!showYearDropdown)}
+                        >
+                            NĂM
+                        </h2>
+                        {showYearDropdown && (
+                            <div className="absolute top-full left-0 bg-gray-800 rounded-lg shadow-lg w-48 z-[100] p-2 max-h-96 overflow-y-auto">
+                                {years && years.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {years.map((year) => (
+                                            <button
+                                                key={year.id ?? `year-${years.indexOf(year)}`}
+                                                className="block w-full text-left px-2 py-1 text-white hover:bg-[#ff4c00] rounded-lg text-sm"
+                                                onClick={() => handleYearSelect(year)}
+                                            >
+                                                {year.release_year}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="p-2 text-gray-400">Không có năm</p>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
                         <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">PHIM LẺ</h2>
@@ -161,7 +342,6 @@ const Header = () => {
                 </div>
             </div>
 
-            {/* Slide-in Panel */}
             <div
                 className={`fixed top-0 right-0 h-full w-[400px] bg-gray-800 p-6 shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}
             >

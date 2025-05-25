@@ -7,6 +7,7 @@ interface Film {
     slug: string;
     title_film: string;
     thumb: string;
+    trailer: string;
     film_type: boolean;
     year: { id: number; release_year: number } | null;
     country: { id: number; country_name: string } | null;
@@ -23,7 +24,20 @@ interface Film {
 const Nominate = () => {
     const navigate = useNavigate();
     const [films, setFilms] = useState<Film[]>([]);
+    console.log("Dữ liệu films:", films);
     const [error, setError] = useState('');
+    const [currentFilm,setCurrentFilm] = useState(null);
+    function getYouTubeId(url?: string): string | undefined {
+        if (!url) return undefined;
+        const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
+        return match?.[1];
+    }
+    // lấy currentfilm
+    useEffect(() => {
+        if (films && films.length > 0) {
+            setCurrentFilm(films[0]);
+        }
+    }, [films]);
 
     // Gọi API để lấy danh sách phim
     useEffect(() => {
@@ -64,37 +78,58 @@ const Nominate = () => {
                         <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" />
                     </div>
                 </div>
-                <div className="grid grid-cols-8 gap-4">
-                    <div
-                        className="col-span-4 relative group aspect-[16/9] cursor-pointer before:content-none after:content-none"
+                {/* <div className='grid grid-cols-8 gap-4'>
+                    <div onClick={() => films[0] && navigate(`/film/${films[0].slug}`)} className='col-span-4'>
+                            <h1>bbb</h1>
+                    </div>
+                <div className="col-span-4 grid grid-cols-2 gap-4 h-full">
+                        {[0, 1, 2, 3].map(i => (
+                            <div key={i} className="bg-gray-700 rounded-lg min-h-[100px] flex items-center justify-center">
+                                <span className="text-white">Phim {i + 1}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div> */}
+                <div className="grid grid-cols-8 gap-4 ">
+                    <div className="col-span-4 h-full   aspect-[16/9] relative group  cursor-pointer before:content-none after:content-none"
                         style={{
                             content: 'none',
                             counterReset: 'none',
                             counterIncrement: 'none',
                             fontSize: '0px',
                             lineHeight: '0',
-                            overflow: 'hidden'
-                        }}
-                        onClick={() => films[0] && navigate(`/film/${films[0].slug}`)}
+                            overflow: 'hidden'}}
+                        onClick={() => currentFilm && navigate(`/film/${currentFilm.slug}`)}
                     >
                         {films[0] ? (
                             <>
-                                <img
+                                {/* <img
                                     src={films[0].thumb}
                                     alt={films[0].title_film}
-                                    className="w-full h-full object-cover rounded-lg"
+                                    className="w-full h-full object-cover  rounded-lg"
                                     loading="lazy"
-                                />
-                                {films[0].is_premium && (
+                                /> */}
+                                {currentFilm?.trailer && (
+                                    <iframe
+                                    className="absolute top-0 left-0 w-full h-full  transition-opacity duration-300 rounded-lg"
+                                    src={`https://www.youtube.com/embed/${getYouTubeId(currentFilm?.trailer)}?autoplay=1&mute=1&controls=0`}
+                                    title="Trailer"
+                                    allow="autoplay; encrypted-media"
+                                    allowFullScreen
+                                    ></iframe>
+                                )
+
+                                }
+                                {currentFilm?.is_premium && (
                                     <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded">
                                         Premium
                                     </div>
                                 )}
-                                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                                {/* <div className=" absolute inset-0  bg-opacity-50 flex items-center justify-center opacity-5 group-hover:opacity-100 transition-opacity rounded-lg">
                                     <h2 className="text-white text-lg font-semibold text-center px-2">
                                         {films[0].title_film}
                                     </h2>
-                                </div>
+                                </div> */}
                             </>
                         ) : (
                             <div className="w-full h-full bg-gray-700 flex items-center justify-center rounded-lg">
@@ -102,36 +137,19 @@ const Nominate = () => {
                             </div>
                         )}
                     </div>
-                    <div className="col-span-4 grid grid-cols-2 grid-rows-2 gap-4">
-                        {[1, 2, 3, 4].map(index => (
-                            <div
-                                key={index}
-                                className="relative group aspect-[16/9] cursor-pointer before:content-none after:content-none"
-                                style={{
-                                    content: 'none',
-                                    counterReset: 'none',
-                                    counterIncrement: 'none',
-                                    fontSize: '0px',
-                                    lineHeight: '0',
-                                    overflow: 'hidden'
-                                }}
-                                onClick={() => films[index] && navigate(`/film/${films[index].slug}`)}
-                            >
+                    <div className="col-span-4 h-full  aspect-[16/9] grid grid-cols-2 grid-rows-2 gap-4">
+                        {[1,2,3,4].map(index=> (
+                            <div onMouseOver={() => films[index] && setCurrentFilm(films[index])} onClick={() =>films[index] &&(setCurrentFilm(films[index]), navigate(`/film/${films[index].slug}`))} key={index} className='relative  group cursor-pointer'>
                                 {films[index] ? (
                                     <>
-                                        <img
-                                            src={films[index].thumb}
-                                            alt={films[index].title_film}
-                                            className="w-full h-full object-cover rounded-lg"
-                                            loading="lazy"
-                                        />
+                                        <img  loading="lazy" className="w-full h-full object-cover rounded-lg"  src={films[index].thumb} alt={films[index].title_film}/>
                                         {films[index].is_premium && (
                                             <div className="absolute top-1 right-1 bg-orange-500 text-white text-xs font-semibold px-1.5 py-0.5 rounded text-center">
                                                 Premium
                                             </div>
                                         )}
-                                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                                            <h2 className="text-white text-sm font-semibold text-center px-2">
+                                        <div className="backdrop-blur-sm absolute inset-0  bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                                            <h2 className="text-white  text-sm font-semibold text-center px-2">
                                                 {films[index].title_film}
                                             </h2>
                                         </div>
@@ -140,53 +158,13 @@ const Nominate = () => {
                                     <div className="w-full h-full bg-gray-700 flex items-center justify-center rounded-lg">
                                         <p className="text-white">Không có phim</p>
                                     </div>
-                                )}
+                                )
+                                }
                             </div>
                         ))}
                     </div>
                 </div>
-                <div className="grid grid-cols-8 gap-4 mt-4">
-                    {[5, 6, 7, 8].map(index => (
-                        <div
-                            key={index}
-                            className="col-span-2 relative group aspect-[16/9] cursor-pointer before:content-none after:content-none"
-                            style={{
-                                content: 'none',
-                                counterReset: 'none',
-                                counterIncrement: 'none',
-                                fontSize: '0px',
-                                lineHeight: '0',
-                                overflow: 'hidden'
-                            }}
-                            onClick={() => films[index] && navigate(`/film/${films[index].slug}`)}
-                        >
-                            {films[index] ? (
-                                <>
-                                    <img
-                                        src={films[index].thumb}
-                                        alt={films[index].title_film}
-                                        className="w-full h-full object-cover rounded-lg"
-                                        loading="lazy"
-                                    />
-                                    {films[index].is_premium && (
-                                        <div className="absolute top-1 right-1 bg-orange-500 text-white text-xs font-semibold px-1.5 py-0.5 rounded text-center">
-                                            Premium
-                                        </div>
-                                    )}
-                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                                        <h2 className="text-white text-sm font-semibold text-center px-2">
-                                            {films[index].title_film}
-                                        </h2>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="w-full h-full bg-gray-700 flex items-center justify-center rounded-lg">
-                                    <p className="text-white">Không có phim</p>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
+
             </div>
             <div className="col-span-2"></div>
         </div>

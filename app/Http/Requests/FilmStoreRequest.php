@@ -13,10 +13,18 @@ class FilmStoreRequest extends FormRequest
 
     public function rules(): array
     {
+        $filmId = $this->route('id'); // Lấy ID từ route khi cập nhật
+
         return [
-            'slug' => 'required|string|max:255|unique:Film,slug',
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('Film', 'slug')->ignore($filmId), // Bỏ qua slug hiện tại khi cập nhật
+            ],
             'title_film' => 'required|string|max:255',
             'thumb' => 'required|string|max:255',
+            'trailer' => 'nullable|string|max:255',
             'film_type' => 'required|boolean',
             'year_id' => 'required|exists:year,id',
             'country_id' => 'required|exists:country,id',
@@ -36,7 +44,7 @@ class FilmStoreRequest extends FormRequest
                 'nullable',
                 'integer',
                 'min:0',
-                Rule::requiredIf($this->is_premium), // Bắt buộc nếu is_premium là true
+                Rule::requiredIf($this->is_premium),
             ],
         ];
     }

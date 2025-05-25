@@ -27,8 +27,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/film/postRating', [RatingController::class, 'postRating']);
     Route::post('/film/watch-history', [WatchHistoriesController::class, 'store']);
     Route::get('/film/rating/{filmId}', [RatingController::class, 'getUserRating'])->middleware('auth:sanctum');
-
+    Route::post('/addyears', [YearController::class, 'store']);
+    Route::post('/addcountries', [CountryController::class, 'store']);
+    Route::post('/addgenres', [GenreController::class, 'store']);
 });
+
+Route::get('/film/getRating/{filmId}', [RatingController::class, 'getRating']);
+
 
 Route::post('/test-file', function (Request $request) {
     Log::info('📂 File test upload', [
