@@ -301,6 +301,44 @@ const AdminPage = () => {
             console.error('Chi tiết lỗi:', err);
         }
     };
+    const handleDeleteFilm = async (filmId: number) => {
+        const confirmDelete = window.confirm('Bạn có chắc muốn xóa phim này?');
+        if (!confirmDelete) {
+            return;
+        }
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`http://localhost:8000/api/delFilm/${filmId}`, {
+
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": 'application/json',
+                },
+            });
+            //Cập nhật danh sách phim sau khi xóa
+            setFilms(films.filter(film => film.id !== filmId));
+            setFormSuccess('Xóa phim thành công');
+            alert('Xóa phim thành công');
+
+        } catch (err: any) {
+            let errorMessage = 'Lỗi khi xóa phim';
+            if (err.response) {
+                errorMessage = err.response.data?.error || `Lỗi từ server (mã ${err.response.status})`;
+                const errorDetails = err.response.data?.errors ? Object.values(err.response.data.errors).flat().join(', ') : '';
+                errorMessage += errorDetails ? `:${errorDetails}` : '';
+
+            } else if (err.request) {
+                errorMessage = 'Không nhận được phản hồi từ server. Vui lòng kiểm tra kết nối mạng';
+
+            } else {
+                errorMessage = `Lỗi ${err.message}`;
+
+            }
+            setFormError(errorMessage);
+            console.error('Chi tiết lỗi', err);
+
+        }
+    }
 
     const renderMovies = () => (
         <div className="p-6">
@@ -672,7 +710,8 @@ const AdminPage = () => {
                                         >
                                             Sửa
                                         </button>
-                                        <button className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 cursor-pointer">
+                                        <button onClick={() => handleDeleteFilm(film.id)}
+                                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 cursor-pointer">
                                             Xóa
                                         </button>
                                     </td>

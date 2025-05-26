@@ -176,4 +176,56 @@ class FilmController extends Controller
             return response()->json(['error' => 'Lỗi khi xóa phim'], 500);
         }
     }
+    public function filter(Request $request)
+    {
+        try {
+            $query = Film::with(['year', 'country', 'genres', 'film_episodes']);
+
+            // Lọc theo thể loại - sử dụng genre parameter
+            if ($request->has('genre')) {
+                $genreNames = is_array($request->genre) ? $request->genre : [$request->genre];
+                $query->whereHas('genres', function ($q) use ($genreNames) {
+                    $q->whereIn('genre.genre_name', $genreNames);
+                });
+            }
+
+            // Lọc theo quốc gia - sử dụng country parameter
+            if ($request->has('country')) {
+                $query->whereHas('country', function ($q) use ($request) {
+                    $q->where('country_name', $request->country);
+                });
+            }
+
+            // Lọc theo năm - sử dụng year parameter
+            if ($request->has('year')) {
+                $query->whereHas('year', function ($q) use ($request) {
+                    $q->where('release_year', $request->year);
+                });
+            }
+
+            // Lọc theo loại phim - sử dụng type parameter
+            if ($request->has('type')) {
+                $filmType = $request->type === 'phim-le' ? 1 : 0;
+                $query->where('film_type', $filmType);
+            }
+
+            // Tìm kiếm - giữ nguyên search parameter
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('title_film', 'like', '%' . $search . '%')
+                        ->orWhere('content', 'like', '%' . $search . '%')
+                        ->orWhere('actor', 'like', '%' . $search . '%')
+                        ->orWhere('director', 'like', '%' . $search . '%');
+                });
+            }
+
+            $films = $query->get();
+            return response()->json($films, 200);
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lọc phim', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Không thể lọc phim'], 500);
+        }
+    }
 }

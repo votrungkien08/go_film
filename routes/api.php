@@ -6,11 +6,8 @@ use App\Http\Controllers\CloudinaryController;
 use App\Http\Controllers\FilmController;
 use App\Http\Controllers\YearController;
 use App\Http\Controllers\CountryController;
-use App\Http\Controllers\GenreController; // Thêm dòng này
+use App\Http\Controllers\GenreController;
 use Illuminate\Support\Facades\Log;
-// use App\Http\Controllers\CountryController;
-// use App\Http\Controllers\GenreController;
-// use App\Http\Controllers\YearController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\RatingController;
@@ -31,6 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/addyears', [YearController::class, 'store']);
     Route::post('/addcountries', [CountryController::class, 'store']);
     Route::post('/addgenres', [GenreController::class, 'store']);
+    Route::delete('/delFilm/{id}', [FilmController::class, 'destroy']);
+
 });
 
 Route::get('/film/getRating/{filmId}', [RatingController::class, 'getRating']);
@@ -51,7 +50,6 @@ Route::get('/get-videos', [CloudinaryController::class, 'getVideosByPhim']);
 
 
 Route::post('/addFilm', [FilmController::class, 'store']);
-Route::post('/delFilm/{id}', [FilmController::class, 'destroy']);
 Route::put('/updateFilm/{id}', [FilmController::class, 'update']);
 Route::get('/films', [FilmController::class, 'index']);
 Route::get('/film/{slug}', [FilmController::class, 'show']);
@@ -70,7 +68,7 @@ Route::get('/film/comments/user/{idUser}', [CommentController::class, 'getUserCo
 
 Route::get('/film/{idFilm}/favorite', [FavoriteController::class, 'getFavoriteByIdFilm']);
 Route::get('/favorite', [FavoriteController::class, 'getTopFavorite']);
-
+Route::get('/filter-films', [FilmController::class, 'filter']);
 
 //Route::get('/film/{id}', [FilmController::class, 'getFilmById']);
 

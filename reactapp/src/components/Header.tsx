@@ -39,6 +39,8 @@ const Header = () => {
     const [countries, setCountries] = useState<Country[]>([]);
     const [showCountryDropdown, setShowCountryDropdown] = useState(false);
     const countryDropdownRef = useRef<HTMLDivElement>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -123,19 +125,48 @@ const Header = () => {
         };
     }, []);
 
+    // Helper function to create SEO-friendly slugs
+    const createSlug = (text: string): string => {
+        return text
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove accents
+            .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+            .replace(/\s+/g, '-') // Replace spaces with hyphens
+            .replace(/-+/g, '-') // Replace multiple hyphens with single
+            .trim();
+    };
+
     const handleGenreSelect = (genre: Genre) => {
         setShowGenreDropdown(false);
-        console.log('Thể loại được chọn:', genre);
+        const genreSlug = createSlug(genre.genre_name);
+        navigate(`/films?genre=${genreSlug}`);
     };
 
     const handleYearSelect = (year: Year) => {
         setShowYearDropdown(false);
-        console.log('Năm được chọn:', year.release_year);
+        navigate(`/films?year=${year.release_year}`);
     };
+
     const handleCountrySelect = (country: Country) => {
         setShowCountryDropdown(false);
-        console.log('Quốc gia được chọn', country.country_name);
-    }
+        const countrySlug = createSlug(country.country_name);
+        navigate(`/films?country=${countrySlug}`);
+    };
+
+    const handleFilmTypeSelect = (filmType: string) => {
+        const typeSlug = filmType === 'true' ? 'phim-le' : 'phim-bo';
+        navigate(`/films?type=${typeSlug}`);
+    };
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            navigate(`/films?search=${encodeURIComponent(searchQuery)}`);
+        } else {
+            navigate('/films');
+        }
+    };
 
     useEffect(() => {
         if (isPanelOpen && !isLoggedIn) {
@@ -320,19 +351,29 @@ const Header = () => {
                         )}
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
-                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">PHIM LẺ</h2>
+                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]"
+                            onClick={() => handleFilmTypeSelect('true')}
+                        >PHIM LẺ</h2>
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
-                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]">PHIM BỘ</h2>
+                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]"
+                            onClick={() => handleFilmTypeSelect('false')}
+                        >PHIM BỘ</h2>
                     </div>
                 </div>
                 <div tabIndex={0} className="group col-span-3 h-full flex items-center relative cursor-pointer">
-                    <input
-                        type="search"
-                        placeholder="Tìm Kiếm"
-                        className="text-white h-[30px] w-full pl-2 border rounded-2xl outline-none group-hover:border-[#ff4c00]"
-                    />
-                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-500 absolute right-2" />
+                    <form onSubmit={handleSearch} className="w-full">
+                        <input
+                            type="search"
+                            placeholder="Tìm Kiếm"
+                            className="text-white h-[30px] w-full pl-2 border rounded-2xl outline-none group-hover:border-[#ff4c00]"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        <button type='submit' className='absolute right-2'>
+                            <MagnifyingGlassIcon className="h-5 w-5 text-gray-500 absolute right-2" />
+                        </button>
+                    </form>
                 </div>
                 <div
                     className="col-span-1 flex items-center justify-end cursor-pointer"
@@ -456,7 +497,7 @@ const Header = () => {
                     </p>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 
