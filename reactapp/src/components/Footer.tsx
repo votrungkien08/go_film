@@ -3,7 +3,7 @@ import { PhoneIcon, EnvelopeIcon} from '@heroicons/react/24/solid';
 const Footer = () => {
     return (
         <>
-            <div className="bg-[#333333] h-[240px] w-full mt-8">
+            <div className=" h-[240px] w-full mt-8">
                 <div className="grid grid-cols-12 gap-2 h-full ">
                     <div className='col-span-2'>
 

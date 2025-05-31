@@ -15,7 +15,8 @@ class FilmController extends Controller
     public function index()
     {
         try {
-            $films = Film::with(['year', 'country', 'genres', 'film_episodes'])->get();
+            // Lấy tất cả phim cùng với thông tin năm, quốc gia, và thể loại
+            $films = Film::with(['year', 'country', 'genres', 'film_episodes'])->orderBy('created_at', 'ASC')->get();
             return response()->json($films, 200);
         } catch (\Exception $e) {
             Log::error('❌ Error fetching films', ['message' => $e->getMessage()]);

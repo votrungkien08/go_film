@@ -2,3 +2,69 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE và Edge */
+  scrollbar-width: none; /* Firefox */
+}
+/* html.system {
+  background-color: #333333 !important;
+  color: #fff !important;
+}
+
+html.light {
+  background-color: #f5f5f5 !important;
+  color: #111 !important;
+}
+
+html.dark {
+  /* background-color: #1a1a1a !important; */
+  /* color: white !important;
+} */ 
+// bg ssystem
+.system {
+  background-color: #333333;
+  color: #ffffff;
+}
+
+.system body {
+  background-color: #333333;
+  color: #ffffff;
+}
+
+/* Dropdown menu styles*/
+.system .bg-popover {
+  background-color: #404040 !important;
+}
+
+.system .text-popover-foreground {
+  color: #ffffff !important;
+}
+
+
+
+/* button */
+.system .border.bg-background {
+  background-color: #404040 !important;
+  border-color: #525252 !important;
+  color: #ffffff !important;
+}
+
+.system .border.bg-background:hover {
+  background-color: #525252 !important;
+}
+
+
+// text
+@media (prefers-color-scheme: dark) {
+  .system-placeholder\:text-white::placeholder {
+    color: white;
+  }
+}
+@media (prefers-color-scheme: light) {
+  .system-placeholder\:text-black::placeholder {
+    color: black;
+  }
+}

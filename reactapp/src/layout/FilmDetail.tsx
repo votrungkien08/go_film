@@ -1,269 +1,34 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useFetcher } from 'react-router-dom';
 import axios from 'axios';
-import { UserCircleIcon } from '@heroicons/react/24/solid';
+import { HeartIcon as HeartSolidIcon,UserCircleIcon } from '@heroicons/react/24/solid';
+import { HeartIcon as HeartOutlineIcon } from '@heroicons/react/24/outline';
 import { openAuthPanel } from '../utils/auth';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-
+import { useFilmData } from '../hooks/useFilm';
+import { useComments } from '../hooks/useComment';
+import { useRating } from '../hooks/useRating';
+import { useFavorite } from '../hooks/useFavorite';
+import { useAuth } from '../hooks/useAuth';
+import { Film } from '../types';
 dayjs.extend(relativeTime);
 
 
-
-interface Episode {
-    episode_number: number;
-    episode_title: string;
-    episode_url: string;
-    duration: string;
-}
-
-interface Year {
-    id: number;
-    release_year: number;
-}
-
-interface Country {
-    id: number;
-    country_name: string;
-}
-
-interface Genre {
-    id: number;
-    genre_name: string;
-}
-
-interface Film {
-    id: number;
-    slug: string;
-    title_film: string;
-    thumb: string;
-    film_type: boolean;
-    year: Year | null;
-    country: Country | null;
-    genres: Genre[];
-    actor: string;
-    director: string;
-    content: string;
-    view: number;
-    is_premium: boolean;
-    point_required: number | null;
-    film_episodes: Episode[];
-}
-
-interface Comment {
-    id: number;
-    user_id: number;
-    film_id: number;
-    comment: string;
-    created_at: string;
-    user: {
-        name: string;
-    } | null;
-}
-
-interface Rating {
-    id: number;
-    user_id: number;
-    film_id: number;
-    rating: number;
-
-}
 
 
 const FilmDetail = () => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
-    const [film, setFilm] = useState<Film | null>(null);
-    const [error, setError] = useState('');
-    const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
-    const [tab, setTab] = useState<'comment' | 'rating'>('comment');
-    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+    const { isLoggedIn } = useAuth();
+    const { film, error, selectedEpisode, setSelectedEpisode } = useFilmData(slug!);
+    const { comments, commentsLoading, commentsError, comment, setComment, handlePostComment } = useComments(film?.id, isLoggedIn);
+    const { rating, setRating, showRating, averageRating, handlePostRating } = useRating(film?.id, isLoggedIn);
+    const { isFavorite, handleToggleFavorite } = useFavorite(film?.id, isLoggedIn);
+    const [tab, setTab] = useState<'comment' | 'rating' | 'info'>('comment');
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-    const [comment, setComment] = useState('');
-    const [rating, setRating] = useState<number | null>(null);
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [commentsLoading, setCommentsLoading] = useState(false);
-    const [commentsError, setCommentsError] = useState('');
-    const [showRating,setShowRating] = useState<Rating[]>([]);
-    const [averageRating,setAverageRating] = useState<number>(0);
-    // Hàm kiểm tra trạng thái đăng nhập
-    const checkLoginStatus = async () => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                const response = await fetch(`http://localhost:8000/api/user`, {
-                    method: 'GET',
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                const data = await response.json();
-                setIsLoggedIn(!!data.user);
-            } catch (err) {
-                console.error('Fetch user error:', err);
-                setIsLoggedIn(false);
-            }
-        } else {
-            setIsLoggedIn(false);
-        }
-    };
-
-    // Kiểm tra trạng thái đăng nhập khi component mount và khi nhận sự kiện loginSuccess/logoutSuccess
-    useEffect(() => {
-        checkLoginStatus();
-
-        const handleLoginSuccess = () => {
-            checkLoginStatus();
-        };
-        window.addEventListener('loginSuccess', handleLoginSuccess);
-
-        const handleLogoutSuccess = () => {
-            checkLoginStatus();
-            setRating(null);
-        };
-        window.addEventListener('logoutSuccess', handleLogoutSuccess);
-
-        return () => {
-            window.removeEventListener('loginSuccess', handleLoginSuccess);
-            window.removeEventListener('logoutSuccess', handleLogoutSuccess);
-        };
-    }, []);
-
-    // Lấy chi tiết phim
-    useEffect(() => {
-        const fetchFilm = async () => {
-            try {
-                const response = await axios.get(`http://localhost:8000/api/film/${slug}`);
-                setFilm(response.data);
-                if (response.data.film_episodes && response.data.film_episodes.length > 0) {
-                    setSelectedEpisode(response.data.film_episodes[0]);
-                }
-            } catch (err: any) {
-                console.error('Lỗi khi lấy chi tiết phim:', err.response?.data || err.message);
-                setError('Không tìm thấy phim hoặc lỗi server.');
-            }
-        };
-        fetchFilm();
-    }, [slug]);
-
-    // Lấy danh sách bình luận
-    useEffect(() => {
-        const fetchComments = async () => {
-            if (!film?.id) return;
-            setCommentsLoading(true);
-            setCommentsError('');
-            try {
-                const response = await axios.get(`http://localhost:8000/api/film/comments/${film.id}`);
-                setComments(response.data.comments);
-            } catch (err: any) {
-                console.error('Lỗi khi lấy bình luận:', err.response?.data || err.message);
-                setCommentsError('Không thể tải bình luận.');
-            } finally {
-                setCommentsLoading(false);
-            }
-        };
-        fetchComments();
-    }, [film?.id]);
-
-    // Lấy đánh giá của người dùng hiện tại
-    useEffect(() => {
-        const fetchUserRating = async () => {
-            if (!film?.id || !isLoggedIn) return;
-            try {
-                const token = localStorage.getItem('token');
-                const response = await axios.get(`http://localhost:8000/api/film/rating/${film.id}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setRating(response.data.rating || null);
-            } catch (err: any) {
-                console.error('Lỗi khi lấy đánh giá:', err.response?.data || err.message);
-            }
-        };
-        fetchUserRating();
-    }, [film?.id, isLoggedIn]);
-
-    const handleEpisodeSelect = (episode: Episode) => {
-        setSelectedEpisode(episode);
-    };
-
-    // Xử lý gửi bình luận
-    const handlePostComment = async () => {
-        if (!isLoggedIn) {
-            setShowAuthPrompt(true);
-            return;
-        }
-        if (!comment.trim()) {
-            alert('Vui lòng nhập bình luận!');
-            return;
-        }
-        try {
-            const token = localStorage.getItem('token');
-            await axios.post(
-                'http://localhost:8000/api/film/postComment',
-                { film_id: film?.id, comment },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setComment('');
-            alert('Bình luận đã được gửi!');
-            const response = await axios.get(`http://localhost:8000/api/film/comments/${film?.id}`);
-            setComments(response.data.comments);
-        } catch (err: any) {
-            console.error('Lỗi khi gửi bình luận:', err.response?.data || err.message);
-            alert('Có lỗi xảy ra khi gửi bình luận.');
-        }
-    };
-
-    // Xử lý gửi đánh giá
-    const handlePostRating = async () => {
-        if (!isLoggedIn) {
-            setShowAuthPrompt(true);
-            return;
-        }
-        if (!rating || rating < 1 || rating > 5) {
-            alert('Vui lòng chọn số sao từ 1 đến 5!');
-            return;
-        }
-        try {
-            const token = localStorage.getItem('token');
-            await axios.post(
-                'http://localhost:8000/api/film/postRating',
-                { film_id: film?.id, rating },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            alert('Đánh giá đã được gửi!');
-            const response = await axios.get(`http://localhost:8000/api/film/rating/${film?.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setRating(response.data.rating || null);
-        } catch (err: any) {
-            console.error('Lỗi khi gửi đánh giá:', err.response?.data || err.message);
-            alert('Có lỗi xảy ra khi gửi đánh giá.');
-        }
-    };
-    
-    // get rating film
-    useEffect(() => {
-        try {
-            if (!film?.id) return;
-            fetch(`http://127.0.0.1:8000/api/film/getRating/${film?.id}`)
-                .then(resposne => resposne.json())
-                .then(data => {
-                    console.log("Fetched rating data:", data); 
-                    if(data.rating) {
-                        setShowRating(data.rating);
-                        const total = data.rating.reduce((sum: number, r: Rating) => sum + r.rating, 0);
-                        const avg = data.rating.length ? total / data.rating.length : 0;
-                        setAverageRating(avg);
-                        console.log("Fetched rating avg:", avg); 
-                        
-                    }
-                })
-                .catch(err => console.error('Error fetching ratings:', err))
-
-        }catch(err:any) {
-            console.log("error get rating film", err.message);
-        }
-    },[film?.id]);
 
     if (error) {
         return (
@@ -335,19 +100,41 @@ const FilmDetail = () => {
                                 </div>
                             )}
                         </div>
-
-                        {!film.film_type && film.film_episodes.length > 0 && (
+                        
+                    
+                        {/* Nếu là phim bộ */}
+                        {!film.film_type && film.film_episodes.length > 0 ? (
                             <div className="mt-4">
                                 <h2 className="text-xl font-semibold mb-3">Danh sách tập</h2>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
-                                    {film.film_episodes.map(episode => (
+                                    {film.film_episodes.map((episode, index) => (
                                         <button
-                                            key={episode.episode_number}
-                                            onClick={() => handleEpisodeSelect(episode)}
-                                            className={`py-2 px-4 rounded-md text-sm font-medium transition-colors duration-300 cursor-pointer ${selectedEpisode?.episode_number === episode.episode_number
-                                                ? 'bg-orange-500 text-white'
-                                                : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A]'
-                                                }`}
+                                            key={episode.id || `${episode.episode_number}-${index}`}
+                                            onClick={() => setSelectedEpisode(episode)}
+                                            className={`py-2 px-4 rounded-md text-sm font-medium transition-colors duration-300 cursor-pointer ${
+                                                String(selectedEpisode?.id) === String(episode.id)
+                                                    ? 'bg-orange-500 text-white'
+                                                    : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A]'
+                                            }`}
+                                        >
+                                            {episode.episode_title || `Tập ${episode.episode_number}`}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="mt-4">
+                                <h2 className="text-xl font-semibold mb-3">Danh sách tập</h2>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+                                    {film.film_episodes.map((episode, index) => (
+                                        <button
+                                            key={episode.id || `${episode.episode_number}-${index}`}
+                                            onClick={() => setSelectedEpisode(episode)}
+                                            className={`py-2 px-4 rounded-md text-sm font-medium transition-colors duration-300 cursor-pointer ${
+                                                String(selectedEpisode?.id) === String(episode.id)
+                                                    ? 'bg-orange-500 text-white'
+                                                    : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A]'
+                                            }`}
                                         >
                                             {episode.episode_title || `Tập ${episode.episode_number}`}
                                         </button>
@@ -358,18 +145,21 @@ const FilmDetail = () => {
 
                         <div className="flex border-b border-gray-700 mt-4">
                             <button
-                                className={`px-4 py-2 rounded-t-md ${tab === 'comment' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'
+                                className={`mr-2 px-4 py-2 rounded-t-md ${tab === 'comment' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'
                                     }`}
                                 onClick={() => setTab('comment')}
                             >
                                 Bình luận
                             </button>
                             <button
-                                className={`px-4 py-2 rounded-t-md ${tab === 'rating' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'
+                                className={`mr-2 px-4 py-2 rounded-t-md ${tab === 'rating' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'
                                     }`}
                                 onClick={() => setTab('rating')}
                             >
                                 Đánh giá
+                            </button>
+                            <button className={`px-4 py-2 rounded-t-md ${tab==='info' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'  }  `} onClick={() => setTab('info')}>
+                                Thông tin
                             </button>
                         </div>
 
@@ -428,7 +218,7 @@ const FilmDetail = () => {
                                             <p className="text-gray-400 text-center">Chưa có bình luận nào.</p>
                                         )}
                                         {!commentsLoading &&
-                                            comments.map(comment => (
+                                            Array.isArray(comments) && comments.map(comment => (
                                                 <div key={comment.id} className="border rounded-sm justify-center flex items-center gap-3">
                                                     <div className=" h-full flex p-2  items-center">
                                                         <UserCircleIcon className="inline-block h-10 w-10 text-gray-300" />
@@ -447,7 +237,8 @@ const FilmDetail = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                            ))}
+                                            ))
+                                        }
                                     </div>
                                 </div>
                             )}
@@ -467,6 +258,7 @@ const FilmDetail = () => {
                                             ))}
                                         </div>
                                         <button
+                                            onFocus={() => !isLoggedIn && setShowAuthPrompt(true)}
                                             onClick={handlePostRating}
                                             className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
                                         >
@@ -475,17 +267,80 @@ const FilmDetail = () => {
                                     </div>
                                 </div>
                             )}
+                            {tab==='info' ? (
+                                <div className='bg-[#444444] rounded-lg p-4'>
+                                    <div className='text-left'>
+                                        <p className='py-2'>
+                                            <span className="font-semibold text-orange-500">Thể loại:</span>{' '}
+                                            {film.genres.map(genre => genre.genre_name).join(', ') || 'N/A'}
+                                        </p>
+                                        <p className='py-2'>
+                                            <span className="font-semibold text-orange-500">Năm phát hành:</span>{' '}
+                                            {film.year?.release_year || 'N/A'}
+                                        </p>
+                                        <p className='py-2'>
+                                            <span className="font-semibold text-orange-500">Quốc gia:</span>{' '}
+                                            {film.country?.country_name || 'N/A'}
+                                        </p>
+                                        <p className='py-2'>
+                                            <span className="font-semibold text-orange-500">Diễn viên:</span>{' '}
+                                            {film.actor || 'N/A'}
+                                        </p>
+                                        <p className='py-2'>
+                                            <span className="font-semibold text-orange-500">Đạo diễn:</span>{' '}
+                                            {film.director || 'N/A'}
+                                        </p>
+                                        <p className='py-2'>
+                                            <span className="font-semibold text-orange-500">Nội dung:</span>{' '}
+                                            {film.content || 'N/A'}
+                                        </p>
+                                        <p className='py-2'>
+                                            <span className="font-semibold text-orange-500">Loại phim:</span>{' '}
+                                            {film.film_type ? 'Phim lẻ' : 'Phim bộ'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div></div>
+                            )
+
+                            }
                         </div>
                     </div>
 
                     <div className="lg:col-span-1">
+                        
                         <div className="bg-[#444444] text-left rounded-lg p-4 shadow-lg">
                             <img
                                 src={film.thumb}
                                 alt={film.title_film}
-                                className=" mx-auto rounded-md mb-4 object-contain aspect-square max-h-48"
+                                className=" mx-auto rounded-sm  object-contain  max-h-48"
                             />
-                            <p></p>
+                            <div className='py-4 flex items-center justify-start'>
+                                <button className='bg-orange-500 w-24 h-10 rounded-lg'>
+                                    Yêu thích
+                                </button>
+                                {isFavorite ? (
+                                        <HeartSolidIcon onClick={() => {if(!isLoggedIn) 
+                                        {
+                                            setShowAuthPrompt(true);
+                                            return;
+                                        }
+                                        handleToggleFavorite();
+                                        }} className='w-8 h-8 text-orange-500  ml-4 cursor-pointer'/>
+
+                                ) : (
+                                        <HeartOutlineIcon onClick={() => {
+                                            if(!isLoggedIn) {
+                                                setShowAuthPrompt(true);
+                                                return;
+                                            }
+                                            handleToggleFavorite();
+                                        }} className='w-8 h-8  text-gray-500 ml-4 stroke-orange-500 cursor-pointer'/>
+
+                                )}
+
+                            </div>
                             <div className="space-y-2">
                                 <div className="flex items-center space-x-3 text-white mt-4">
                                     {/* Vòng tròn phần trăm */}
@@ -523,31 +378,6 @@ const FilmDetail = () => {
                                         </div>
                                     </div>
                                 </div>
-
-                                <p>
-                                    <span className="font-semibold text-orange-500">Thể loại:</span>{' '}
-                                    {film.genres.map(genre => genre.genre_name).join(', ') || 'N/A'}
-                                </p>
-                                <p>
-                                    <span className="font-semibold text-orange-500">Năm phát hành:</span>{' '}
-                                    {film.year?.release_year || 'N/A'}
-                                </p>
-                                <p>
-                                    <span className="font-semibold text-orange-500">Quốc gia:</span>{' '}
-                                    {film.country?.country_name || 'N/A'}
-                                </p>
-                                <p>
-                                    <span className="font-semibold text-orange-500">Diễn viên:</span>{' '}
-                                    {film.actor || 'N/A'}
-                                </p>
-                                <p>
-                                    <span className="font-semibold text-orange-500">Đạo diễn:</span>{' '}
-                                    {film.director || 'N/A'}
-                                </p>
-                                <p>
-                                    <span className="font-semibold text-orange-500">Nội dung:</span>{' '}
-                                    {film.content || 'N/A'}
-                                </p>
                                 <p>
                                     <span className="font-semibold text-orange-500">Lượt xem:</span> {film.view}
                                 </p>
@@ -559,10 +389,7 @@ const FilmDetail = () => {
                                     <span className="font-semibold text-orange-500">Điểm yêu cầu:</span>{' '}
                                     {film.is_premium ? film.point_required || '0' : 'N/A'}
                                 </p>
-                                <p>
-                                    <span className="font-semibold text-orange-500">Loại phim:</span>{' '}
-                                    {film.film_type ? 'Phim lẻ' : 'Phim bộ'}
-                                </p>
+
                             </div>
                         </div>
                     </div>
@@ -570,11 +397,11 @@ const FilmDetail = () => {
 
                 {showAuthPrompt && (
                     <div
-                        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50"
+                        className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-opacity-50  z-50"
                         onClick={() => setShowAuthPrompt(false)}
                     >
                         <div
-                            className="bg-[#444444] w-96 rounded-lg p-6"
+                            className="bg-[#000000] w-96 rounded-lg p-6"
                             onClick={e => e.stopPropagation()}
                         >
                             <h2 className="text-xl font-semibold mb-4 text-white">

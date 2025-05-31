@@ -18,12 +18,16 @@ class WatchHistoriesController extends Controller
                     'error' => 'Unauthorized',
                 ], 401);
             }
+            $request->validate([
+                'film_id' => 'required|integer|exists:films,id',
+            ]);
             $history = Watch_histories::updateOrCreate([
                 'user_id' => $user->id,
                 'film_id' => $request->film_id,
             ], [
                 'watch_at' => now(),
             ]);
+            $history->load('film'); 
 
 
             return response()->json([

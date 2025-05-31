@@ -22,6 +22,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // comment
     Route::post('/film/postComment', [CommentController::class, 'postComment']);
+    Route::post('/checkComment', [CommentController::class, 'checkComment']);
+
+
+    // rating
     Route::post('/film/postRating', [RatingController::class, 'postRating']);
     Route::post('/film/watch-history', [WatchHistoriesController::class, 'store']);
     Route::get('/film/rating/{filmId}', [RatingController::class, 'getUserRating'])->middleware('auth:sanctum');
@@ -30,7 +34,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/addgenres', [GenreController::class, 'store']);
     Route::delete('/delFilm/{id}', [FilmController::class, 'destroy']);
 
+    // favorite
+    Route::post('addFavorite', [FavoriteController::class, 'addFavorite']);
+    Route::delete('removeFavorite/{idFilm}', [FavoriteController::class, 'removeFavorite']);
 });
+
+// favorite
+Route::get('/film/{idFilm}/favorite', [FavoriteController::class, 'isFavorite']);
+Route::get('/favorite', [FavoriteController::class, 'getTopFavorite']);
+
+
 
 Route::get('/film/getRating/{filmId}', [RatingController::class, 'getRating']);
 
@@ -61,7 +74,10 @@ Route::get('/genres', [GenreController::class, 'index']);
 Route::get('/years', [YearController::class, 'index']);
 
 
-Route::get('/film/{id}/comments', [CommentController::class, 'index']);
+Route::get('/comments', [CommentController::class, 'index']);
+Route::get('/{id}/comments', [CommentController::class, 'getCommentByIdFilm']);
+// block comment
+Route::post('/toggleBlockComment/{idComment}', [CommentController::class, 'toggleBlockComments']);
 Route::get('/film/comments/{idFilm}', [CommentController::class, 'getCommentByIdFilm']);
 Route::get('/film/comments/user/{idUser}', [CommentController::class, 'getUserComment']);
 
@@ -69,6 +85,7 @@ Route::get('/film/comments/user/{idUser}', [CommentController::class, 'getUserCo
 Route::get('/film/{idFilm}/favorite', [FavoriteController::class, 'getFavoriteByIdFilm']);
 Route::get('/favorite', [FavoriteController::class, 'getTopFavorite']);
 Route::get('/filter-films', [FilmController::class, 'filter']);
+
 
 //Route::get('/film/{id}', [FilmController::class, 'getFilmById']);
 

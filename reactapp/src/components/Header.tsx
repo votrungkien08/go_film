@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
 import { useAuthPanel } from '../utils/auth';
-
+import { toast } from 'sonner';
+import { ModeToggle } from './mode-toggle';
+import { useTheme } from "../components/theme-provider";
 interface Genre {
     id: number;
     genre_name: string;
@@ -18,7 +20,9 @@ interface Country {
     country_name: string;
 }
 
+
 const Header = () => {
+    const { theme } = useTheme();
     const { isPanelOpen, setIsPanelOpen, isLoginForm, setIsLoginForm } = useAuthPanel();
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
     const [user, setUser] = useState<{ name: string; points: number; role: string } | null>(null);
@@ -184,7 +188,7 @@ const Header = () => {
                     });
                     setUser(response.data.user);
                 } catch (err: any) {
-                    window.alert('Không thể tải thông tin người dùng');
+                    toast.error('Không thể tải thông tin người dùng');
                     setUser(null);
                 }
             };
@@ -203,7 +207,7 @@ const Header = () => {
                 email: formData.email,
                 password: formData.password,
             });
-            window.alert('Đăng nhập thành công!');
+            toast.success('Đăng nhập thành công!');
             localStorage.setItem('token', response.data.token);
             setUser(response.data.user);
             setIsLoggedIn(true);
@@ -216,18 +220,18 @@ const Header = () => {
             }, 1000);
         } catch (err: any) {
             const message = err.response?.data?.message || 'Đăng nhập thất bại';
-            window.alert(message);
+            toast.error(message);
         }
     };
 
     const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
-            window.alert('Mật khẩu xác nhận không khớp');
+            toast.warning('Mật khẩu xác nhận không khớp');
             return;
         }
         if (formData.password.length < 8) {
-            window.alert('Mật khẩu phải có ít nhất 8 ký tự');
+            toast.warning('Mật khẩu phải có ít nhất 8 ký tự');
             return;
         }
         try {
@@ -237,12 +241,12 @@ const Header = () => {
                 password: formData.password,
                 password_confirmation: formData.confirmPassword,
             });
-            window.alert('Đăng ký thành công! Vui lòng đăng nhập.');
+            toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
             setIsLoginForm(true);
             setFormData({ name: '', email: '', password: '', confirmPassword: '' });
         } catch (err: any) {
             const message = err.response?.data?.message || 'Đăng ký thất bại';
-            window.alert(message);
+            toast.error(message);
         }
     };
 
@@ -255,18 +259,18 @@ const Header = () => {
             localStorage.removeItem('token');
             setIsLoggedIn(false);
             setUser(null);
-            window.alert('Đăng xuất thành công!');
+            toast.success('Đăng xuất thành công!');
             setTimeout(() => {
                 setIsPanelOpen(false);
                 window.dispatchEvent(new Event('logoutSuccess'));
             }, 1000);
         } catch (err: any) {
-            window.alert('Đăng xuất thất bại');
+            toast.error('Đăng xuất thất bại');
         }
     };
 
     return (
-        <div className="bg-[#333333] h-[60px] w-full fixed top-0 left-0 z-50 px-4">
+        <div className={`h-[60px] w-full fixed top-0 left-0  z-50 px-4 backdrop-blur-lg `}>
             <div className="grid grid-cols-12 gap-2 h-full items-center">
                 <div className="col-span-2 flex items-center cursor-pointer h-full">
                     <Link to="/" className="flex items-center h-full">
@@ -274,10 +278,10 @@ const Header = () => {
                     </Link>
                 </div>
 
-                <div className="col-span-6 flex items-center justify-start h-full">
+                <div className="col-span-5  flex items-center justify-start h-full">
                     <div tabIndex={0} className="group relative flex items-center justify-center cursor-pointer" ref={dropdownRef}>
                         <h2
-                            className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]"
+                            className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => setShowGenreDropdown(!showGenreDropdown)}
                         >
                             THỂ LOẠI
@@ -303,7 +307,7 @@ const Header = () => {
                         )}
                     </div>
                     <div tabIndex={0} className="group relative  flex items-center justify-center cursor-pointer" ref={countryDropdownRef}>
-                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]"
+                        <h2 className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => setShowCountryDropdown(!showCountryDropdown)}>QUỐC GIA</h2>
                         {showCountryDropdown && (
                             <div className='absolute top-full left-0 bg-gray-800 rounded-lg shadow-lg w-64 z-[100] p-2 max-h-96 overflow-y-auto'>
@@ -325,7 +329,7 @@ const Header = () => {
                     </div>
                     <div tabIndex={0} className="group relative flex items-center justify-center cursor-pointer" ref={yearDropdownRef}>
                         <h2
-                            className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]"
+                            className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => setShowYearDropdown(!showYearDropdown)}
                         >
                             NĂM
@@ -351,35 +355,40 @@ const Header = () => {
                         )}
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
-                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]"
+                        <h2 className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => handleFilmTypeSelect('true')}
                         >PHIM LẺ</h2>
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
-                        <h2 className="mr-10 py-4 text-left text-white group-hover:text-[#ff4c00]"
+                        <h2 className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => handleFilmTypeSelect('false')}
                         >PHIM BỘ</h2>
                     </div>
                 </div>
-                <div tabIndex={0} className="group col-span-3 h-full flex items-center relative cursor-pointer">
+                <div tabIndex={0} className="group col-span-3 h-full flex justify-center items-center relative cursor-pointer">
                     <form onSubmit={handleSearch} className="w-full">
                         <input
                             type="search"
                             placeholder="Tìm Kiếm"
-                            className="text-white h-[30px] w-full pl-2 border rounded-2xl outline-none group-hover:border-[#ff4c00]"
+                            className={`h-[30px] w-full pl-2 border rounded-2xl outline-none group-hover:border-[#ff4c00] light:placeholder:text-black ${theme === 'light' ? 'placeholder:text-black border-black' : ''} ${theme === 'dark' ? 'placeholder:text-white border-white' : ''} ${theme === 'system' ? 'system-placeholder:text-white' : ''}`}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
-                        <button type='submit' className='absolute right-2'>
-                            <MagnifyingGlassIcon className="h-5 w-5 text-gray-500 absolute right-2" />
+                        <button type='submit' className='w-8 h-8 absolute right-0 top-1/2 transform -translate-1/2 '>
+                            <MagnifyingGlassIcon className="h-5 w-5 " />
                         </button>
                     </form>
+                </div>
+
+                <div className='col-span-1  flex justify-end focus:outline-none focus:ring-0'>
+                    <ModeToggle ></ModeToggle>
                 </div>
                 <div
                     className="col-span-1 flex items-center justify-end cursor-pointer"
                     onClick={() => setIsPanelOpen(true)}
                 >
-                    <UserCircleIcon className="h-10 w-10 text-white border rounded-3xl border-white" />
+                    <UserCircleIcon className={`h-10 w-10  border rounded-3xl ${theme==='dark' ? "border-white" : ""} ${theme==='light' ? "border-black" : ""}  `}  />
+                    
                 </div>
             </div>
 
@@ -387,7 +396,7 @@ const Header = () => {
                 className={`fixed top-0 right-0 h-full w-[400px] bg-gray-800 p-6 shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}
             >
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-white">
+                    <h2 className="text-xl font-bold">
                         {isLoggedIn ? 'Thông Tin Người Dùng' : isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
                     </h2>
                     <button
@@ -399,7 +408,7 @@ const Header = () => {
                 </div>
 
                 {isLoggedIn && user ? (
-                    <div className="text-white">
+                    <div className="">
                         <div className="mb-4 relative">
                             <label className="text-sm text-gray-300">Họ và tên</label>
                             <p className="w-full p-2 pl-4 bg-[#3A3A3A] border border-gray-600 rounded text-white">{user.name}</p>
@@ -410,7 +419,7 @@ const Header = () => {
                         </div>
                         <button
                             onClick={handleLogout}
-                            className="w-full bg-[#ff4c00] text-white p-2 rounded hover:bg-[#e04300] transition-colors cursor-pointer"
+                            className="w-full bg-[#ff4c00]  p-2 rounded hover:bg-[#e04300] transition-colors cursor-pointer"
                         >
                             Đăng Xuất
                         </button>

@@ -52,12 +52,12 @@ const Rank = () => {
                         <>
                             <div className="col-span-1 relative overflow-visible group">
 
-                                <div className=" text-left text-[200px] font-black" style={{WebkitTextStroke: '3px #cbcbcb'}}>
+                                <div className=" text-left text-black text-[200px] font-black" style={{WebkitTextStroke: '3px #cbcbcb'}}>
                                     {index+1}
                                 </div>
                                 <img className="absolute top-16 left-18 z-10 rounded-lg   object-cover w-32 h-48 " src={item.thumb} alt="" />
                                 <div onClick={()=> {navigate(`/film/${item.slug}`)}}  className="backdrop-blur-sm absolute top-16 left-18 z-20 rounded-lg w-32 h-48 cursor-pointer opacity-0 group-hover:opacity-100   flex items-center justify-center ">
-                                    <p className="text-center text-white text-sm font-semibold">{item.title_film}</p>
+                                    <p className="text-center  text-sm font-semibold">{item.title_film}</p>
                                 </div>
                             </div>
                         </>

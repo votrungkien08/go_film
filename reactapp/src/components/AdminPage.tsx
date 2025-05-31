@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios, { AxiosError } from 'axios';
+import { data, useNavigate } from 'react-router-dom';
 import {
     PlusCircleIcon,
     CalendarIcon,
     UserIcon,
-    CogIcon
+    CogIcon,
+    ChatBubbleOvalLeftIcon
 } from '@heroicons/react/24/solid';
+import { toast } from 'sonner';
 
 interface Episode {
     episode_number: number;
@@ -47,6 +49,14 @@ interface Film {
     is_premium: boolean;
     point_required: number | null;
     film_episodes: Episode[];
+}
+interface Comment {
+  id: number;
+  user_id: number;
+  film_id: number;
+  comment: string;
+  created_at: string | null;
+  is_blocked: boolean;
 }
 
 const AdminPage = () => {
@@ -97,6 +107,9 @@ const AdminPage = () => {
     const [formSuccess, setFormSuccess] = useState('');
     const [isEditing, setIsEditing] = useState(false);
 
+    // comment
+    const [comments, setComments] = useState<Comment[]>([]);
+
     // State cho danh sách năm, quốc gia, và thể loại
     const [years, setYears] = useState<Year[]>([]);
     const [countries, setCountries] = useState<Country[]>([]);
@@ -108,6 +121,65 @@ const AdminPage = () => {
     const [countryForm, setCountryForm] = useState({ country_name: '' });
     const [settingError, setSettingError] = useState('');
     const [settingSuccess, setSettingSuccess] = useState('');
+
+    // fetch comment
+    useEffect(() => {
+        fetch('http://localhost:8000/api/comments')
+            .then((response) => response.json())
+            .then((data) => {
+                // Kiểm tra data là mảng hay object
+                console.log('data comment',data.comments);
+                console.log('typeof data:', typeof data.comments); // 👈 in kiểu của data
+                console.log('isArray:', Array.isArray(data)); // 👈 check xem có phải mảng ko
+                if (Array.isArray(data)) {
+                    setComments(data);
+                } else if (data.comments && Array.isArray(data.comments)) {
+                    setComments(data.comments);
+                } else {
+                    setComments([]); // fallback nếu API trả không đúng
+                }
+            })
+            .catch((err) => console.error('Lỗi:', err));
+    },[]);
+
+    // block comment
+    const toggleBlockComment = (idComment) => {
+        fetch(`http://localhost:8000/api/toggleBlockComment/${idComment}`, {
+            method: 'POST'
+        })
+        .then((response) => response.json())
+        .then(() => {
+            fetch('http://localhost:8000/api/comments')
+            .then((response) => response.json())
+            .then((data) => {
+                setComments(data.comments);
+            })
+        })
+    }
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    navigate('/');
+                    return;
+                }
+                const response = await axios.get('http://localhost:8000/api/user', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (response.data.user.role !== 'admin') {
+                    navigate('/');
+                    return;
+                }
+                setUser(response.data.user);
+            } catch (err: any) {
+                setError('Không thể tải thông tin người dùng');
+                navigate('/');
+            }
+        };
+        fetchUser();
+    }, [navigate]);
 
     // Hàm xử lý khi nhấn nút "Sửa"
     const handleEditFilm = (film: Film) => {
@@ -1057,6 +1129,25 @@ const AdminPage = () => {
     if (!user) {
         return <div className="text-white text-center mt-10">Đang tải...</div>;
     }
+    const renderComments = () => (
+        <>
+                <div className="p-8 text-white">
+                <h1 className="text-2xl mb-4">Danh sách bình luận</h1>
+                {comments.map(comment => (
+                    <div key={comment.id} className="bg-gray-800 p-4 mb-2 rounded">
+                    <p>{comment.comment}</p>
+                    <p className="text-sm text-gray-400">Bởi: {comment.user_id}</p>
+                    <button
+                        onClick={() => toggleBlockComment(comment.id)}
+                        className={`mt-2 px-3 py-1 rounded ${comment.is_blocked ? 'bg-red-500' : 'bg-green-500'}`}
+                    >
+                        {comment.is_blocked ? 'Bỏ chặn' : 'Chặn'}
+                    </button>
+                    </div>
+                ))}
+                </div>
+        </>
+    );
 
     return (
         <div className="min-h-screen bg-gray-900 flex">
@@ -1080,6 +1171,12 @@ const AdminPage = () => {
                     <UserIcon className="h-8 w-8" />
                 </button>
                 <button
+                    onClick={() => setActiveSection('comments')}
+                    className={`p-3 ${activeSection === 'comments' ? 'text-[#ff4c00]' : 'text-gray-300'} hover:text-[#ff4c00]`}
+                >
+                    <ChatBubbleOvalLeftIcon className="h-8 w-8" />
+                </button>
+                <button
                     onClick={() => setActiveSection('settings')}
                     className={`p-3 ${activeSection === 'settings' ? 'text-[#ff4c00]' : 'text-gray-300'} hover:text-[#ff4c00]`}
                 >
@@ -1092,6 +1189,7 @@ const AdminPage = () => {
                 {activeSection === 'movies' && renderMovies()}
                 {activeSection === 'users' && renderUsers()}
                 {activeSection === 'settings' && renderSettings()}
+                {activeSection === 'comments' && renderComments()}
             </div>
         </div>
     );

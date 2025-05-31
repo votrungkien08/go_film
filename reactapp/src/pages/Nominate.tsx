@@ -31,7 +31,6 @@ interface Rating {
 const Nominate = () => {
     const navigate = useNavigate();
     const [films, setFilms] = useState<Film[]>([]);
-    console.log("Dữ liệu films:", films);
     const [error, setError] = useState('');
     const [currentFilm,setCurrentFilm] = useState(null);
     const [rating,setRating] = useState<Rating[]>([]);
@@ -71,17 +70,17 @@ const Nominate = () => {
     }
 
     return (
-        <div className="grid grid-cols-12 gap-4 py-4 pt-[100px]">
+        <div className="grid grid-cols-12 gap-4  pt-[100px]">
             <div className="col-span-1"></div>
             <div className="col-span-10">
                 <div className="grid grid-cols-8 gap-4 mb-4">
                     <div className="col-span-4 flex items-center h-12">
-                        <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" />
-                        <h1 className="ml-2 text-white font-bold">PHIM ĐỀ CỬ</h1>
+                        <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" style={{filter: 'invert(53%) sepia(94%) saturate(749%) hue-rotate(353deg) brightness(101%) contrast(101%)'}} />
+                        <h1 className="ml-2  font-bold">PHIM ĐỀ CỬ</h1>
                     </div>
                     <div className="col-span-4 flex items-center justify-end">
                         <h1
-                            className="mr-2 text-white font-bold cursor-pointer"
+                            className="mr-2  font-bold cursor-pointer"
                             onClick={() => navigate('/films')} // Tùy chọn: dẫn đến trang danh sách phim
                         >
                             XEM TẤT CẢ
