@@ -22,7 +22,7 @@ interface Country {
     country_name: string;
 }
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const Header = () => {
     const { theme } = useTheme();
@@ -43,7 +43,7 @@ const Header = () => {
     const yearDropdownRef = useRef<HTMLDivElement>(null);
     const [countries, setCountries] = useState<Country[]>([]);
     const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-    const countryDropdownRef = useRef<HTMLDivElement>();
+    const countryDropdownRef = useRef<HTMLDivElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [pointsToBuy, setPointsToBuy] = useState('');
     const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -61,13 +61,13 @@ const Header = () => {
                 const genresData = response.data.genres || [];
                 console.log('Genres:', genresData);
                 const uniqueGenres = genresData.filter(
-                    (genre: Genre, index: number, self: any[]) =>
+                    (genre: Genre, index: number, self: Genre[]) =>
                         genre.id != null && self.findIndex((g) => g.id === genre.id) === index
                 );
                 setGenres(uniqueGenres);
             } catch (err: any) {
                 console.error('Lỗi khi lấy danh sách thể loại:', err.response?.data || err.message);
-                window.alert('Không thể tải danh sách thể loại');
+                toast.error('Không thể tải danh sách thể loại');
                 setGenres([]);
             }
         };
@@ -81,13 +81,13 @@ const Header = () => {
                 const yearsData = response.data.years || [];
                 console.log('Years:', yearsData);
                 const uniqueYears = yearsData.filter(
-                    (year: Year, index: number, self: any[]) =>
+                    (year: Year, index: number, self: Year[]) =>
                         year.id != null && self.findIndex((y) => y.id === year.id) === index
                 );
                 setYears(uniqueYears);
             } catch (err: any) {
                 console.error('Lỗi khi lấy danh sách năm:', err.response?.data || err.message);
-                window.alert('Không thể tải danh sách năm');
+                toast.error('Không thể tải danh sách năm');
                 setYears([]);
             }
         };
@@ -99,15 +99,15 @@ const Header = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const countriesData = response.data.country || [];
-                console.log('Countries', countriesData);
+                console.log('Countries:', countriesData);
                 const uniqueCountries = countriesData.filter(
-                    (country: Country, index: number, self: any[]) =>
+                    (country: Country, index: number, self: Country[]) =>
                         country.id != null && self.findIndex((c) => c.id === country.id) === index
                 );
                 setCountries(uniqueCountries);
             } catch (err: any) {
-                console.log('Lỗi khi lấy danh sách quốc gia:', err.response?.data || err.message);
-                window.alert('Không thể tải danh sách quốc gia');
+                console.error('Lỗi khi lấy danh sách quốc gia:', err.response?.data || err.message);
+                toast.error('Không thể tải danh sách quốc gia');
                 setCountries([]);
             }
         };
@@ -171,7 +171,6 @@ const Header = () => {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     setUser(response.data.user);
-                    // Chuyển hướng về trang chính sau khi cập nhật thông tin người dùng
                     navigate('/', { replace: true });
                 } catch (err: any) {
                     toast.error('Không thể cập nhật thông tin người dùng');
@@ -184,7 +183,7 @@ const Header = () => {
             navigate('/', { replace: true });
         } else if (paymentStatus === 'ERROR') {
             toast.error('Lỗi thanh toán. Vui lòng liên hệ hỗ trợ.');
-            navigate('/');
+            navigate('/', { replace: true });
         }
     }, [location.search, navigate]);
 
@@ -207,7 +206,7 @@ const Header = () => {
 
     const handleYearSelect = (year: Year) => {
         setShowYearDropdown(false);
-        navigate(`/years/${year.release_year}`);
+        navigate(`/films?year=${year.release_year}`); // Sửa để nhất quán với các route khác
     };
 
     const handleCountrySelect = (country: Country) => {
@@ -217,8 +216,8 @@ const Header = () => {
     };
 
     const handleFilmTypeSelect = (filmType: string) => {
-        const typeSlug = filmType === 'true' ? 'phim-le' : 'public';
-        navigate(`/Films?type=${typeSlug}`);
+        const typeSlug = filmType === 'true' ? 'phim-le' : 'phim-bo'; // Sửa 'public' thành 'phim-bo'
+        navigate(`/films?type=${typeSlug}`);
     };
 
     const handleSearch = (e: React.FormEvent) => {
@@ -248,7 +247,7 @@ const Header = () => {
             setTimeout(() => {
                 setIsPanelOpen(false);
                 if (response.data.user.role === 'admin') {
-                    navigate('/result');
+                    navigate('/admin'); // Sửa '/result' thành '/admin' cho nhất quán
                 }
                 window.dispatchEvent(new Event('loginSuccess'));
             }, 1000);
