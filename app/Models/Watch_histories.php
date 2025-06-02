@@ -10,18 +10,19 @@ class Watch_histories extends Model
     public $timestamps = false;
     protected $fillable = [
         'user_id',
-        'film_id',
+        'episodes_id',
         'watch_at',
+        'progress_time',
     ];
 
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class,'user_id');
     }
 
-    public function film()
+    public function episodes()
     {
-        return $this->belongsTo(Film::class);
+        return $this->belongsTo(Film_episodes::class,'episodes_id');
     }
 }

@@ -16,8 +16,13 @@ protected $table = 'film_episodes';
     ];
     public $timestamps = false;
 
-    public function films()
+    public function film()
     {
         return $this->belongsTo(Film::class, 'film_id');
+    }
+
+    public function watch_histories()
+    {
+        return $this->hasMany(Watch_histories::class, 'episodes_id');
     }
 }

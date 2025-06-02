@@ -45,7 +45,7 @@ class Film extends Model
     public function ratings() {
         return $this->hasMany(Rating::class,'film_id');
     }
-    public function watch_histories() {
-        return $this->hasMany(Watch_histories::class,'film_id');
-    }
+    // public function watch_histories() {
+    //     return $this->hasMany(Watch_histories::class,'film_id');
+    // }
 }

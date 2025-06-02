@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { HeartIcon as HeartSolidIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { HeartIcon as HeartOutlineIcon } from '@heroicons/react/24/outline';
 import { openAuthPanel } from '../utils/auth';
@@ -12,26 +12,49 @@ import { useComments } from '../hooks/useComment';
 import { useRating } from '../hooks/useRating';
 import { useFavorite } from '../hooks/useFavorite';
 import { useAuth } from '../hooks/useAuth';
+import { easeIn, motion } from 'framer-motion';
 // Import Hls.js
 import Hls from 'hls.js';
+import { useWatchHistories } from '../hooks/useWatchHistories';
+import { useIncreaseView } from '../hooks/useIncreaseView';
 
 dayjs.extend(relativeTime);
 
 const FilmDetail = () => {
+    const variants = {
+        hidden: { opacity: 0, scale: 0.8, transition: { duration: 0.5, ease: easeIn } },
+        visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: easeIn } },
+    };
+
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
     const { isLoggedIn } = useAuth();
-    const { film, error, selectedEpisode, setSelectedEpisode } = useFilmData(slug!);
+    // Lấy episodeParam từ search
+    // query params selectedEpisode
+    const { search } = useLocation();
+    const params = new URLSearchParams(search);
+    const episodeParam = params.get('episode');
+    // Gọi useFilmData trước để có film
+    const { film, error, selectedEpisode, setSelectedEpisode } = useFilmData(slug!, episodeParam!);
+
     const { comments, commentsLoading, commentsError, comment, setComment, handlePostComment } = useComments(film?.id, isLoggedIn);
     const { rating, setRating, showRating, averageRating, handlePostRating } = useRating(film?.id, isLoggedIn);
     const { isFavorite, handleToggleFavorite } = useFavorite(film?.id, isLoggedIn);
     const [tab, setTab] = useState<'comment' | 'rating' | 'info'>('comment');
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-
+    
+    // Thêm: Hàm để trích xuất số tập cho danh sách tập
+    const getEpisodeNumber = (number: string): number => {
+        const match = number.match(/\d+/); // Trích xuất số từ chuỗi, ví dụ "12" -> 12
+        return match ? parseInt(match[0]) : 0;
+    };
+    
     // Ref cho video element và HLS instance
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
-
+    
+    const { handleTimeUpdate} = useWatchHistories(selectedEpisode, videoRef);
+    const { handleViewIncrement } = useIncreaseView({ filmId: film?.id, videoRef, selectedEpisode });
     // Function để khởi tạo HLS player
     const initializeHLS = (videoUrl: string) => {
         if (!videoRef.current) return;
@@ -115,7 +138,7 @@ const FilmDetail = () => {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-[#333333] flex flex-col items-center justify-center text-red-500">
+            <div className="min-h-screen  flex flex-col items-center justify-center text-red-500">
                 <h4 className="text-xl font-semibold">{error}</h4>
                 <button
                     className="mt-4 bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors duration-300"
@@ -126,10 +149,11 @@ const FilmDetail = () => {
             </div>
         );
     }
+    
 
     if (!film) {
         return (
-            <div className="min-h-screen bg-[#333333] flex items-center justify-center text-white">
+            <div className="min-h-screen  flex items-center justify-center ">
                 <div className="flex items-center gap-2">
                     <svg
                         className="animate-spin h-5 w-5 text-orange-500"
@@ -155,7 +179,12 @@ const FilmDetail = () => {
     const percentage = ratingValue / 5 * 100;
 
     return (
-        <div className="min-h-screen bg-[#333333] text-white py-6">
+        <motion.div       
+            variants={variants}
+            initial="hidden"
+            animate="visible" 
+            className="min-h-screen  text-white py-6"
+        >
             <div className="container mx-auto px-4">
                 <button
                     className="flex items-center gap-2 text-gray-300 hover:text-orange-500 transition-colors duration-300 mb-6"
@@ -177,6 +206,7 @@ const FilmDetail = () => {
                                     ref={videoRef}
                                     controls
                                     className="w-full h-full object-cover"
+                                    onTimeUpdate={() => {handleTimeUpdate(); handleViewIncrement()}}
                                     poster={film.thumb}
                                     crossOrigin="anonymous"
                                     playsInline
@@ -198,7 +228,7 @@ const FilmDetail = () => {
                                 {film.film_episodes.map((episode, index) => (
                                     <button
                                         key={episode.id || `${episode.episode_number}-${index}`}
-                                        onClick={() => setSelectedEpisode(episode)}
+                                        onClick={() => {setSelectedEpisode(episode);navigate(`/film/${slug}?episode=${getEpisodeNumber(episode.episode_title)}`, { replace: true }); }}
                                         className={`py-2 px-4 rounded-md text-sm font-medium transition-colors duration-300 cursor-pointer ${String(selectedEpisode?.id) === String(episode.id)
                                             ? 'bg-orange-500 text-white'
                                             : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A]'
@@ -473,7 +503,7 @@ const FilmDetail = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 };
 

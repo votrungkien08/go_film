@@ -35,7 +35,7 @@ const Nominate = () => {
     const [currentFilm,setCurrentFilm] = useState(null);
     const [rating,setRating] = useState<Rating[]>([]);
 
-    const topFilmFavorite = films.slice(0,4);
+    const topFilmFavorite = films.slice(0,8);
     function getYouTubeId(url?: string): string | undefined {
         if (!url) return undefined;
         const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
@@ -70,28 +70,14 @@ const Nominate = () => {
     }
 
     return (
-        <div className="grid grid-cols-12 gap-4  pt-[100px]">
+        <div className="grid grid-cols-12 gap-4 min-h-[1000px]  pt-[70px]">
             <div className="col-span-1"></div>
             <div className="col-span-10">
-                <div className="grid grid-cols-8 gap-4 mb-4">
-                    <div className="col-span-4 flex items-center h-12">
-                        <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" style={{filter: 'invert(53%) sepia(94%) saturate(749%) hue-rotate(353deg) brightness(101%) contrast(101%)'}} />
-                        <h1 className="ml-2  font-bold">PHIM ĐỀ CỬ</h1>
-                    </div>
-                    <div className="col-span-4 flex items-center justify-end">
-                        <h1
-                            className="mr-2  font-bold cursor-pointer"
-                            onClick={() => navigate('/films')} // Tùy chọn: dẫn đến trang danh sách phim
-                        >
-                            XEM TẤT CẢ
-                        </h1>
-                        <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" />
-                    </div>
-                </div>
+
 
                 <div className="grid grid-cols-8 gap-4 ">
-                    {/* bên trái */}
-                    <div className="col-span-4 h-full   aspect-[16/9] relative group  cursor-pointer before:content-none after:content-none"
+                    {/* trailer */}
+                    <div className="col-span-8   w-full aspect-[16/9] relative group  cursor-pointer before:content-none after:content-none"
                         style={{
                             content: 'none',
                             counterReset: 'none',
@@ -127,10 +113,28 @@ const Nominate = () => {
                             </div>
                         )}
                     </div>
-                    {/* bên phải */}
-                    <div className="col-span-4 h-full  aspect-[16/9] grid grid-cols-2 grid-rows-2 gap-4">
+
+                </div>
+
+                <div className="grid grid-cols-8 gap-4 my-8 shadow shadow-gray-500/50 ">
+                    <div className="col-span-4 flex items-center h-12">
+                        <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" style={{filter: 'invert(53%) sepia(94%) saturate(749%) hue-rotate(353deg) brightness(101%) contrast(101%)'}} />
+                        <h1 className="ml-2  font-bold">PHIM ĐỀ CỬ</h1>
+                    </div>
+                    <div className="col-span-4 flex items-center justify-end">
+                        <h1
+                            className="mr-2  font-bold cursor-pointer"
+                            onClick={() => navigate('/films')} // Tùy chọn: dẫn đến trang danh sách phim
+                        >
+                            XEM TẤT CẢ
+                        </h1>
+                        <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-8 gap-4">
                         {topFilmFavorite.map((film,index)=> (
-                            <div onMouseOver={() => setCurrentFilm(film) } onClick={() =>(setCurrentFilm(film), navigate(`/film/${films[index].slug}`))} key={film.id} className='relative  group cursor-pointer'>
+                            <div onMouseOver={() => setCurrentFilm(film) } onClick={() =>(setCurrentFilm(film), navigate(`/film/${films[index].slug}`))} key={film.id} className='col-span-2 aspect-[16/9]  h-full relative  group cursor-pointer'>
                                 {films ? (
                                     <>
                                         <img  loading="lazy" className="w-full h-full object-cover rounded-lg"  src={film.thumb} alt={film.title_film}/>
@@ -139,8 +143,8 @@ const Nominate = () => {
                                                 Premium
                                             </div>
                                         )}
-                                        <div className="backdrop-blur-sm cursor-pointer absolute inset-0  bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                                            <h2 className="text-white  text-sm font-semibold text-center px-2">
+                                        <div className="backdrop-blur-sm cursor-pointer absolute inset-0  bg-opacity-50  flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
+                                            <h2 className=" text-sm font-semibold text-center px-2">
                                                 {film.title_film}
                                             </h2>
                                         </div>
@@ -153,7 +157,6 @@ const Nominate = () => {
                                 }
                             </div>
                         ))}
-                    </div>
                 </div>
 
             </div>

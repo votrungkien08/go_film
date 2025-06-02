@@ -11,7 +11,7 @@ class CommentController extends Controller
     public function index(Request $request)
     {
         try {
-            $comments = Comment::all();
+            $comments = Comment::with('user')->get();
 
             return response()->json([
                 'status' => 'success',
@@ -58,7 +58,7 @@ class CommentController extends Controller
                 ], 404);
             }
             $comments = $film->comments()
-            ->where('is_blocked', 0) // Nạp quan hệ user
+                ->where('is_blocked', 0) // Nạp quan hệ user
                 ->with('user')
                 ->get();
             return response()->json([

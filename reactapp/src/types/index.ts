@@ -1,3 +1,4 @@
+import { Episode } from './index';
 // src/types/index.ts
 export interface Episode {
   episode_number: number;
@@ -46,6 +47,7 @@ export interface Comment {
   film_id: number;
   comment: string;
   created_at: string;
+  is_blocked: boolean;
   user: {
     name: string;
   } | null;
@@ -56,4 +58,13 @@ export interface Rating {
   user_id: number;
   film_id: number;
   rating: number;
+}
+
+
+export interface WatchHistories {
+  id: number
+  user_id: number;
+  episodes_id: number;
+  watch_at: number;
+  progress_time: number
 }

@@ -6,7 +6,7 @@ import { useAuthPanel } from '../utils/auth';
 import { toast } from 'sonner';
 import { ModeToggle } from './mode-toggle';
 import { useTheme } from "../components/theme-provider";
-
+import { motion } from 'framer-motion';
 interface Genre {
     id: number;
     genre_name: string;
@@ -47,6 +47,34 @@ const Header = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [pointsToBuy, setPointsToBuy] = useState('');
     const [showPaymentForm, setShowPaymentForm] = useState(false);
+
+    // useRef handle tab index focus
+    const refTab = useRef(null);
+    const [hoverPosition, setHoverPosition] = useState({
+        left:0,
+        width:0,
+        opacity:0
+    });
+
+    const handleHover = (e: React.MouseEvent<HTMLHeadingElement>) => { 
+        const target = e.currentTarget;
+        const rect = target.getBoundingClientRect();
+        const containerRect = refTab.current.getBoundingClientRect();
+        setHoverPosition({
+            left: rect.left - containerRect.left,
+            width: rect.width,
+            opacity: 1
+        });
+
+    }
+    const handleMouseLeave = () => {
+        setHoverPosition((prev) => {
+            return {
+                ...prev,
+                opacity: 0
+            };
+        })
+    }
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -328,7 +356,7 @@ const Header = () => {
     };
 
     return (
-        <div className={`h-[60px] w-full fixed top-0 left-0 z-50 px-4 backdrop-blur-lg`}>
+        <div className={`h-[60px] w-full fixed top-0 left-0  z-50 px-4 backdrop-blur-lg ${theme === 'light' ? "shadow shadow-blue-700/20" : ""} ${theme === 'dark' ? "shadow shadow-white/20" : ""}  ${theme === 'system' ? "shadow shadow-orange-500/20" : ""} `}>
             <div className="grid grid-cols-12 gap-2 h-full items-center">
                 <div className="col-span-2 flex items-center cursor-pointer h-full">
                     <Link to="/" className="flex items-center h-full">
@@ -336,11 +364,15 @@ const Header = () => {
                     </Link>
                 </div>
 
-                <div className="col-span-5 flex items-center justify-start h-full">
+                <div ref={refTab}  className="relative col-span-5 flex items-center justify-center h-full"
+
+                >
                     <div tabIndex={0} className="group relative flex items-center justify-center cursor-pointer" ref={dropdownRef}>
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                            onMouseEnter={(e) => handleHover(e)}
+                            onMouseLeave={handleMouseLeave}
                         >
                             THỂ LOẠI
                         </h2>
@@ -367,7 +399,9 @@ const Header = () => {
                     <div tabIndex={0} className="group relative flex items-center justify-center cursor-pointer" ref={countryDropdownRef}>
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
-                            onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                            onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                            onMouseEnter={(e) => handleHover(e)}
+                            onMouseLeave={handleMouseLeave}
                         >
                             QUỐC GIA
                         </h2>
@@ -394,7 +428,9 @@ const Header = () => {
                     <div tabIndex={0} className="group relative flex items-center justify-center cursor-pointer" ref={yearDropdownRef}>
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
-                            onClick={() => setShowYearDropdown(!showYearDropdown)}
+                            onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                            onMouseEnter={(e) => handleHover(e)}
+                            onMouseLeave={handleMouseLeave}
                         >
                             NĂM
                         </h2>
@@ -422,6 +458,8 @@ const Header = () => {
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => handleFilmTypeSelect('true')}
+                            onMouseEnter={(e) => handleHover(e)}
+                            onMouseLeave={handleMouseLeave}
                         >
                             PHIM LẺ
                         </h2>
@@ -430,10 +468,18 @@ const Header = () => {
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => handleFilmTypeSelect('false')}
+                            onMouseEnter={(e) => handleHover(e)}
+                            onMouseLeave={handleMouseLeave}
                         >
                             PHIM BỘ
                         </h2>
                     </div>
+
+                    <motion.div
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        animate={hoverPosition}
+                        className='absolute bottom-0 left-0 h-[4px] bg-[#ff4c00] rounded-full'
+                    />
                 </div>
                 <div tabIndex={0} className="group col-span-3 h-full flex justify-center items-center relative cursor-pointer">
                     <form onSubmit={handleSearch} className="w-full">
@@ -462,11 +508,11 @@ const Header = () => {
             </div>
 
             {isPanelOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setIsPanelOpen(false)}></div>
+                <div className="fixed inset-0 h-screen backdrop-blur-3xl    z-40" onClick={() => setIsPanelOpen(false)}></div>
             )}
 
             <div
-                className={`fixed top-0 right-0 h-full w-[400px] bg-gray-900 border-l border-gray-700 p-6 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                className={`fixed top-0 right-0 h-screen w-[400px] bg-[#2c3e50] bg-opacity-100 backdrop-blur-lg border-l  p-6 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}
             >
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-white">
@@ -525,6 +571,14 @@ const Header = () => {
                                 <label className="block text-sm text-gray-300 mb-2">Điểm</label>
                                 <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.points}</p>
                             </div>
+                            <button
+                                onClick={() => {navigate('/histories'); setIsPanelOpen(false);}}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            >
+                                Lịch Sử Phim
+                                
+                            </button>
+                            
                             <button
                                 onClick={() => setShowPaymentForm(true)}
                                 className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
