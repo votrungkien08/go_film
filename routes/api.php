@@ -12,6 +12,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\RatingController;
 use App\Http\Controllers\WatchHistoriesController;
+use App\Http\Controllers\TransactionController;
 use App\Models\Film;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -37,6 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // favorite
     Route::post('addFavorite', [FavoriteController::class, 'addFavorite']);
     Route::delete('removeFavorite/{idFilm}', [FavoriteController::class, 'removeFavorite']);
+
+    // VNPay payment
+    Route::post('/vnpay/create', [TransactionController::class, 'createPayment']);
 });
 
 // favorite
@@ -82,10 +86,11 @@ Route::get('/film/comments/{idFilm}', [CommentController::class, 'getCommentById
 Route::get('/film/comments/user/{idUser}', [CommentController::class, 'getUserComment']);
 
 
-Route::get('/film/{idFilm}/favorite', [FavoriteController::class, 'getFavoriteByIdFilm']);
+//Route::get('/film/{idFilm}/favorite', [FavoriteController::class, 'getFavoriteByIdFilm']);
 Route::get('/favorite', [FavoriteController::class, 'getTopFavorite']);
 Route::get('/filter-films', [FilmController::class, 'filter']);
-
+// VNPay callback
+Route::get('/vnpay/callback', [TransactionController::class, 'callback']);
 
 //Route::get('/film/{id}', [FilmController::class, 'getFilmById']);
 
