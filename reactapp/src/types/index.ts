@@ -26,7 +26,7 @@ export interface Film {
   slug: string;
   title_film: string;
   thumb: string;
-  trailer: string ;
+  trailer: string;
   film_type: boolean;
   year: Year | null;
   country: Country | null;
@@ -56,4 +56,11 @@ export interface Rating {
   user_id: number;
   film_id: number;
   rating: number;
+}
+export interface User {
+  id?: number;
+  name?: string;
+  email?: string;
+  points?: number;
+  role?: string;
 }

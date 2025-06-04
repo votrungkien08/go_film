@@ -1,3 +1,5 @@
+// src/layout/FilmDetail.tsx
+
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HeartIcon as HeartSolidIcon, UserCircleIcon } from '@heroicons/react/24/solid';
@@ -12,7 +14,6 @@ import { useComments } from '../hooks/useComment';
 import { useRating } from '../hooks/useRating';
 import { useFavorite } from '../hooks/useFavorite';
 import { useAuth } from '../hooks/useAuth';
-// Import Hls.js
 import Hls from 'hls.js';
 
 dayjs.extend(relativeTime);
@@ -20,47 +21,38 @@ dayjs.extend(relativeTime);
 const FilmDetail = () => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
-    const { isLoggedIn } = useAuth();
+    const { isLoggedIn, user } = useAuth();
     const { film, error, selectedEpisode, setSelectedEpisode } = useFilmData(slug!);
     const { comments, commentsLoading, commentsError, comment, setComment, handlePostComment } = useComments(film?.id, isLoggedIn);
     const { rating, setRating, showRating, averageRating, handlePostRating } = useRating(film?.id, isLoggedIn);
     const { isFavorite, handleToggleFavorite } = useFavorite(film?.id, isLoggedIn);
     const [tab, setTab] = useState<'comment' | 'rating' | 'info'>('comment');
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+    const [showPointsPrompt, setShowPointsPrompt] = useState(false);
 
-    // Ref cho video element và HLS instance
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
 
-    // Function để khởi tạo HLS player
     const initializeHLS = (videoUrl: string) => {
         if (!videoRef.current) return;
-
         const video = videoRef.current;
 
-        // Dọn dẹp HLS instance cũ nếu có
         if (hlsRef.current) {
             hlsRef.current.destroy();
             hlsRef.current = null;
         }
 
-        // Kiểm tra xem URL có phải là m3u8 không
         const isM3U8 = videoUrl.includes('.m3u8') || videoUrl.includes('m3u8');
-
         if (isM3U8) {
-            // Kiểm tra browser có hỗ trợ HLS natively không
             if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // Safari và iOS hỗ trợ HLS natively
                 video.src = videoUrl;
             } else if (Hls.isSupported()) {
-                // Sử dụng Hls.js cho các browser khác
                 const hls = new Hls({
                     debug: false,
                     enableWorker: true,
                     lowLatencyMode: true,
-                    backBufferLength: 90
+                    backBufferLength: 90,
                 });
-
                 hlsRef.current = hls;
                 hls.loadSource(videoUrl);
                 hls.attachMedia(video);
@@ -93,25 +85,28 @@ const FilmDetail = () => {
                 alert('Trình duyệt của bạn không hỗ trợ phát video HLS. Vui lòng sử dụng trình duyệt khác.');
             }
         } else {
-            // Video thông thường (MP4, WebM, etc.)
             video.src = videoUrl;
         }
     };
 
-    // Effect để khởi tạo HLS khi selectedEpisode thay đổi
     useEffect(() => {
         if (selectedEpisode?.episode_url) {
-            initializeHLS(selectedEpisode.episode_url);
+            if (film?.is_premium && !isLoggedIn) {
+                setShowAuthPrompt(true);
+            } else if (film?.is_premium && isLoggedIn && user && (user.points || 0) < (film.point_required ?? 0)) {
+                setShowPointsPrompt(true);
+            } else {
+                initializeHLS(selectedEpisode.episode_url);
+            }
         }
 
-        // Cleanup function
         return () => {
             if (hlsRef.current) {
                 hlsRef.current.destroy();
                 hlsRef.current = null;
             }
         };
-    }, [selectedEpisode]);
+    }, [selectedEpisode, film?.is_premium, isLoggedIn, user?.points, film?.point_required]);
 
     if (error) {
         return (
@@ -150,7 +145,6 @@ const FilmDetail = () => {
         );
     }
 
-    // Đảm bảo averageRating là số hợp lệ
     const ratingValue = Number.isFinite(averageRating) ? averageRating : 0;
     const percentage = ratingValue / 5 * 100;
 
@@ -173,17 +167,28 @@ const FilmDetail = () => {
                     <div className="lg:col-span-2">
                         <div className="relative aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
                             {selectedEpisode ? (
-                                <video
-                                    ref={videoRef}
-                                    controls
-                                    className="w-full h-full object-cover"
-                                    poster={film.thumb}
-                                    crossOrigin="anonymous"
-                                    playsInline
-                                    preload="metadata"
-                                >
-                                    Trình duyệt của bạn không hỗ trợ phát video.
-                                </video>
+                                film.is_premium && isLoggedIn && user && (user.points || 0) < (film.point_required ?? 0) ? (
+
+                                    <div className="flex items-center justify-center bg-gray-800 h-full text-gray-300">
+                                        <p>Bạn không đủ điểm để xem phim này</p>
+                                    </div>
+                                ) : film.is_premium && !isLoggedIn ? (
+                                    <div className="flex items-center justify-center bg-gray-800 h-full text-gray-300">
+                                        <p>Vui lòng đăng nhập để xem phim premium</p>
+                                    </div>
+                                ) : (
+                                    <video
+                                        ref={videoRef}
+                                        controls
+                                        className="w-full h-full object-cover"
+                                        poster={film.thumb}
+                                        crossOrigin="anonymous"
+                                        playsInline
+                                        preload="metadata"
+                                    >
+                                        Trình duyệt của bạn không hỗ trợ phát video.
+                                    </video>
+                                )
                             ) : (
                                 <div className="flex items-center justify-center bg-gray-800 h-full text-gray-300">
                                     <p>Không có video để phát</p>
@@ -191,7 +196,6 @@ const FilmDetail = () => {
                             )}
                         </div>
 
-                        {/* Danh sách tập */}
                         <div className="mt-4">
                             <h2 className="text-xl font-semibold mb-3">Danh sách tập</h2>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
@@ -212,19 +216,22 @@ const FilmDetail = () => {
 
                         <div className="flex border-b border-gray-700 mt-4">
                             <button
-                                className={`mr-2 px-4 py-2 rounded-t-md ${tab === 'comment' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'}`}
+                                className={`mr-2 px-4 py-2 rounded-t-md ${tab === 'comment' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'
+                                    }`}
                                 onClick={() => setTab('comment')}
                             >
                                 Bình luận
                             </button>
                             <button
-                                className={`mr-2 px-4 py-2 rounded-t-md ${tab === 'rating' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'}`}
+                                className={`mr-2 px-4 py-2 rounded-t-md ${tab === 'rating' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'
+                                    }`}
                                 onClick={() => setTab('rating')}
                             >
                                 Đánh giá
                             </button>
                             <button
-                                className={`px-4 py-2 rounded-t-md ${tab === 'info' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'}`}
+                                className={`px-4 py-2 rounded-t-md ${tab === 'info' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'
+                                    }`}
                                 onClick={() => setTab('info')}
                             >
                                 Thông tin
@@ -363,13 +370,21 @@ const FilmDetail = () => {
 
                     <div className="lg:col-span-1">
                         <div className="bg-[#444444] text-left rounded-lg p-4 shadow-lg">
-                            <img
-                                src={film.thumb}
-                                alt={film.title_film}
-                                className="mx-auto rounded-sm object-contain max-h-48"
-                            />
+                            <img src={film.thumb} alt={film.title_film} className="mx-auto rounded-sm object-contain max-h-48" />
                             <div className="py-4 flex items-center justify-start">
-                                <button className="bg-orange-500 w-24 h-10 rounded-lg">Yêu thích</button>
+                                <button
+                                    onClick={() => {
+                                        if (!isLoggedIn) {
+                                            setShowAuthPrompt(true);
+                                            return;
+                                        }
+                                        handleToggleFavorite();
+                                    }}
+                                    className={`w-24 h-10 rounded-lg ${isFavorite ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A]'
+                                        }`}
+                                >
+                                    {isFavorite ? 'Bỏ yêu thích' : 'Yêu thích'}
+                                </button>
                                 {isFavorite ? (
                                     <HeartSolidIcon
                                         onClick={() => {
@@ -396,7 +411,6 @@ const FilmDetail = () => {
                             </div>
                             <div className="space-y-2">
                                 <div className="flex items-center space-x-3 text-white mt-4">
-                                    {/* Vòng tròn phần trăm */}
                                     <div className="w-[50px] h-[50px]">
                                         <CircularProgressbar
                                             value={percentage}
@@ -409,10 +423,7 @@ const FilmDetail = () => {
                                             })}
                                         />
                                     </div>
-
-                                    {/* Dãy sao và thông tin */}
                                     <div>
-                                        {/* Hiển thị sao */}
                                         <div className="text-yellow-400 text-lg">
                                             {Array.from({ length: 5 }).map((_, index) => (
                                                 <span key={index}>
@@ -420,8 +431,6 @@ const FilmDetail = () => {
                                                 </span>
                                             ))}
                                         </div>
-
-                                        {/* Thông tin chi tiết */}
                                         <div className="text-sm text-gray-300">
                                             ({showRating.length} lượt, đánh giá: <span className="text-white font-bold">{ratingValue.toFixed(1)}</span> trên 5)
                                         </div>
@@ -450,19 +459,49 @@ const FilmDetail = () => {
                     >
                         <div className="bg-[#000000] w-96 rounded-lg p-6" onClick={(e) => e.stopPropagation()}>
                             <h2 className="text-xl font-semibold mb-4 text-white">
-                                Vui lòng đăng nhập để sử dụng chức năng này
+                                Vui lòng đăng nhập để xem phim premium
                             </h2>
                             <div className="flex justify-around">
                                 <button
                                     onClick={() => setShowAuthPrompt(false)}
                                     className="px-4 py-2 bg-[#3A3A3A] text-white rounded-md hover:bg-[#4A4A4A] transition-colors duration-300"
                                 >
-                                    Thoát
+                                    Hủy
                                 </button>
                                 <button
                                     onClick={() => {
                                         setShowAuthPrompt(false);
                                         openAuthPanel();
+                                    }}
+                                    className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
+                                >
+                                    Đăng nhập
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showPointsPrompt && (
+                    <div
+                        className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-opacity-50 z-50"
+                        onClick={() => setShowPointsPrompt(false)}
+                    >
+                        <div className="bg-[#000000] w-96 rounded-lg p-6" onClick={(e) => e.stopPropagation()}>
+                            <h2 className="text-xl font-semibold mb-4 text-white">
+                                Bạn không đủ điểm để xem phim này. Bạn có muốn mua điểm premium?
+                            </h2>
+                            <div className="flex justify-around">
+                                <button
+                                    onClick={() => setShowPointsPrompt(false)}
+                                    className="px-4 py-2 bg-[#3A3A3A] text-white rounded-md hover:bg-[#4A4A4A] transition-colors duration-300"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowPointsPrompt(false);
+                                        navigate('/buy-points'); // [SỬA] Đã đúng, giữ nguyên
                                     }}
                                     className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
                                 >

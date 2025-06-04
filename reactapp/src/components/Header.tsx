@@ -45,9 +45,8 @@ const Header = () => {
     const [showCountryDropdown, setShowCountryDropdown] = useState(false);
     const countryDropdownRef = useRef<HTMLDivElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [pointsToBuy, setPointsToBuy] = useState('');
-    const [showPaymentForm, setShowPaymentForm] = useState(false);
 
+    const paymentProcessedRef = useRef(false);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -59,7 +58,6 @@ const Header = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const genresData = response.data.genres || [];
-                console.log('Genres:', genresData);
                 const uniqueGenres = genresData.filter(
                     (genre: Genre, index: number, self: Genre[]) =>
                         genre.id != null && self.findIndex((g) => g.id === genre.id) === index
@@ -79,7 +77,6 @@ const Header = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const yearsData = response.data.years || [];
-                console.log('Years:', yearsData);
                 const uniqueYears = yearsData.filter(
                     (year: Year, index: number, self: Year[]) =>
                         year.id != null && self.findIndex((y) => y.id === year.id) === index
@@ -99,7 +96,6 @@ const Header = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const countriesData = response.data.country || [];
-                console.log('Countries:', countriesData);
                 const uniqueCountries = countriesData.filter(
                     (country: Country, index: number, self: Country[]) =>
                         country.id != null && self.findIndex((c) => c.id === country.id) === index
@@ -162,28 +158,61 @@ const Header = () => {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const paymentStatus = params.get('payment');
-        if (paymentStatus === 'SUCCESS') {
-            toast.success('Thanh toán thành công! Điểm đã được cộng vào tài khoản.');
-            const fetchUser = async () => {
-                try {
-                    const token = localStorage.getItem('token');
-                    const response = await axios.get(`${API_URL}/api/user`, {
-                        headers: { Authorization: `Bearer ${token}` },
+
+        if (paymentStatus && !paymentProcessedRef.current) {
+            paymentProcessedRef.current = true;
+
+            if (paymentStatus === 'success') {
+                setTimeout(() => {
+                    toast.success('Thanh toán thành công! Điểm đã được cộng vào tài khoản.', {
+                        duration: 5000,
+                        position: 'top-center'
                     });
-                    setUser(response.data.user);
-                    navigate('/', { replace: true });
-                } catch (err: any) {
-                    toast.error('Không thể cập nhật thông tin người dùng');
-                    navigate('/', { replace: true });
-                }
-            };
-            fetchUser();
-        } else if (paymentStatus === 'FAILED') {
-            toast.error('Thanh toán thất bại. Vui lòng thử lại.');
-            navigate('/', { replace: true });
-        } else if (paymentStatus === 'ERROR') {
-            toast.error('Lỗi thanh toán. Vui lòng liên hệ hỗ trợ.');
-            navigate('/', { replace: true });
+                }, 500);
+
+                const fetchUser = async () => {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await axios.get(`${API_URL}/api/user`, {
+                            headers: { Authorization: `Bearer ${token}` },
+                        });
+                        setUser(response.data.user);
+                        setTimeout(() => {
+                            navigate(location.pathname, { replace: true });
+                        }, 1000);
+                    } catch (err: any) {
+                        toast.error('Không thể cập nhật thông tin người dùng');
+                        setTimeout(() => {
+                            navigate(location.pathname, { replace: true });
+                        }, 1000);
+                    }
+                };
+                fetchUser();
+            } else if (paymentStatus === 'FAILED') {
+                setTimeout(() => {
+                    toast.error('Thanh toán thất bại. Vui lòng thử lại.', {
+                        duration: 5000,
+                        position: 'top-center'
+                    });
+                }, 500);
+                setTimeout(() => {
+                    navigate(location.pathname, { replace: true });
+                }, 1000);
+            } else if (paymentStatus === 'ERROR') {
+                setTimeout(() => {
+                    toast.error('Lỗi thanh toán. Vui lòng liên hệ hỗ trợ.', {
+                        duration: 5000,
+                        position: 'top-center'
+                    });
+                }, 500);
+                setTimeout(() => {
+                    navigate(location.pathname, { replace: true });
+                }, 1000);
+            }
+        }
+
+        if (!paymentStatus) {
+            paymentProcessedRef.current = false;
         }
     }, [location.search, navigate]);
 
@@ -206,7 +235,7 @@ const Header = () => {
 
     const handleYearSelect = (year: Year) => {
         setShowYearDropdown(false);
-        navigate(`/films?year=${year.release_year}`); // Sửa để nhất quán với các route khác
+        navigate(`/films?year=${year.release_year}`);
     };
 
     const handleCountrySelect = (country: Country) => {
@@ -216,7 +245,7 @@ const Header = () => {
     };
 
     const handleFilmTypeSelect = (filmType: string) => {
-        const typeSlug = filmType === 'true' ? 'phim-le' : 'phim-bo'; // Sửa 'public' thành 'phim-bo'
+        const typeSlug = filmType === 'true' ? 'phim-le' : 'phim-bo';
         navigate(`/films?type=${typeSlug}`);
     };
 
@@ -247,7 +276,7 @@ const Header = () => {
             setTimeout(() => {
                 setIsPanelOpen(false);
                 if (response.data.user.role === 'admin') {
-                    navigate('/admin'); // Sửa '/result' thành '/admin' cho nhất quán
+                    navigate('/admin');
                 }
                 window.dispatchEvent(new Event('loginSuccess'));
             }, 1000);
@@ -302,31 +331,6 @@ const Header = () => {
         }
     };
 
-    const handleBuyPoints = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!pointsToBuy || parseInt(pointsToBuy) <= 0) {
-            toast.warning('Vui lòng nhập số điểm hợp lệ');
-            return;
-        }
-
-        const points = parseInt(pointsToBuy);
-        const amount = points * 1000;
-
-        try {
-            const token = localStorage.getItem('token');
-            console.log('Sending data:', { points, amount, token });
-            const response = await axios.post(
-                `${API_URL}/api/vnpay/create`,
-                { points, amount },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            window.location.href = response.data.url;
-        } catch (err: any) {
-            console.error('Payment error:', err.response?.data || err.message);
-            toast.error('Lỗi khi tạo thanh toán. Vui lòng thử lại.');
-        }
-    };
-
     return (
         <div className={`h-[60px] w-full fixed top-0 left-0 z-50 px-4 backdrop-blur-lg`}>
             <div className="grid grid-cols-12 gap-2 h-full items-center">
@@ -372,13 +376,13 @@ const Header = () => {
                             QUỐC GIA
                         </h2>
                         {showCountryDropdown && (
-                            <div className='absolute top-full left-0 bg-gray-800 rounded-lg shadow-lg w-64 z-[100] p-2 max-h-96 overflow-y-auto'>
+                            <div className="absolute top-full left-0 bg-gray-800 rounded-lg shadow-lg w-64 z-[100] p-2 max-h-96 overflow-y-auto">
                                 {countries && countries.length > 0 ? (
-                                    <div className='grid grid-cols-2 gap-2'>
+                                    <div className="grid grid-cols-2 gap-2">
                                         {countries.map((country) => (
                                             <button
                                                 key={country.id ?? `country-${countries.indexOf(country)}`}
-                                                className='block w-full text-left px-2 py-1 text-white hover:bg-[#ff4c00] rounded-lg text-sm'
+                                                className="block w-full text-left px-2 py-1 text-white hover:bg-[#ff4c00] rounded-lg text-sm"
                                                 onClick={() => handleCountrySelect(country)}
                                             >
                                                 {country.country_name}
@@ -386,7 +390,7 @@ const Header = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className='p-2 text-gray-400'>Không có quốc gia</p>
+                                    <p className="p-2 text-gray-400">Không có quốc gia</p>
                                 )}
                             </div>
                         )}
@@ -420,7 +424,7 @@ const Header = () => {
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
                         <h2
-                            className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
+                            class="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => handleFilmTypeSelect('true')}
                         >
                             PHIM LẺ
@@ -428,36 +432,39 @@ const Header = () => {
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
                         <h2
-                            className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
+                            class="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => handleFilmTypeSelect('false')}
                         >
                             PHIM BỘ
                         </h2>
                     </div>
                 </div>
-                <div tabIndex={0} className="group col-span-3 h-full flex justify-center items-center relative cursor-pointer">
+                <div tabIndex={0} className="group col-span-3 h-full flex items-center relative cursor-pointer">
                     <form onSubmit={handleSearch} className="w-full">
                         <input
                             type="search"
-                            placeholder="Tìm Kiếm"
-                            className={`h-[30px] w-full pl-2 border rounded-2xl outline-none group-hover:border-[#ff4c00] light:placeholder:text-black ${theme === 'light' ? 'placeholder:text-black border-black' : ''} ${theme === 'dark' ? 'placeholder:text-white border-white' : ''} ${theme === 'system' ? 'system-placeholder:text-white' : ''}`}
+                            placeholder="Tìm kiếm"
+                            className={`h-[30px] w-full pl-2 border rounded-2xl outline-none group-hover:border-[#ff4c00] ${theme === 'light' ? 'placeholder:text-black border-black' : ''
+                                } ${theme === 'dark' ? 'placeholder:text-white border-white' : ''} ${theme === 'system' ? 'system-placeholder:text-white' : ''
+                                }`}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
-                        <button type='submit' className='w-8 h-8 absolute right-0 top-1/2 transform -translate-y-1/2'>
+                        <button type="submit" className="w-8 h-8 absolute right-0 top-1/2 transform -translate-y-1/2">
                             <MagnifyingGlassIcon className="h-5 w-5" />
                         </button>
                     </form>
                 </div>
 
-                <div className='col-span-1 flex justify-end focus:outline-none focus:ring-0'>
+                <div className="col-span-1 flex justify-end focus:outline-none focus:ring-0">
                     <ModeToggle />
                 </div>
                 <div
                     className="col-span-1 flex items-center justify-end cursor-pointer"
                     onClick={() => setIsPanelOpen(true)}
                 >
-                    <UserCircleIcon className={`h-10 w-10 border rounded-3xl ${theme === 'dark' ? "border-white" : ""} ${theme === 'light' ? "border-black" : ""}`} />
+                    <UserCircleIcon className={`h-10 w-10 border rounded-full ${theme === 'dark' ? 'border-white' : ''
+                        } ${theme === 'light' ? 'border-black' : ''}`} />
                 </div>
             </div>
 
@@ -466,79 +473,47 @@ const Header = () => {
             )}
 
             <div
-                className={`fixed top-0 right-0 h-full w-[400px] bg-gray-900 border-l border-gray-700 p-6 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                className={`fixed top-0 right-0 h-full w-[400px] bg-gray-900 border-l border-gray-700 p-6 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'
+                    }`}
             >
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-white">
-                        {isLoggedIn ? (showPaymentForm ? 'Mua Điểm' : 'Thông Tin Người Dùng') : isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
+                        {isLoggedIn ? 'Thông Tin Người Dùng' : isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
                     </h2>
                     <button
-                        onClick={() => {
-                            setIsPanelOpen(false);
-                            setShowPaymentForm(false);
-                        }}
-                        className="text-gray-400 hover:text-white cursor-pointer text-xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-700 transition-colors"
+                        class="text-gray-400 hover:text-white cursor-pointer text-xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-700 transition-colors"
+                        onClick={() => setIsPanelOpen(false)}
                     >
                         ✕
                     </button>
                 </div>
 
                 {isLoggedIn && user ? (
-                    showPaymentForm ? (
-                        <form onSubmit={handleBuyPoints} className="space-y-4">
-                            <div className="relative">
-                                <label htmlFor="points" className="block text-sm text-gray-300 mb-2">
-                                    Số điểm muốn mua (1 điểm = 1000 VND)
-                                </label>
-                                <input
-                                    type="number"
-                                    name="points"
-                                    value={pointsToBuy}
-                                    onChange={(e) => setPointsToBuy(e.target.value)}
-                                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                    placeholder="Nhập số điểm"
-                                    required
-                                    min="1"
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
-                            >
-                                Thanh Toán Qua VNPay
-                            </button>
-                            <button
-                                type="button"
-                                className="w-full bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer font-semibold mt-2"
-                                onClick={() => setShowPaymentForm(false)}
-                            >
-                                Quay Lại
-                            </button>
-                        </form>
-                    ) : (
-                        <div className="">
-                            <div className="mb-4 relative">
-                                <label className="block text-sm text-gray-300 mb-2">Họ và tên</label>
-                                <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.name}</p>
-                            </div>
-                            <div className="mb-6 relative">
-                                <label className="block text-sm text-gray-300 mb-2">Điểm</label>
-                                <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.points}</p>
-                            </div>
-                            <button
-                                onClick={() => setShowPaymentForm(true)}
-                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
-                            >
-                                Mua Điểm
-                            </button>
-                            <button
-                                onClick={handleLogout}
-                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
-                            >
-                                Đăng Xuất
-                            </button>
+                    <div className="space-y-4">
+                        <div className="mb-4">
+                            <label className="block text-sm text-gray-300 mb-2">Họ và tên</label>
+                            <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.name}</p>
                         </div>
-                    )
+                        <div className="mb-6">
+                            <label className="block text-sm text-gray-300 mb-2">Điểm</label>
+                            <p className="w-full p-3 bg-gray-800 border rounded-lg text-white">{user.points}</p>
+                        </div>
+                        <button
+                            class="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            onClick={() => {
+                                setIsPanelOpen(false);
+                                navigate('/buy-points');
+                            }}
+                        >
+                            Mua Điểm
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
+                        >
+                            Đăng Xuất
+                        </button>
+                    </div>
                 ) : (
                     <form onSubmit={isLoginForm ? handleLogin : handleRegister} className="space-y-4">
                         {!isLoginForm && (
@@ -551,11 +526,12 @@ const Header = () => {
                                     name="name"
                                     value={formData.name}
                                     onChange={handleInputChange}
-                                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                    placeholder="Nhập họ và tên"
+                                    className="w-full p-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                    placeholder="Nhập họ tên"
                                     required
                                 />
                             </div>
+
                         )}
                         <div className="relative">
                             <label htmlFor="email" className="block text-sm text-gray-300 mb-2">
@@ -566,7 +542,7 @@ const Header = () => {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleInputChange}
-                                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                className="w-full p-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff44c00] focus:border-transparent transition-all"
                                 placeholder="Nhập email"
                                 required
                             />
@@ -580,7 +556,7 @@ const Header = () => {
                                 name="password"
                                 value={formData.password}
                                 onChange={handleInputChange}
-                                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                className="w-full p-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
                                 placeholder="Nhập mật khẩu"
                                 required
                             />
@@ -595,7 +571,7 @@ const Header = () => {
                                     name="confirmPassword"
                                     value={formData.confirmPassword}
                                     onChange={handleInputChange}
-                                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                    className="w-full p-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
                                     placeholder="Nhập lại mật khẩu"
                                     required
                                 />
@@ -627,6 +603,7 @@ const Header = () => {
                             </p>
                         </div>
                     </div>
+
                 )}
             </div>
         </div>

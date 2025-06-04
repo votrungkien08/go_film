@@ -32,10 +32,10 @@ const Nominate = () => {
     const navigate = useNavigate();
     const [films, setFilms] = useState<Film[]>([]);
     const [error, setError] = useState('');
-    const [currentFilm,setCurrentFilm] = useState(null);
-    const [rating,setRating] = useState<Rating[]>([]);
+    const [currentFilm, setCurrentFilm] = useState(null);
+    const [rating, setRating] = useState<Rating[]>([]);
 
-    const topFilmFavorite = films.slice(0,4);
+    const topFilmFavorite = films.slice(0, 4);
     function getYouTubeId(url?: string): string | undefined {
         if (!url) return undefined;
         const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
@@ -55,7 +55,7 @@ const Nominate = () => {
                 const response = await axios.get('http://localhost:8000/api/favorite', {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
-                console.log('phim ne',response.data.film)
+                console.log('phim ne', response.data.film)
                 setFilms(response.data.film);
             } catch (err: any) {
                 console.error('Lỗi khi lấy danh sách phim:', err.response?.data || err.message);
@@ -75,7 +75,7 @@ const Nominate = () => {
             <div className="col-span-10">
                 <div className="grid grid-cols-8 gap-4 mb-4">
                     <div className="col-span-4 flex items-center h-12">
-                        <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" style={{filter: 'invert(53%) sepia(94%) saturate(749%) hue-rotate(353deg) brightness(101%) contrast(101%)'}} />
+                        <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" style={{ filter: 'invert(53%) sepia(94%) saturate(749%) hue-rotate(353deg) brightness(101%) contrast(101%)' }} />
                         <h1 className="ml-2  font-bold">PHIM ĐỀ CỬ</h1>
                     </div>
                     <div className="col-span-4 flex items-center justify-end">
@@ -97,25 +97,28 @@ const Nominate = () => {
                             counterReset: 'none',
                             counterIncrement: 'none',
                             fontSize: '0px',
-                            overflow: 'hidden'}}
-                        // onClick={() => currentFilm && navigate(`/film/${currentFilm.slug}`)}
+                            overflow: 'hidden'
+                        }}
+                    // onClick={() => currentFilm && navigate(`/film/${currentFilm.slug}`)}
                     >
                         {films[0] ? (
                             <>
 
                                 {currentFilm?.trailer && (
                                     <iframe
-                                    className="absolute top-0 left-0 w-full h-full  transition-opacity duration-300 rounded-lg"
-                                    src={`https://www.youtube.com/embed/${getYouTubeId(currentFilm?.trailer)}?autoplay=1&mute=1&controls=0`}
-                                    title="Trailer"
-                                    allow="autoplay; encrypted-media"
-                                    allowFullScreen
+                                        className="absolute top-0 left-0 w-full h-full  transition-opacity duration-300 rounded-lg"
+                                        src={`https://www.youtube.com/embed/${getYouTubeId(currentFilm?.trailer)}?autoplay=1&mute=1&controls=0`}
+                                        title="Trailer"
+                                        allow="autoplay; encrypted-media"
+                                        allowFullScreen
                                     ></iframe>
                                 )
 
                                 }
-                                {currentFilm?.is_premium && (
-                                    <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded">
+                                {/* 🔴 SỬA: Thay currentFilm?.is_premium thành films[0]?.is_premium */}
+                                {/* 🔴 SỬA: Thêm !! để convert boolean thành true/false rõ ràng */}
+                                {!!films[0]?.is_premium && (
+                                    <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded z-10">
                                         Premium
                                     </div>
                                 )}
@@ -129,13 +132,15 @@ const Nominate = () => {
                     </div>
                     {/* bên phải */}
                     <div className="col-span-4 h-full  aspect-[16/9] grid grid-cols-2 grid-rows-2 gap-4">
-                        {topFilmFavorite.map((film,index)=> (
-                            <div onMouseOver={() => setCurrentFilm(film) } onClick={() =>(setCurrentFilm(film), navigate(`/film/${films[index].slug}`))} key={film.id} className='relative  group cursor-pointer'>
+                        {topFilmFavorite.map((film, index) => (
+                            <div onMouseOver={() => setCurrentFilm(film)} onClick={() => (setCurrentFilm(film), navigate(`/film/${films[index].slug}`))} key={film.id} className='relative  group cursor-pointer'>
                                 {films ? (
                                     <>
-                                        <img  loading="lazy" className="w-full h-full object-cover rounded-lg"  src={film.thumb} alt={film.title_film}/>
-                                        {films.is_premium && (
-                                            <div className="absolute top-1 right-1 bg-orange-500 text-white text-xs font-semibold px-1.5 py-0.5 rounded text-center">
+                                        <img loading="lazy" className="w-full h-full object-cover rounded-lg" src={film.thumb} alt={film.title_film} />
+                                        {/* 🔴 SỬA: Thay films.is_premium thành film.is_premium */}
+                                        {/* 🔴 SỬA: Thêm !! để convert boolean thành true/false rõ ràng */}
+                                        {!!film.is_premium && (
+                                            <div className="absolute top-1 right-1 bg-orange-500 text-white text-xs font-semibold px-1.5 py-0.5 rounded text-center z-10">
                                                 Premium
                                             </div>
                                         )}
