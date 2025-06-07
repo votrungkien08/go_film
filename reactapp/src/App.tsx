@@ -13,6 +13,7 @@ import FilmList from './pages/FilmList';
 import './App.css';
 import { ThemeProvider } from './components/theme-provider';
 import BuyPoints from './components/ui/BuyPoints';
+import Chatbot from './Chatbot';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           {/* Các route sử dụng MainLayout */}
           <Route path="/" element={<MainLayout />}>
             <Route path="nominate" element={<Nominate />} />
+            <Route path="chatbot" element={<Chatbot />} />
             <Route path="film/:slug" element={<FilmDetail />} />
             <Route path="films" element={<FilmList />} />
           </Route>

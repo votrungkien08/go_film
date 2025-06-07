@@ -13,6 +13,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\RatingController;
 use App\Http\Controllers\WatchHistoriesController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ChatbotController;
 use App\Models\Film;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -91,6 +92,8 @@ Route::get('/favorite', [FavoriteController::class, 'getTopFavorite']);
 Route::get('/filter-films', [FilmController::class, 'filter']);
 // VNPay callback
 Route::get('/vnpay/callback', [TransactionController::class, 'callback']);
+
+Route::post('/chatbot', [ChatbotController::class, 'handle']);
 
 //Route::get('/film/{id}', [FilmController::class, 'getFilmById']);
 
