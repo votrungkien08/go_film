@@ -7,7 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PaymentSuccess;
 class TransactionController extends Controller
 {
     public function createPayment(Request $request)
@@ -149,6 +150,21 @@ class TransactionController extends Controller
                     $user->points += $transaction->points;
                     $user->save();
 
+                    // Gửi email thông báo thanh toán thành công
+                    try {
+                        Mail::to($user->email)->send(new PaymentSuccess($transaction, $user));
+                        Log::info('Payment success email sent', [
+                            'user_id' => $user->id,
+                            'email' => $user->email,
+                            'tnx_ref' => $transaction->vnp_TxnRef
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send payment success email', [
+                            'user_id' => $user->id,
+                            'email' => $user->email,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
                     Log::info('Payment successful, points added', [
                         'user_id' => $user->id,
                         'points_added' => $transaction->points,

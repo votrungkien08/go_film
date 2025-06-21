@@ -5,6 +5,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Update from "../pages/Update";
 import Rank from "../pages/Rank";
 import Chatbot from '../Chatbot';
+import AdvancedFilter from "../components/ui/AdvancedFilter";
 
 const MainLayout = () => {
     // hook useLocation() để lấy thông tin URL hiện tại
@@ -18,42 +19,28 @@ const MainLayout = () => {
         <>
             <div className=" px-4">
                 <Header />
+                <div className="w-full flex justify-end items-center mt-4">
+                    <div className="min-w-[280px] max-w-[400px] w-full">
+                        <AdvancedFilter />
+                    </div>
+                </div>
+
                 {!isFilmDetail && !isFilmList && (
-                    <>
+                    <div className="-mt-2">
                         <Nominate />
                         <Update />
                         <Rank />
-                    </>
+                    </div>
                 )}
+
                 <main>
                     <Outlet />
                 </main>
                 <Footer />
                 <Chatbot />
             </div>
-
         </>
     )
-
-    //    return (
-    //         <>
-    //             <div className="bg-[#333333] px-4">
-    //                 <Header />
-    //                 {/* Chỉ hiển thị Nominate và Rank khi không phải trang chi tiết phim và không phải trang danh sách phim */}
-    //                 {!isFilmDetail && !isFilmList && (
-    //                     <>
-    //                         <Nominate />
-    //                         {/* <Update /> */}
-    //                         <Rank />
-    //                     </>
-    //                 )}
-    //                 <main>
-    //                     <Outlet />
-    //                 </main>
-    //                 <Footer />
-    //             </div>
-    //         </>
-    //     )
 }
 
 export default MainLayout;

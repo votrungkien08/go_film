@@ -1,0 +1,54 @@
+<mjml>
+  <mj-head>
+    <mj-title>Thanh Toán Thành Công</mj-title>
+    <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+    <mj-attributes>
+      <mj-text font-size="16px" color="#333333" font-family="Arial, sans-serif" />
+      <mj-button background-color="#f97316" color="#ffffff" font-size="16px" border-radius="8px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px" border-radius="8px">
+      <mj-column>
+        <mj-image src="https://via.placeholder.com/150x50.png?text=Go+Film+Logo" alt="Go Film Logo" width="150px" padding-bottom="20px" />
+        <mj-text font-size="24px" font-weight="bold" color="#f97316" align="center">
+          Thanh Toán Thành Công
+        </mj-text>
+        <mj-text padding="20px 0">
+          Xin chào {{ $userName }},
+          <br /><br />
+          Cảm ơn bạn đã mua điểm Premium trên hệ thống Go Film. Dưới đây là thông tin giao dịch:
+        </mj-text>
+        <mj-table>
+          <tr style="border-bottom: 1px solid #e0e0e0; padding: 10px;">
+            <td style="padding: 10px;"><strong>Số điểm:</strong></td>
+            <td style="padding: 10px;">{{ $points }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e0e0e0; padding: 10px;">
+            <td style="padding: 10px;"><strong>Số tiền:</strong></td>
+            <td style="padding: 10px;">{{ $amount }} VND</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e0e0e0; padding: 10px;">
+            <td style="padding: 10px;"><strong>Mã giao dịch:</strong></td>
+            <td style="padding: 10px;">{{ $txnRef }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e0e0e0; padding: 10px;">
+            <td style="padding: 10px;"><strong>Thời gian:</strong></td>
+            <td style="padding: 10px;">{{ $date }}</td>
+          </tr>
+        </mj-table>
+        <mj-text padding="20px 0">
+          Số điểm đã được cộng vào tài khoản của bạn. Bạn có thể kiểm tra số dư điểm trong trang cá nhân.
+          <br /><br />
+          Nếu có thắc mắc, vui lòng liên hệ qua email <a href="mailto:support@gofilm.com">support@gofilm.com</a>.
+        </mj-text>
+        <mj-button href="{{ env('FRONTEND_URL') }}/profile">
+          Kiểm tra số dư điểm
+        </mj-button>
+        <mj-text font-size="12px" color="#777777" align="center" padding-top="20px">
+          © {{ date('Y') }} Go Film. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

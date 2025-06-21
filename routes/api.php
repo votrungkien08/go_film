@@ -42,6 +42,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // VNPay payment
     Route::post('/vnpay/create', [TransactionController::class, 'createPayment']);
+
+    Route::post('/films/deduct-points', [FilmController::class, 'deductPoints']);
+    Route::post('/films/reward-points', [FilmController::class, 'rewardPointsForNormalFilm']);
 });
 
 // favorite

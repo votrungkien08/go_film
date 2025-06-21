@@ -424,7 +424,7 @@ const Header = () => {
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
                         <h2
-                            class="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
+                            className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => handleFilmTypeSelect('true')}
                         >
                             PHIM LẺ
@@ -432,7 +432,7 @@ const Header = () => {
                     </div>
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
                         <h2
-                            class="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
+                            className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => handleFilmTypeSelect('false')}
                         >
                             PHIM BỘ
@@ -481,7 +481,7 @@ const Header = () => {
                         {isLoggedIn ? 'Thông Tin Người Dùng' : isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
                     </h2>
                     <button
-                        class="text-gray-400 hover:text-white cursor-pointer text-xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-700 transition-colors"
+                        className="text-gray-400 hover:text-white cursor-pointer text-xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-700 transition-colors"
                         onClick={() => setIsPanelOpen(false)}
                     >
                         ✕
@@ -499,7 +499,7 @@ const Header = () => {
                             <p className="w-full p-3 bg-gray-800 border rounded-lg text-white">{user.points}</p>
                         </div>
                         <button
-                            class="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
                             onClick={() => {
                                 setIsPanelOpen(false);
                                 navigate('/buy-points');

@@ -1,5 +1,3 @@
-// src/components/ui/BuyPoints.tsx
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -14,6 +12,7 @@ const BuyPoints = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const [showCustomInput, setShowCustomInput] = useState<boolean>(false);
 
     // Tự động tính số tiền dựa trên số điểm
     useEffect(() => {
@@ -24,10 +23,23 @@ const BuyPoints = () => {
         }
     }, [points]);
 
+    // Hàm xử lý khi nhấn nút chọn nhanh
+    const handleQuickSelect = (pointValue: number) => {
+        setPoints(pointValue);
+        setShowCustomInput(false);
+    };
+
+    // Hàm xử lý khi nhấn nút "Tùy chỉnh số điểm"
+    const handleToggleCustomInput = () => {
+        setShowCustomInput(true);
+        setPoints(0); // Reset số điểm khi mở ô input
+    };
+
     const handleBuyPoints = async () => {
-        if (points <= 0) {
-            setError('Vui lòng nhập số điểm hợp lệ.');
-            toast.warning('Vui lòng nhập số điểm hợp lệ');
+        // THAY ĐỔI: Kiểm tra số điểm tối thiểu là 5 chỉ khi nhấn thanh toán
+        if (points < 5) {
+            setError('Số điểm tối thiểu là 5.');
+            toast.warning('Số điểm tối thiểu là 5.');
             return;
         }
 
@@ -64,7 +76,6 @@ const BuyPoints = () => {
                 setSuccess('Đang chuyển hướng đến trang thanh toán...');
                 toast.success('Đang chuyển hướng đến VNPay...');
 
-                // Delay nhỏ để user thấy thông báo
                 setTimeout(() => {
                     window.location.href = response.data.url;
                 }, 1000);
@@ -128,15 +139,43 @@ const BuyPoints = () => {
                         <label className="block text-gray-300 mb-2">
                             Số điểm muốn mua (1 điểm = 1,000 VND):
                         </label>
-                        <input
-                            type="number"
-                            value={points || ''}
-                            onChange={(e) => setPoints(Number(e.target.value))}
-                            className="w-full p-3 bg-[#3A3A3A] text-white border border-gray-600 rounded-md focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                            placeholder="Nhập số điểm"
-                            min="1"
+                        {showCustomInput && (
+                            <input
+                                type="number"
+                                value={points || ''}
+                                // THAY ĐỔI: Bỏ min="5", quay lại setPoints trực tiếp
+                                onChange={(e) => setPoints(Number(e.target.value))}
+                                className="w-full p-3 bg-[#3A3A3A] text-white border border-gray-600 rounded-md focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                                placeholder="Nhập số điểm (tối thiểu 5)"
+                                disabled={loading}
+                            />
+                        )}
+                    </div>
+
+                    <div className="mb-4 flex gap-2 justify-center">
+                        {[10, 20, 30, 50].map((pointValue) => (
+                            <button
+                                key={pointValue}
+                                onClick={() => handleQuickSelect(pointValue)}
+                                className={`px-4 py-2 rounded-md font-medium transition-all duration-300 ${points === pointValue && !showCustomInput
+                                        ? 'bg-orange-500 text-white'
+                                        : 'bg-[#3A3A3A] text-gray-300 hover:bg-orange-500 hover:text-white'
+                                    }`}
+                                disabled={loading}
+                            >
+                                {pointValue} điểm
+                            </button>
+                        ))}
+                        <button
+                            onClick={handleToggleCustomInput}
+                            className={`px-4 py-2 rounded-md font-medium transition-all duration-300 ${showCustomInput
+                                    ? 'bg-orange-500 text-white'
+                                    : 'bg-[#3A3A3A] text-gray-300 hover:bg-orange-500 hover:text-white'
+                                }`}
                             disabled={loading}
-                        />
+                        >
+                            Tùy chỉnh số điểm
+                        </button>
                     </div>
 
                     <div className="mb-6">
@@ -151,8 +190,9 @@ const BuyPoints = () => {
 
                     <button
                         onClick={handleBuyPoints}
-                        disabled={loading || points <= 0}
-                        className={`w-full py-3 rounded-md font-medium transition-all duration-300 ${loading || points <= 0
+                        // THAY ĐỔI: Vô hiệu hóa nút nếu points < 5
+                        disabled={loading || points < 5}
+                        className={`w-full py-3 rounded-md font-medium transition-all duration-300 ${loading || points < 5
                                 ? 'bg-gray-500 cursor-not-allowed'
                                 : 'bg-orange-500 hover:bg-orange-600 hover:shadow-lg'
                             } text-white`}
