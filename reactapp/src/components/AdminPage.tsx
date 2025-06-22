@@ -9,7 +9,7 @@ import {
     ChatBubbleOvalLeftIcon
 } from '@heroicons/react/24/solid';
 import { toast } from 'sonner';
-
+import { useAdminComments } from '../hooks/useAdminComments';
 interface Episode {
     episode_number: number;
     episode_title: string;
@@ -49,14 +49,6 @@ interface Film {
     is_premium: boolean;
     point_required: number | null;
     film_episodes: Episode[];
-}
-interface Comment {
-  id: number;
-  user_id: number;
-  film_id: number;
-  comment: string;
-  created_at: string | null;
-  is_blocked: boolean;
 }
 
 const AdminPage = () => {
@@ -107,8 +99,8 @@ const AdminPage = () => {
     const [formSuccess, setFormSuccess] = useState('');
     const [isEditing, setIsEditing] = useState(false);
 
-    // comment
-    const [comments, setComments] = useState<Comment[]>([]);
+    // comment admin
+    const { comments, loading, toggleBlockComment } = useAdminComments();
 
     // State cho danh sách năm, quốc gia, và thể loại
     const [years, setYears] = useState<Year[]>([]);
@@ -122,64 +114,7 @@ const AdminPage = () => {
     const [settingError, setSettingError] = useState('');
     const [settingSuccess, setSettingSuccess] = useState('');
 
-    // fetch comment
-    useEffect(() => {
-        fetch('http://localhost:8000/api/comments')
-            .then((response) => response.json())
-            .then((data) => {
-                // Kiểm tra data là mảng hay object
-                console.log('data comment',data.comments);
-                console.log('typeof data:', typeof data.comments); // 👈 in kiểu của data
-                console.log('isArray:', Array.isArray(data)); // 👈 check xem có phải mảng ko
-                if (Array.isArray(data)) {
-                    setComments(data);
-                } else if (data.comments && Array.isArray(data.comments)) {
-                    setComments(data.comments);
-                } else {
-                    setComments([]); // fallback nếu API trả không đúng
-                }
-            })
-            .catch((err) => console.error('Lỗi:', err));
-    },[]);
-
-    // block comment
-    const toggleBlockComment = (idComment) => {
-        fetch(`http://localhost:8000/api/toggleBlockComment/${idComment}`, {
-            method: 'POST'
-        })
-        .then((response) => response.json())
-        .then(() => {
-            fetch('http://localhost:8000/api/comments')
-            .then((response) => response.json())
-            .then((data) => {
-                setComments(data.comments);
-            })
-        })
-    }
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    navigate('/');
-                    return;
-                }
-                const response = await axios.get('http://localhost:8000/api/user', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (response.data.user.role !== 'admin') {
-                    navigate('/');
-                    return;
-                }
-                setUser(response.data.user);
-            } catch (err: any) {
-                setError('Không thể tải thông tin người dùng');
-                navigate('/');
-            }
-        };
-        fetchUser();
-    }, [navigate]);
+    
 
     // Hàm xử lý khi nhấn nút "Sửa"
     const handleEditFilm = (film: Film) => {
@@ -1129,25 +1064,54 @@ const AdminPage = () => {
     if (!user) {
         return <div className="text-white text-center mt-10">Đang tải...</div>;
     }
-    const renderComments = () => (
-        <>
-                <div className="p-8 text-white">
-                <h1 className="text-2xl mb-4">Danh sách bình luận</h1>
-                {comments.map(comment => (
-                    <div key={comment.id} className="bg-gray-800 p-4 mb-2 rounded">
-                    <p>{comment.comment}</p>
-                    <p className="text-sm text-gray-400">Bởi: {comment.user_id}</p>
-                    <button
-                        onClick={() => toggleBlockComment(comment.id)}
-                        className={`mt-2 px-3 py-1 rounded ${comment.is_blocked ? 'bg-red-500' : 'bg-green-500'}`}
-                    >
-                        {comment.is_blocked ? 'Bỏ chặn' : 'Chặn'}
-                    </button>
-                    </div>
-                ))}
+    if (loading) return <p>Đang tải bình luận...</p>;
+    if (error) return <p>{error}</p>;
+   const renderComments = () => (
+    <div className="grid grid-cols-12 gap-4">
+        <h1 className="col-span-12 text-3xl font-bold mb-6 border-b border-gray-600 pb-2">📋 Danh sách bình luận</h1>
+
+        {comments.length === 0 ? (
+            <p className="text-gray-400">Không có bình luận nào.</p>
+        ) : (
+        <div className="col-span-12 space-y-4">
+            {comments.map((comment) => (
+            <div  key={comment.id} className="grid grid-cols-4 items-start gap-4 bg-gray-600 p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                {/* Avatar */}
+                <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white text-xl font-bold">
+                    {comment.user?.name?.charAt(0).toUpperCase() || '?'}
                 </div>
-        </>
-    );
+                </div>
+
+                {/* Nội dung bình luận */}
+                <div className="flex-1">
+                <div className="flex justify-between items-center mb-1">
+                    <span className="text-lg font-semibold text-blue-400">
+                    {comment.user?.name || `ID: ${comment.user_id}`}
+                    </span>
+                    <span className="text-sm text-gray-300">
+                    {new Date(comment.created_at).toLocaleString()}
+                    </span>
+                </div>
+                <p className="text-gray-200 mb-2">{comment.comment}</p>
+                <button
+                    onClick={() => toggleBlockComment(comment.id)}
+                    className={`px-4 py-1 rounded text-sm font-medium transition-colors ${
+                    comment.is_blocked
+                        ? 'bg-red-600 hover:bg-red-700'
+                        : 'bg-green-600 hover:bg-green-700'
+                    }`}
+                >
+                    {comment.is_blocked ? 'Bỏ chặn' : 'Chặn'}
+                </button>
+                </div>
+            </div>
+            ))}
+        </div>
+        )}
+    </div>
+);
+
 
     return (
         <div className="min-h-screen bg-gray-900 flex">

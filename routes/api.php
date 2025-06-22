@@ -9,12 +9,15 @@ use App\Http\Controllers\CountryController;
 use App\Http\Controllers\GenreController;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\EpisodesController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\RatingController;
 use App\Http\Controllers\WatchHistoriesController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ChatbotController;
 use App\Models\Film;
+use App\Models\Film_episodes;
+use App\Models\Watch_histories;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -43,9 +46,16 @@ Route::middleware('auth:sanctum')->group(function () {
     // VNPay payment
     Route::post('/vnpay/create', [TransactionController::class, 'createPayment']);
 
+    // watch history
+    Route::get('/watch-histories', [WatchHistoriesController::class, 'getWatchHistory']);
+    Route::post('/store-histories', [WatchHistoriesController::class, 'store']);
     Route::post('/films/deduct-points', [FilmController::class, 'deductPoints']);
     Route::post('/films/reward-points', [FilmController::class, 'rewardPointsForNormalFilm']);
 });
+
+// episode
+Route::get('/episode/{episodeId}', [EpisodesController::class, 'getFilmByEpisodeId']);
+
 
 // favorite
 Route::get('/film/{idFilm}/favorite', [FavoriteController::class, 'isFavorite']);
@@ -88,6 +98,9 @@ Route::get('/{id}/comments', [CommentController::class, 'getCommentByIdFilm']);
 Route::post('/toggleBlockComment/{idComment}', [CommentController::class, 'toggleBlockComments']);
 Route::get('/film/comments/{idFilm}', [CommentController::class, 'getCommentByIdFilm']);
 Route::get('/film/comments/user/{idUser}', [CommentController::class, 'getUserComment']);
+
+// increase view
+Route::post('/increaseView', [FilmController::class, 'increaseView']);
 
 
 //Route::get('/film/{idFilm}/favorite', [FavoriteController::class, 'getFavoriteByIdFilm']);

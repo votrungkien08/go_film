@@ -2,7 +2,8 @@ import { useRef ,useEffect,useState } from "react"
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from "@/components/ui/scroll-area"
-
+import { useTheme } from "../components/theme-provider";
+import { motion, scale} from 'framer-motion';
 interface Film {
     id: number;
     slug: string;
@@ -24,6 +25,7 @@ interface Film {
 }
 
 const Update = () => {
+    const { theme } = useTheme();
     const navigate = useNavigate();
     const [films, setFilms] = useState<Film[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -97,13 +99,13 @@ const Update = () => {
 
     return (
         <>
-            <div className="grid grid-cols-12 gap-4">
+            <div className="grid grid-cols-12 min-h-80 gap-4 my-8">
                 <div className="col-span-1"></div>
                 <div className="col-span-10">
-                <div className="grid grid-cols-10 gap-4 mb-4">
-                    <div className="col-span-5 flex items-center h-12">
+                <div className="grid grid-cols-10 gap-4 mb-4  shadow shadow-gray-500/50 ">
+                    <div className="col-span-5 flex items-center h-12 ">
                             <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" />
-                            <h1 className="ml-2  font-bold">PHIM ĐỀ CỬ</h1>
+                            <h1 className="ml-2  font-bold">PHIM MỚI CẬP NHẬT</h1>
                         </div>
                         <div className="col-span-5 flex items-center justify-end">
                             <h1
@@ -115,40 +117,19 @@ const Update = () => {
                             <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" />
                         </div>
                     </div>
-                    <div className="col-span-10">
-                        {/* <div ref={scrollRef} className='grid grid-cols-10 col-span-10 gap-4 '>
-                            <button onClick={scrollLeft} className="z-10 top-1/2 -translate-y-1/2 absolute left-0 text-black bg-opacity-50 rounded-full  p-4 bg-white cursor-pointer">&#8249;</button>
-                            {updateFilm.map((item,index) => (
-                                <div key={item.id} className="col-span-2 cursor-pointer relative group">
-                                    <img className='w-full h-full object-cover rounded-lg' src={item.thumb} alt="" />
-                                    <div onClick={()=> {navigate(`/film/${item.slug}`)}} className='absolute rounded-lg bottom-0 opacity-0 backdrop-blur-sm group-hover:opacity-100  flex items-center justify-center w-full h-full'>
-                                        <h2 className=' text-sm font-semibold text-center px-2'>{item.title_film}</h2>
-                                    </div>
-                                </div>
-                            ))}
-                            
-                            <button onClick={scrollRight} className="z-10 top-1/2 -translate-y-1/2 absolute right-0 text-black bg-opacity-50 rounded-full  p-4 bg-white cursor-pointer">&#8250;</button>
-                        </div> */}
-                        <div className="relative">
-                            <button onClick={scrollLeft} className="z-10 top-1/2 -translate-y-1/2 absolute left-0 text-black bg-opacity-50 rounded-full  p-4 bg-white cursor-pointer">&#8249;</button>
-                            
-                            <div ref={scrollRef} className="overflow-x-auto scrollbar-hide">
-                                <div className="flex flex-nowrap gap-4">
+                    <div className="col-span-10 relative group">
+                            <button onClick={scrollLeft} className={`h-full text-7xl opacity-0 group-hover:opacity-100 bg-gradient-to-l from-transparent  transition-all duration-300   z-10 top-1/2 -translate-y-1/2 absolute left-0    p-4  cursor-pointer ${theme === 'dark' ? "to-white/50 group-hover:bg-white/10 text-black" : ""} ${theme === 'light' ? "to-black/50 group-hover:bg-black/40 text-white" : ""} ${theme === 'system' ? " to-white/50 group-hover:bg-white/10 text-black" : ""}`} >&#8249;</button>
+                            <div ref={scrollRef} className="overflow-x-auto scrollbar-hide flex flex-nowrap gap-4">
                                     {updateFilm.map((item,index) => (
-                                        <div key={item.id} className="min-w-[20%] max-w-[20%] overflow-hidden cursor-pointer relative group">
+                                        <motion.div  whileHover={{ scale: 0.9 }}  whileTap={{ scale: 0.8 }}  key={item.id} className="min-w-[20%] max-w-[20%] overflow-hidden cursor-pointer relative group/item">
                                             <img className='w-full h-full object-cover rounded-lg' src={item.thumb} alt="" />
-                                            <div onClick={()=> {navigate(`/film/${item.slug}`)}} className='absolute rounded-lg bottom-0 opacity-0 backdrop-blur-sm group-hover:opacity-100  flex items-center justify-center w-full h-full'>
+                                            <div onClick={()=> {navigate(`/film/${item.slug}`)}} className='absolute rounded-lg bottom-0 opacity-0 backdrop-blur-sm group-hover/item:opacity-100 transition-opacity duration-300  flex items-center justify-center w-full h-full'>
                                                 <h2 className=' text-sm font-semibold text-center px-2'>{item.title_film}</h2>
                                             </div>
-                                        </div>
+                                        </motion.div>
                                     ))}
-                                </div>
                             </div>
-
-
-                            <button onClick={scrollRight} className="z-10 top-1/2 -translate-y-1/2 absolute right-0 text-black bg-opacity-50 rounded-full  p-4 bg-white cursor-pointer">&#8250;</button>
-                            
-                        </div>
+                            <button onClick={scrollRight} className={`text-7xl opacity-0 group-hover:opacity-100 h-full bg-gradient-to-r from-transparent   transition-all duration-300  z-10 top-1/2 -translate-y-1/2 absolute right-0    p-4  cursor-pointer ${theme === 'dark' ? " to-white/50 group-hover:bg-white/10 text-black" : ""} ${theme === 'light' ? " to-black/50 group-hover:bg-black/40 text-white" : ""} ${theme === 'system' ? " to-white/50 group-hover:bg-white/10 text-black" : ""}`}>&#8250;</button>
                     </div>
                 </div>
                 <div className="col-span-1"></div>

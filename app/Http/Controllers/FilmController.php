@@ -500,4 +500,23 @@ class FilmController extends Controller
             ], 500);
         }
     }
+    public function increaseView(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:film,id',
+        ]);
+
+        try {
+            $film = Film::findOrFail($request->id);
+            $film->increment('view');
+            $film->refresh();
+            return response()->json([
+                'message' => 'Lượt xem đã được tăng',
+                'view_count' => $film->view,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error increase view ', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Không thể tăng lượt xem phim'], 500);
+        }
+    }
 }

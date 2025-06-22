@@ -27,6 +27,7 @@ export const useComments = (filmId: number | undefined, isLoggedIn: boolean): Co
       setCommentsError('');
       try {
         const response = await axios.get(`http://localhost:8000/api/film/comments/${filmId}`);
+        console.log('đây là comment nè',response.data);
         setComments(response.data.comments);
       } catch (err: any) {
         setCommentsError(err.response?.data?.message || 'Không thể tải bình luận.');

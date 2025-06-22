@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { HeartIcon as HeartSolidIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { HeartIcon as HeartOutlineIcon } from '@heroicons/react/24/outline';
 import { openAuthPanel } from '../utils/auth';
@@ -12,9 +12,12 @@ import { useComments } from '../hooks/useComment';
 import { useRating } from '../hooks/useRating';
 import { useFavorite } from '../hooks/useFavorite';
 import { useAuth } from '../hooks/useAuth';
+import { easeIn, motion } from 'framer-motion';
 import Hls from 'hls.js';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { useWatchHistories } from '../hooks/useWatchHistories';
+import { useIncreaseView } from '../hooks/useIncreaseView';
 
 dayjs.extend(relativeTime);
 
@@ -29,25 +32,40 @@ interface PaymentStatus {
 }
 
 const FilmDetail = () => {
+    const variants = {
+        hidden: { opacity: 0, scale: 0.8, transition: { duration: 0.5, ease: easeIn } },
+        visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: easeIn } },
+    };
+
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
+    const { search } = useLocation();
+    const params = new URLSearchParams(search);
+    const episodeParam = params.get('episode');
     const { isLoggedIn, user } = useAuth();
-    const { film, error, selectedEpisode, setSelectedEpisode } = useFilmData(slug!);
+    const { film, error, selectedEpisode, setSelectedEpisode } = useFilmData(slug!, episodeParam!);
     const { comments, commentsLoading, commentsError, comment, setComment, handlePostComment } = useComments(film?.id, isLoggedIn);
     const { rating, setRating, showRating, averageRating, handlePostRating } = useRating(film?.id, isLoggedIn);
     const { isFavorite, handleToggleFavorite } = useFavorite(film?.id, isLoggedIn);
+    const { handleTimeUpdate } = useWatchHistories(selectedEpisode, videoRef);
+    const { handleViewIncrement } = useIncreaseView({ filmId: film?.id, videoRef, selectedEpisode });
     const [tab, setTab] = useState<'comment' | 'rating' | 'info'>('comment');
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
     const [showPointsPrompt, setShowPointsPrompt] = useState(false);
     const [canWatch, setCanWatch] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
     const [isCheckingPayment, setIsCheckingPayment] = useState(false);
-    const [hasRewarded, setHasRewarded] = useState(false); // THÊM: State để theo dõi trạng thái tích điểm
+    const [hasRewarded, setHasRewarded] = useState(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
     const lastCurrentTimeRef = useRef(0);
     const [deducted, setDeducted] = useState(false);
+
+    const getEpisodeNumber = (number: string): number => {
+        const match = number.match(/\d+/);
+        return match ? parseInt(match[0]) : 0;
+    };
 
     const initializeHLS = (videoUrl: string) => {
         if (!videoRef.current) return;
@@ -198,7 +216,6 @@ const FilmDetail = () => {
         }
     }, [film, selectedEpisode, isLoggedIn]);
 
-    // THÊM: Hàm kiểm tra trạng thái tích điểm
     const checkRewardStatus = useCallback(async () => {
         if (!film?.id || !selectedEpisode?.id || !isLoggedIn || film.is_premium) return;
 
@@ -219,7 +236,7 @@ const FilmDetail = () => {
             setHasRewarded(response.data.has_rewarded);
         } catch (error) {
             console.error('Lỗi khi kiểm tra trạng thái tích điểm:', error);
-            setHasRewarded(false); // Mặc định chưa tích điểm nếu lỗi
+            setHasRewarded(false);
         }
     }, [film?.id, selectedEpisode?.id, isLoggedIn, film?.is_premium]);
 
@@ -243,7 +260,7 @@ const FilmDetail = () => {
                     duration: 3000,
                     position: 'top-center',
                 });
-                setHasRewarded(true); // THÊM: Cập nhật trạng thái sau khi tích điểm
+                setHasRewarded(true);
             }
         } catch (error: unknown) {
             // Không hiển thị toast lỗi nếu đã tích điểm trước đó
@@ -257,17 +274,12 @@ const FilmDetail = () => {
         setPaymentStatus(null);
         setShowAuthPrompt(false);
         setShowPointsPrompt(false);
-        setHasRewarded(false); // THÊM: Reset trạng thái tích điểm khi đổi tập
-
-        if (hlsRef.current) {
-            hlsRef.current.destroy();
-            hlsRef.current = null;
-        }
+        setHasRewarded(false);
 
         if (!film?.is_premium) {
             setCanWatch(true);
             initializeHLS(selectedEpisode.episode_url);
-            checkRewardStatus(); // THÊM: Kiểm tra trạng thái tích điểm cho phim thường
+            checkRewardStatus();
             return;
         }
 
@@ -277,7 +289,7 @@ const FilmDetail = () => {
         }
 
         checkPaymentStatus();
-    }, [selectedEpisode, film?.is_premium, isLoggedIn, checkPaymentStatus, checkRewardStatus]); // SỬA: Thêm checkRewardStatus vào dependencies
+    }, [selectedEpisode, film?.is_premium, isLoggedIn, checkPaymentStatus, checkRewardStatus]);
 
     useEffect(() => {
         if (!paymentStatus || !film?.is_premium || !isLoggedIn) return;
@@ -289,7 +301,6 @@ const FilmDetail = () => {
         }
     }, [paymentStatus, film?.is_premium, isLoggedIn]);
 
-    // Logic trừ điểm cho phim premium
     useEffect(() => {
         const video = videoRef.current;
         if (!video || !film?.is_premium || !canWatch || paymentStatus?.already_paid) return;
@@ -326,7 +337,6 @@ const FilmDetail = () => {
         };
     }, [film?.is_premium, canWatch, paymentStatus?.already_paid, deductPoints]);
 
-    // Logic tích điểm cho phim thường
     useEffect(() => {
         const video = videoRef.current;
         if (!video || film?.is_premium || !canWatch) return;
@@ -344,7 +354,7 @@ const FilmDetail = () => {
             if (Math.abs(currentTime - lastCurrentTimeRef.current) > tenPercentDuration) {
                 setDeducted(true);
                 video.removeEventListener('timeupdate', handleTimeUpdate);
-                if (!hasRewarded) { // SỬA: Chỉ hiển thị toast nếu chưa tích điểm
+                if (!hasRewarded) {
                     toast.info('Bạn đã tua quá 10% thời lượng video, không thể tích điểm.', {
                         duration: 3000,
                         position: 'top-center',
@@ -366,7 +376,7 @@ const FilmDetail = () => {
         return () => {
             video.removeEventListener('timeupdate', handleTimeUpdate);
         };
-    }, [film?.is_premium, canWatch, rewardPoints, hasRewarded]); // SỬA: Thêm hasRewarded vào dependencies
+    }, [film?.is_premium, canWatch, rewardPoints, hasRewarded]);
 
     useEffect(() => {
         return () => {
@@ -446,6 +456,7 @@ const FilmDetail = () => {
                     ref={videoRef}
                     controls
                     className="w-full h-full object-cover"
+                    onTimeUpdate={() => { handleTimeUpdate(); handleViewIncrement(); }}
                     poster={film.thumb}
                     crossOrigin="anonymous"
                     playsInline
@@ -487,6 +498,7 @@ const FilmDetail = () => {
                             >
                                 Mua điểm
                             </button>
+                            {/* sua */}
                         </div>
                     </div>
                 );
@@ -518,7 +530,12 @@ const FilmDetail = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#333333] text-white py-6">
+        <motion.div
+            variants={variants}
+            initial="hidden"
+            animate="visible"
+            className="min-h-screen bg-[#333333] text-white py-6"
+        >
             <div className="container mx-auto px-4">
                 <button
                     className="flex items-center gap-2 text-gray-300 hover:text-orange-500 transition-colors duration-300 mb-6"
@@ -544,7 +561,10 @@ const FilmDetail = () => {
                                 {film.film_episodes.map((episode, index) => (
                                     <button
                                         key={episode.id || `${episode.episode_number}-${index}`}
-                                        onClick={() => setSelectedEpisode(episode)}
+                                        onClick={() => {
+                                            setSelectedEpisode(episode);
+                                            navigate(`/film/${slug}?episode=${getEpisodeNumber(episode.episode_title)}`, { replace: true });
+                                        }}
                                         className={`py-2 px-4 rounded-md text-sm font-medium transition-colors duration-300 cursor-pointer ${String(selectedEpisode?.id) === String(episode.id)
                                             ? 'bg-orange-500 text-white'
                                             : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A]'
@@ -558,22 +578,19 @@ const FilmDetail = () => {
 
                         <div className="flex border-b border-gray-700 mt-4">
                             <button
-                                className={`mr-2 px-4 py-2 rounded-t-md ${tab === 'comment' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'
-                                    }`}
+                                className={`mr-2 px-4 py-2 rounded-t-md ${tab === 'comment' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'}`}
                                 onClick={() => setTab('comment')}
                             >
                                 Bình luận
                             </button>
                             <button
-                                className={`mr-2 px-4 py-2 rounded-t-md ${tab === 'rating' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'
-                                    }`}
+                                className={`mr-2 px-4 py-2 rounded-t-md ${tab === 'rating' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'}`}
                                 onClick={() => setTab('rating')}
                             >
                                 Đánh giá
                             </button>
                             <button
-                                className={`px-4 py-2 rounded-t-md ${tab === 'info' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'
-                                    }`}
+                                className={`px-4 py-2 rounded-t-md ${tab === 'info' ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A] cursor-pointer'}`}
                                 onClick={() => setTab('info')}
                             >
                                 Thông tin
@@ -852,7 +869,7 @@ const FilmDetail = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 };
 
