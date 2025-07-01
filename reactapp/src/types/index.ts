@@ -1,6 +1,7 @@
 import { Episode } from './index';
 // src/types/index.ts
 export interface Episode {
+  id?: number;
   episode_number: number;
   episode_title: string;
   episode_url: string;
@@ -27,7 +28,7 @@ export interface Film {
   slug: string;
   title_film: string;
   thumb: string;
-  trailer: string ;
+  trailer: string;
   film_type: boolean;
   year: Year | null;
   country: Country | null;
@@ -61,6 +62,14 @@ export interface Rating {
   rating: number;
 }
 
+export interface User {
+  id?: number;
+  name?: string;
+  email?: string;
+  points?: number;
+  role?: string;
+}
+
 
 export interface WatchHistories {
   id: number
@@ -76,4 +85,5 @@ export interface Users {
   email: string;
   role: string;
   points: number
+
 }

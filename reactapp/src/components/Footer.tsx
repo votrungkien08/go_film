@@ -1,4 +1,4 @@
-import { PhoneIcon, EnvelopeIcon} from '@heroicons/react/24/solid';
+import { PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
 
 const Footer = () => {
     return (
@@ -17,7 +17,7 @@ const Footer = () => {
                                     </h2>
                                 </div>
                                 <div className='font-bold'>
-                                    
+
                                     <div className='flex pb-2'>
                                         <a href="#">Giới thiệu</a>
                                     </div>
@@ -28,30 +28,30 @@ const Footer = () => {
                                 </div>
                             </div>
                             <div className=' font-bold'>
-                                <div  className='mb-4'>
+                                <div className='mb-4'>
                                     <h2 className='flex items-center'>
                                         HỔ TRỢ
                                     </h2>
                                 </div>
                                 <div className="flex items-center ">
-                                    
+
                                     <div className='' >
                                         <a href="#" className='p-4 inline-block'>
-                                            <img src="/img/logofb.png" alt="" className="w-5 h-5 object-contain"/>
+                                            <img src="/img/logofb.png" alt="" className="w-5 h-5 object-contain" />
                                         </a>
                                     </div>
                                     <div className=''>
                                         <a href="#" className='p-4 inline-block'>
-                                            <img src="/img/logozl.png" alt="" className="w-5 h-5"/>
+                                            <img src="/img/logozl.png" alt="" className="w-5 h-5" />
 
                                         </a>
                                     </div>
                                     <div >
                                         <a href="#" className='p-4 inline-block'>
-                                            <img src="/img/logoins.png" alt="" className="w-5 h-5"/>
+                                            <img src="/img/logoins.png" alt="" className="w-5 h-5" />
                                         </a>
                                     </div>
-        
+
 
                                 </div>
                             </div>
@@ -63,18 +63,18 @@ const Footer = () => {
                                 </div>
                                 <div className=''>
                                     <div className='flex items-center '>
-                                        <PhoneIcon className='w-5 h-5 mr-3'/>
+                                        <PhoneIcon className='w-5 h-5 mr-3' />
                                         <p>0353946625</p>
                                     </div>
                                     <div className='flex items-center'>
-                                        <EnvelopeIcon className='w-5 h-5 mr-3'/>
+                                        <EnvelopeIcon className='w-5 h-5 mr-3' />
                                         <p>kiendzsh1@gmail.com</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className='col-span-1'>
 
                     </div>

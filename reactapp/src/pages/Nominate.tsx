@@ -275,8 +275,24 @@ const Nominate = () => {
             setCurrentFilm(topFilmFavorite[currentIndex - 1]);
         } else if (currentIndex === 0 && topFilmFavorite.length > 0) {
             setCurrentFilm(topFilmFavorite[topFilmFavorite.length - 1]); // Quay lại phim cuối
-        }
-    };
+    // const [currentFilm, setCurrentFilm] = useState(null);
+    // const [rating, setRating] = useState<Rating[]>([]);
+
+
+    // const topFilmFavorite = films.slice(0, 8);
+
+//     function getYouTubeId(url?: string): string | undefined {
+//         if (!url) return undefined;
+//         const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
+//         return match?.[1];
+//     }
+//     // lấy currentfilm
+//     useEffect(() => {
+//         if (films && films.length > 0) {
+//             setCurrentFilm(films[0]);
+// >>>>>>> 370eaf4650dacd34d9aaa8155a8da8e16ec5d891
+//         }
+//     };
 
     // Nút Next
     const goToNextFilm = () => {
@@ -302,6 +318,7 @@ const Nominate = () => {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
                 console.log('phim ne', response.data.film);
+
                 setFilms(response.data.film);
             } catch (err: any) {
                 console.error('Lỗi khi lấy danh sách phim:', err.response?.data || err.message);

@@ -14,6 +14,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\RatingController;
 use App\Http\Controllers\WatchHistoriesController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ChatbotController;
 use App\Models\Film;
 use App\Models\Film_episodes;
 use App\Models\Watch_histories;
@@ -46,10 +47,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // VNPay payment
     Route::post('/vnpay/create', [TransactionController::class, 'createPayment']);
+
     // watch history
     Route::get('/watch-histories', [WatchHistoriesController::class, 'getWatchHistory']);
     Route::post('/store-histories', [WatchHistoriesController::class, 'store']);
-
+    Route::post('/films/deduct-points', [FilmController::class, 'deductPoints']);
+    Route::post('/films/reward-points', [FilmController::class, 'rewardPointsForNormalFilm']);
 });
 
 
@@ -113,6 +116,8 @@ Route::get('/favorite', [FavoriteController::class, 'getTopFavorite']);
 Route::get('/filter-films', [FilmController::class, 'filter']);
 // VNPay callback
 Route::get('/vnpay/callback', [TransactionController::class, 'callback']);
+
+Route::post('/chatbot', [ChatbotController::class, 'handle']);
 
 //Route::get('/film/{id}', [FilmController::class, 'getFilmById']);
 

@@ -27,8 +27,8 @@ const Histories = () => {
     const token = localStorage.getItem('token');
 
     const variants = {
-        hidden:{ opacity:0,y:100, scale:0.8, transition: { duration: 0.5 } },
-        visible: {opacity:1,y:0, scale:1, transition: { duration: 0.5 } },
+        hidden: { opacity: 0, y: 100, scale: 0.8, transition: { duration: 0.5 } },
+        visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5 } },
     }
     // cắt chuỗi thành số
     const getEpisodeNumber = (number: string): number => {
@@ -95,8 +95,8 @@ const Histories = () => {
                             history.film &&
                             history.episode.id &&
                             (!acc[history.film.id] ||
-                             getEpisodeNumber(history.episode.episode_title) > 
-                             getEpisodeNumber(acc[history.film.id].episode?.episode_title || 'FULL'))
+                                getEpisodeNumber(history.episode.episode_title) >
+                                getEpisodeNumber(acc[history.film.id].episode?.episode_title || 'FULL'))
                         ) {
                             acc[history.film.id] = history;
                         }
@@ -141,7 +141,7 @@ const Histories = () => {
     }
 
     return (
-        <motion.div 
+        <motion.div
             variants={variants}
             initial="hidden"
             animate="visible"
@@ -152,7 +152,7 @@ const Histories = () => {
                 <h1 className="text-4xl font-bold mb-8">Lịch sử xem</h1>
                 <div className="grid grid-cols-10 gap-4">
                     {watchHistory.map((history) => (
-                        <motion.div whileHover={{ scale: 1.2 }}  whileTap={{ scale: 0.8 }} key={history.id} className="col-span-2 p-4 bg-neutral-900 rounded-lg shadow-md border border-gray-600 hover:shadow-lg transition-shadow" >
+                        <motion.div whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.8 }} key={history.id} className="col-span-2 p-4 bg-neutral-900 rounded-lg shadow-md border border-gray-600 hover:shadow-lg transition-shadow" >
                             <div className="group w-40 h-60 relative">
                                 {history.film?.thumb && (
                                     <img
@@ -174,9 +174,9 @@ const Histories = () => {
                             </div>
                         </motion.div>
                     ))}
-                    
-                </div>    
-            </div> 
+
+                </div>
+            </div>
             <div className='col-span-1'></div>
 
         </motion.div>

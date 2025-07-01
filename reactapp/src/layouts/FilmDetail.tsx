@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { HeartIcon as HeartSolidIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { HeartIcon as HeartOutlineIcon } from '@heroicons/react/24/outline';
@@ -13,12 +13,23 @@ import { useRating } from '../hooks/useRating';
 import { useFavorite } from '../hooks/useFavorite';
 import { useAuth } from '../hooks/useAuth';
 import { easeIn, motion } from 'framer-motion';
-// Import Hls.js
 import Hls from 'hls.js';
+import axios from 'axios';
+import { toast } from 'sonner';
 import { useWatchHistories } from '../hooks/useWatchHistories';
 import { useIncreaseView } from '../hooks/useIncreaseView';
 import { RotateCcw, RotateCw, Pause ,Play, Maximize  } from 'lucide-react';
 dayjs.extend(relativeTime);
+
+interface PaymentStatus {
+    can_watch: boolean;
+    already_paid: boolean;
+    is_premium: boolean;
+    has_enough_points?: boolean;
+    points_required?: number;
+    user_points?: number;
+    message: string;
+}
 
 const FilmDetail = () => {
     const variants = {
@@ -28,28 +39,25 @@ const FilmDetail = () => {
 
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
-    const { isLoggedIn } = useAuth();
-    // Lấy episodeParam từ search
-    // query params selectedEpisode
     const { search } = useLocation();
     const params = new URLSearchParams(search);
     const episodeParam = params.get('episode');
-    // Gọi useFilmData trước để có film
+    const { isLoggedIn, user } = useAuth();
     const { film, error, selectedEpisode, setSelectedEpisode } = useFilmData(slug!, episodeParam!);
-
     const { comments, commentsLoading, commentsError, comment, setComment, handlePostComment } = useComments(film?.id, isLoggedIn);
     const { rating, setRating, showRating, averageRating, handlePostRating } = useRating(film?.id, isLoggedIn);
     const { isFavorite,likeCount, handleToggleFavorite } = useFavorite(film?.id, isLoggedIn);
+    const { isFavorite, handleToggleFavorite } = useFavorite(film?.id, isLoggedIn);
+    const { handleTimeUpdate } = useWatchHistories(selectedEpisode, videoRef);
+    const { handleViewIncrement } = useIncreaseView({ filmId: film?.id, videoRef, selectedEpisode });
     const [tab, setTab] = useState<'comment' | 'rating' | 'info'>('comment');
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-    
-    // Thêm: Hàm để trích xuất số tập cho danh sách tập
-    const getEpisodeNumber = (number: string): number => {
-        const match = number.match(/\d+/); // Trích xuất số từ chuỗi, ví dụ "12" -> 12
-        return match ? parseInt(match[0]) : 0;
-    };
-    
-    // Ref cho video element và HLS instance
+    const [showPointsPrompt, setShowPointsPrompt] = useState(false);
+    const [canWatch, setCanWatch] = useState(false);
+    const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
+    const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+    const [hasRewarded, setHasRewarded] = useState(false);
+
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
 
@@ -164,34 +172,34 @@ const FilmDetail = () => {
     const { handleTimeUpdate} = useWatchHistories(selectedEpisode, videoRef, setCurrentTime);
     const { handleViewIncrement } = useIncreaseView({ filmId: film?.id, videoRef, selectedEpisode });
     // Function để khởi tạo HLS player
+    const lastCurrentTimeRef = useRef(0);
+    const [deducted, setDeducted] = useState(false);
+
+    const getEpisodeNumber = (number: string): number => {
+        const match = number.match(/\d+/);
+        return match ? parseInt(match[0]) : 0;
+    };
+
     const initializeHLS = (videoUrl: string) => {
         if (!videoRef.current) return;
-
         const video = videoRef.current;
 
-        // Dọn dẹp HLS instance cũ nếu có
         if (hlsRef.current) {
             hlsRef.current.destroy();
             hlsRef.current = null;
         }
 
-        // Kiểm tra xem URL có phải là m3u8 không
         const isM3U8 = videoUrl.includes('.m3u8') || videoUrl.includes('m3u8');
-
         if (isM3U8) {
-            // Kiểm tra browser có hỗ trợ HLS natively không
             if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // Safari và iOS hỗ trợ HLS natively
                 video.src = videoUrl;
             } else if (Hls.isSupported()) {
-                // Sử dụng Hls.js cho các browser khác
                 const hls = new Hls({
                     debug: false,
                     enableWorker: true,
                     lowLatencyMode: true,
-                    backBufferLength: 90
+                    backBufferLength: 90,
                 });
-
                 hlsRef.current = hls;
                 hls.loadSource(videoUrl);
                 hls.attachMedia(video);
@@ -224,7 +232,6 @@ const FilmDetail = () => {
                 alert('Trình duyệt của bạn không hỗ trợ phát video HLS. Vui lòng sử dụng trình duyệt khác.');
             }
         } else {
-            // Video thông thường (MP4, WebM, etc.)
             video.src = videoUrl;
         }
     };
@@ -284,7 +291,164 @@ const FilmDetail = () => {
 
         video.addEventListener('timeupdate', updateCurrentTime);
         if (selectedEpisode?.episode_url) {
+    const checkPaymentStatus = useCallback(async () => {
+        if (!film?.id || !selectedEpisode?.id || !isLoggedIn) return;
+
+        setIsCheckingPayment(true);
+        try {
+            const response = await axios.post(
+                'http://localhost:8000/api/films/deduct-points',
+                {
+                    film_id: film.id,
+                    episode_id: selectedEpisode.id,
+                    only_check: true
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                }
+            );
+
+            console.log('Payment status response:', response.data);
+            setPaymentStatus(response.data);
+            setCanWatch(response.data.can_watch);
+
+            if (response.data.can_watch && selectedEpisode.episode_url) {
+                initializeHLS(selectedEpisode.episode_url);
+            }
+        } catch (error: unknown) {
+            console.error('Lỗi khi kiểm tra trạng thái thanh toán:', error);
+            if (typeof error === 'object' && error !== null && 'response' in error) {
+                const err = error as { response?: { status?: number, data?: { message?: string } } };
+                if (err.response?.status === 403) {
+                    setPaymentStatus({
+                        can_watch: false,
+                        already_paid: false,
+                        is_premium: true,
+                        has_enough_points: false,
+                        points_required: film?.point_required ?? undefined,
+                        user_points: user?.points,
+                        message: err.response.data?.message || 'Bạn không đủ điểm để xem phim này'
+                    });
+                    setCanWatch(false);
+                    return;
+                }
+                if (err.response?.status !== 401 && err.response?.status !== 403) {
+                    setCanWatch(true);
+                    if (selectedEpisode.episode_url) {
+                        initializeHLS(selectedEpisode.episode_url);
+                    }
+                }
+            }
+        } finally {
+            setIsCheckingPayment(false);
+        }
+    }, [film?.id, selectedEpisode?.id, isLoggedIn, film?.point_required, user?.points, selectedEpisode?.episode_url]);
+
+    const deductPoints = useCallback(async () => {
+        if (!film?.id || !selectedEpisode?.id || !isLoggedIn || !film.is_premium) return;
+        try {
+            const response = await axios.post(
+                'http://localhost:8000/api/films/deduct-points',
+                {
+                    film_id: film.id,
+                    episode_id: selectedEpisode.id
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                }
+            );
+            console.log('API deduct-points response:', response.data);
+            if (response.data.can_watch) {
+                setCanWatch(true);
+                setPaymentStatus(prev => prev ? { ...prev, can_watch: true, already_paid: true } : null);
+                toast.success(`Đã trừ ${film.point_required} điểm. Điểm còn lại: ${response.data.remaining_points}`, {
+                    duration: 3000,
+                    position: 'top-center',
+                });
+            }
+        } catch (error: unknown) {
+            console.error('Lỗi khi trừ điểm:', error);
+            let message = 'Lỗi khi trừ điểm. Vui lòng thử lại.';
+            if (typeof error === 'object' && error !== null && 'response' in error) {
+                const err = error as { response?: { data?: { error?: string } } };
+                if (err.response?.data?.error) message = err.response.data.error;
+            }
+            toast.error(message, {
+                duration: 3000,
+                position: 'top-center',
+            });
+        }
+    }, [film, selectedEpisode, isLoggedIn]);
+
+    const checkRewardStatus = useCallback(async () => {
+        if (!film?.id || !selectedEpisode?.id || !isLoggedIn || film.is_premium) return;
+
+        try {
+            const response = await axios.post(
+                'http://localhost:8000/api/films/reward-points',
+                {
+                    film_id: film.id,
+                    episode_id: selectedEpisode.id,
+                    only_check: true
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                }
+            );
+            setHasRewarded(response.data.has_rewarded);
+        } catch (error) {
+            console.error('Lỗi khi kiểm tra trạng thái tích điểm:', error);
+            setHasRewarded(false);
+        }
+    }, [film?.id, selectedEpisode?.id, isLoggedIn, film?.is_premium]);
+
+    const rewardPoints = useCallback(async () => {
+        if (!film?.id || !selectedEpisode?.id || !isLoggedIn || film.is_premium) return;
+        try {
+            const response = await axios.post(
+                'http://localhost:8000/api/films/reward-points',
+                {
+                    film_id: film.id,
+                    episode_id: selectedEpisode.id
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                }
+            );
+            if (response.data.success) {
+                toast.success('Bạn đã được cộng 3 điểm khi xem phim thường!', {
+                    duration: 3000,
+                    position: 'top-center',
+                });
+                setHasRewarded(true);
+            }
+        } catch (error: unknown) {
+            // Không hiển thị toast lỗi nếu đã tích điểm trước đó
+        }
+    }, [film, selectedEpisode, isLoggedIn]);
+
+    useEffect(() => {
+        if (!selectedEpisode?.episode_url) return;
+
+        setCanWatch(false);
+        setPaymentStatus(null);
+        setShowAuthPrompt(false);
+        setShowPointsPrompt(false);
+        setHasRewarded(false);
+
+        if (!film?.is_premium) {
+            setCanWatch(true);
             initializeHLS(selectedEpisode.episode_url);
+            checkRewardStatus();
+            return;
         }
 
         
@@ -324,6 +488,102 @@ const FilmDetail = () => {
         document.addEventListener("mozfullscreenchange", handleFullscreenChange);
         document.addEventListener("MSFullscreenChange", handleFullscreenChange);
 
+        if (!isLoggedIn) {
+            setShowAuthPrompt(true);
+            return;
+        }
+
+        checkPaymentStatus();
+    }, [selectedEpisode, film?.is_premium, isLoggedIn, checkPaymentStatus, checkRewardStatus]);
+
+    useEffect(() => {
+        if (!paymentStatus || !film?.is_premium || !isLoggedIn) return;
+
+        if (!paymentStatus.can_watch && !paymentStatus.already_paid) {
+            if (paymentStatus.has_enough_points === false) {
+                setShowPointsPrompt(true);
+            }
+        }
+    }, [paymentStatus, film?.is_premium, isLoggedIn]);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || !film?.is_premium || !canWatch || paymentStatus?.already_paid) return;
+
+        setDeducted(false);
+        lastCurrentTimeRef.current = 0;
+
+        const handleTimeUpdate = () => {
+            const duration = video.duration;
+            const currentTime = video.currentTime;
+
+            if (!duration || isNaN(duration)) return;
+
+            const fortyPercentDuration = duration * 0.4;
+            if (Math.abs(currentTime - lastCurrentTimeRef.current) > fortyPercentDuration) {
+                setDeducted(true);
+                video.removeEventListener('timeupdate', handleTimeUpdate);
+                return;
+            }
+
+            lastCurrentTimeRef.current = currentTime;
+
+            if (!deducted && currentTime / duration >= 0.9) {
+                deductPoints();
+                setDeducted(true);
+                video.removeEventListener('timeupdate', handleTimeUpdate);
+            }
+        };
+
+        video.addEventListener('timeupdate', handleTimeUpdate);
+
+        return () => {
+            video.removeEventListener('timeupdate', handleTimeUpdate);
+        };
+    }, [film?.is_premium, canWatch, paymentStatus?.already_paid, deductPoints]);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || film?.is_premium || !canWatch) return;
+
+        setDeducted(false);
+        lastCurrentTimeRef.current = 0;
+
+        const handleTimeUpdate = () => {
+            const duration = video.duration;
+            const currentTime = video.currentTime;
+
+            if (!duration || isNaN(duration)) return;
+
+            const tenPercentDuration = duration * 0.1;
+            if (Math.abs(currentTime - lastCurrentTimeRef.current) > tenPercentDuration) {
+                setDeducted(true);
+                video.removeEventListener('timeupdate', handleTimeUpdate);
+                if (!hasRewarded) {
+                    toast.info('Bạn đã tua quá 10% thời lượng video, không thể tích điểm.', {
+                        duration: 3000,
+                        position: 'top-center',
+                    });
+                }
+                return;
+            }
+
+            lastCurrentTimeRef.current = currentTime;
+
+            if (!deducted && currentTime / duration >= 0.9) {
+                rewardPoints();
+                setDeducted(true);
+                video.removeEventListener('timeupdate', handleTimeUpdate);
+            }
+        };
+
+        video.addEventListener('timeupdate', handleTimeUpdate);
+        return () => {
+            video.removeEventListener('timeupdate', handleTimeUpdate);
+        };
+    }, [film?.is_premium, canWatch, rewardPoints, hasRewarded]);
+
+    useEffect(() => {
         return () => {
             video.removeEventListener('timeupdate', updateCurrentTime);
             if (hlsRef.current) {
@@ -332,10 +592,11 @@ const FilmDetail = () => {
             }
         };
 }, [selectedEpisode]);
+    }, []);
 
     if (error) {
         return (
-            <div className="min-h-screen  flex flex-col items-center justify-center text-red-500">
+            <div className="min-h-screen bg-[#333333] flex flex-col items-center justify-center text-red-500">
                 <h4 className="text-xl font-semibold">{error}</h4>
                 <button
                     className="mt-4 bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors duration-300"
@@ -346,11 +607,10 @@ const FilmDetail = () => {
             </div>
         );
     }
-    
 
     if (!film) {
         return (
-            <div className="min-h-screen  flex items-center justify-center ">
+            <div className="min-h-screen bg-[#333333] flex items-center justify-center text-white">
                 <div className="flex items-center gap-2">
                     <svg
                         className="animate-spin h-5 w-5 text-orange-500"
@@ -371,16 +631,117 @@ const FilmDetail = () => {
         );
     }
 
-    // Đảm bảo averageRating là số hợp lệ
     const ratingValue = Number.isFinite(averageRating) ? averageRating : 0;
     const percentage = ratingValue / 5 * 100;
 
+    const renderVideoPlayer = () => {
+        if (!selectedEpisode) {
+            return (
+                <div className="flex items-center justify-center bg-gray-800 h-full text-gray-300">
+                    <p>Không có video để phát</p>
+                </div>
+            );
+        }
+
+        if (isCheckingPayment) {
+            return (
+                <div className="flex items-center justify-center bg-gray-800 h-full text-gray-300">
+                    <div className="flex items-center gap-2">
+                        <svg className="animate-spin h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Đang kiểm tra quyền xem...</span>
+                    </div>
+                </div>
+            );
+        }
+
+        if (canWatch) {
+            return (
+                <video
+                    ref={videoRef}
+                    controls
+                    className="w-full h-full object-cover"
+                    onTimeUpdate={() => { handleTimeUpdate(); handleViewIncrement(); }}
+                    poster={film.thumb}
+                    crossOrigin="anonymous"
+                    playsInline
+                    preload="metadata"
+                >
+                    Trình duyệt của bạn không hỗ trợ phát video.
+                </video>
+            );
+        }
+
+        if (film.is_premium && !isLoggedIn) {
+            return (
+                <div className="flex items-center justify-center bg-gray-800 h-full text-gray-300">
+                    <div className="text-center">
+                        <p className="mb-4">Vui lòng đăng nhập để xem phim premium</p>
+                        <button
+                            onClick={() => setShowAuthPrompt(true)}
+                            className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+                        >
+                            Đăng nhập
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        if (paymentStatus && !paymentStatus.can_watch) {
+            if (paymentStatus.has_enough_points === false) {
+                return (
+                    <div className="flex items-center justify-center bg-gray-800 h-full text-gray-300">
+                        <div className="text-center">
+                            <p className="mb-4">Bạn không đủ điểm để xem phim này</p>
+                            <p className="mb-4 text-sm">
+                                Cần: {paymentStatus.points_required} điểm | Hiện có: {paymentStatus.user_points} điểm
+                            </p>
+                            <button
+                                onClick={() => setShowPointsPrompt(true)}
+                                className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+                            >
+                                Mua điểm
+                            </button>
+                            {/* sua */}
+                        </div>
+                    </div>
+                );
+            } else {
+                return (
+                    <div className="flex items-center justify-center bg-gray-800 h-full text-gray-300">
+                        <div className="text-center">
+                            <p className="mb-4">Phim premium - Cần thanh toán để xem</p>
+                            <p className="mb-4 text-sm">
+                                Cần: {paymentStatus.points_required} điểm
+                            </p>
+                            <button
+                                onClick={deductPoints}
+                                className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+                            >
+                                Thanh toán và xem
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+        }
+
+        return (
+            <div className="flex items-center justify-center bg-gray-800 h-full text-gray-300">
+                <p>Đang tải...</p>
+            </div>
+        );
+    };
+
     return (
-        <motion.div       
+        <motion.div
             variants={variants}
             initial="hidden"
-            animate="visible" 
-            className="min-h-screen  text-white py-6"
+            animate="visible"
+            className="min-h-screen bg-[#333333] text-white py-6"
         >
             <div className="container mx-auto px-4">
                 <button
@@ -475,13 +836,20 @@ const FilmDetail = () => {
                         
 
                         {/* Danh sách tập */}
+                        <div className="relative aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
+                            {renderVideoPlayer()}
+                        </div>
+
                         <div className="mt-4">
                             <h2 className="text-xl font-semibold mb-3">Danh sách tập</h2>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
                                 {film.film_episodes.map((episode, index) => (
                                     <button
                                         key={episode.id || `${episode.episode_number}-${index}`}
-                                        onClick={() => {setSelectedEpisode(episode);navigate(`/film/${slug}?episode=${getEpisodeNumber(episode.episode_title)}`, { replace: true }); }}
+                                        onClick={() => {
+                                            setSelectedEpisode(episode);
+                                            navigate(`/film/${slug}?episode=${getEpisodeNumber(episode.episode_title)}`, { replace: true });
+                                        }}
                                         className={`py-2 px-4 rounded-md text-sm font-medium transition-colors duration-300 cursor-pointer ${String(selectedEpisode?.id) === String(episode.id)
                                             ? 'bg-orange-500 text-white'
                                             : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A]'
@@ -646,13 +1014,20 @@ const FilmDetail = () => {
 
                     <div className="lg:col-span-1">
                         <div className="bg-[#444444] text-left rounded-lg p-4 shadow-lg">
-                            <img
-                                src={film.thumb}
-                                alt={film.title_film}
-                                className="mx-auto rounded-sm object-contain max-h-48"
-                            />
+                            <img src={film.thumb} alt={film.title_film} className="mx-auto rounded-sm object-contain max-h-48" />
                             <div className="py-4 flex items-center justify-start">
-                                <button className="bg-orange-500 w-24 h-10 rounded-lg">Yêu thích</button>
+                                <button
+                                    onClick={() => {
+                                        if (!isLoggedIn) {
+                                            setShowAuthPrompt(true);
+                                            return;
+                                        }
+                                        handleToggleFavorite();
+                                    }}
+                                    className={`w-24 h-10 rounded-lg ${isFavorite ? 'bg-orange-500 text-white' : 'bg-[#3A3A3A] text-gray-300 hover:bg-[#4A4A4A]'}`}
+                                >
+                                    {isFavorite ? 'Bỏ yêu thích' : 'Yêu thích'}
+                                </button>
                                 {isFavorite ? (
                                     <HeartSolidIcon
                                         onClick={() => {
@@ -680,7 +1055,6 @@ const FilmDetail = () => {
                             </div>
                             <div className="space-y-2">
                                 <div className="flex items-center space-x-3 text-white mt-4">
-                                    {/* Vòng tròn phần trăm */}
                                     <div className="w-[50px] h-[50px]">
                                         <CircularProgressbar
                                             value={percentage}
@@ -693,10 +1067,7 @@ const FilmDetail = () => {
                                             })}
                                         />
                                     </div>
-
-                                    {/* Dãy sao và thông tin */}
                                     <div>
-                                        {/* Hiển thị sao */}
                                         <div className="text-yellow-400 text-lg">
                                             {Array.from({ length: 5 }).map((_, index) => (
                                                 <span key={index}>
@@ -704,10 +1075,9 @@ const FilmDetail = () => {
                                                 </span>
                                             ))}
                                         </div>
-
-                                        {/* Thông tin chi tiết */}
                                         <div className="text-sm text-gray-300">
-                                            ({showRating.length} lượt, đánh giá: <span className="text-white font-bold">{ratingValue.toFixed(1)}</span> trên 5)
+                                            ({showRating.length} lượt, đánh giá:{' '}
+                                            <span className="text-white font-bold">{ratingValue.toFixed(1)}</span> trên 5)
                                         </div>
                                     </div>
                                 </div>
@@ -733,20 +1103,48 @@ const FilmDetail = () => {
                         onClick={() => setShowAuthPrompt(false)}
                     >
                         <div className="bg-[#000000] w-96 rounded-lg p-6" onClick={(e) => e.stopPropagation()}>
-                            <h2 className="text-xl font-semibold mb-4 text-white">
-                                Vui lòng đăng nhập để sử dụng chức năng này
-                            </h2>
+                            <h2 className="text-xl font-semibold mb-4 text-white">Vui lòng đăng nhập để xem phim premium</h2>
                             <div className="flex justify-around">
                                 <button
                                     onClick={() => setShowAuthPrompt(false)}
                                     className="px-4 py-2 bg-[#3A3A3A] text-white rounded-md hover:bg-[#4A4A4A] transition-colors duration-300"
                                 >
-                                    Thoát
+                                    Hủy
                                 </button>
                                 <button
                                     onClick={() => {
                                         setShowAuthPrompt(false);
                                         openAuthPanel();
+                                    }}
+                                    className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
+                                >
+                                    Đăng nhập
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showPointsPrompt && (
+                    <div
+                        className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-opacity-50 z-50"
+                        onClick={() => setShowPointsPrompt(false)}
+                    >
+                        <div className="bg-[#000000] w-96 rounded-lg p-6" onClick={(e) => e.stopPropagation()}>
+                            <h2 className="text-xl font-semibold mb-4 text-white">
+                                Bạn không đủ điểm để xem phim này. Bạn có muốn mua điểm premium?
+                            </h2>
+                            <div className="flex justify-around">
+                                <button
+                                    onClick={() => setShowPointsPrompt(false)}
+                                    className="px-4 py-2 bg-[#3A3A3A] text-white rounded-md hover:bg-[#4A4A4A] transition-colors duration-300"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowPointsPrompt(false);
+                                        navigate('/buy-points');
                                     }}
                                     className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
                                 >

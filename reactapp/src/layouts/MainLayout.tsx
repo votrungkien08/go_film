@@ -173,50 +173,63 @@ import Rank from "../pages/Rank";
 import { useRef, useState, useEffect, use } from 'react';
 import LoadingOverlay from "../components/LoadingOverlay";
 import ParticleRing from "../components/ParticleRing";
+import Chatbot from '../Chatbot';
+import AdvancedFilter from "../components/ui/AdvancedFilter";
+
 const MainLayout = () => {
   const location = useLocation();
   const isFilmDetail = location.pathname.startsWith('/film/');
   const isFilmList = location.pathname === '/films';
   const isHistories = location.pathname === '/histories';
   const isFavorites = location.pathname === '/favorites';
+    const location = useLocation();
+    const isFilmDetail = location.pathname.startsWith('/film/');
+    const isFilmList = location.pathname === '/films';
+    const isHistories = location.pathname === '/histories';
 
-  const [isLoading, setIsLoading] = useState(true);
 
-  const nominateVariants = {
-    hidden: { opacity: 0, x: -100, scale: 0.9 },
-    visible: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.6, ease: 'easeOut' } },
-  };
-  const updatedVariants = {
-    hidden: { opacity: 0, x: 100, scale: 0.9 },
-    visible: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.6, ease: 'easeOut' } },
-  };
-  const rankVariants = {
-    hidden: { opacity: 0, y: 100, scale: 0.9 },
-    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: 'easeOut' } },
-  };
-  const childVariants = {
-    hidden: { opacity: 0, y: 20, scale: 0.9 },
-    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: 'easeOut' } },
-  };
+    const [isLoading, setIsLoading] = useState(true);
 
-  const nominateRef = useRef(null);
-  const rankRef = useRef(null);
-  const updateRef = useRef(null);
-  const outletRef = useRef(null);
-  const footerRef = useRef(null);
+    const nominateVariants = {
+        hidden: { opacity: 0, x: -100, scale: 0.9 },
+        visible: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.6, ease: 'easeOut' } },
+    };
+    const updatedVariants = {
+        hidden: { opacity: 0, x: 100, scale: 0.9 },
+        visible: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.6, ease: 'easeOut' } },
+    };
+    const rankVariants = {
+        hidden: { opacity: 0, y: 100, scale: 0.9 },
+        visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: 'easeOut' } },
+    };
+    const childVariants = {
+        hidden: { opacity: 0, y: 20, scale: 0.9 },
+        visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: 'easeOut' } },
+    };
 
-  return (
-    <div className="relative min-h-screen flex flex-col">
+    const nominateRef = useRef(null);
+    const rankRef = useRef(null);
+    const updateRef = useRef(null);
+    const outletRef = useRef(null);
+    const footerRef = useRef(null);
 
-      {isLoading && <LoadingOverlay onLoadingComplete={() => setIsLoading(false)} />}
+    return (
+        <div className="relative min-h-screen flex flex-col">
 
-      {!isLoading && (
-        <>
-          {/* <div className="absolute top-0 left-0 w-full h-screen z-0 pointer-events-none">
+            {isLoading && <LoadingOverlay onLoadingComplete={() => setIsLoading(false)} />}
+
+            {!isLoading && (
+                <>
+                    {/* <div className="absolute top-0 left-0 w-full h-screen z-0 pointer-events-none">
             <ParticleRing />
           </div> */}
           <div className="px-4  overflow-hidden">
             <Header />
+            <div className="w-full flex justify-end items-center mt-4">
+                <div className="min-w-[280px] max-w-[400px] w-full">
+                    <AdvancedFilter />
+                </div>
+            </div>
             {!isFilmDetail && !isFilmList && !isHistories && !isFavorites &&(
               <>
                 <motion.div
@@ -267,13 +280,17 @@ const MainLayout = () => {
                   viewport={{ once: false, amount: 0.3 }} 
             >
               <Footer />
+              <Chatbot />
+
             </motion.div>
           </div>
         </>
+                    
 
-      )}
-    </div>
-  );
+            )}
+        </div>
+    );
 };
+
 
 export default MainLayout;
