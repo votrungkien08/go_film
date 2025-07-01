@@ -32,6 +32,7 @@ interface PaymentStatus {
 }
 
 const FilmDetail = () => {
+    const videoRef = useRef<HTMLVideoElement>(null);
     const variants = {
         hidden: { opacity: 0, scale: 0.8, transition: { duration: 0.5, ease: easeIn } },
         visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: easeIn } },
@@ -57,7 +58,7 @@ const FilmDetail = () => {
     const [isCheckingPayment, setIsCheckingPayment] = useState(false);
     const [hasRewarded, setHasRewarded] = useState(false);
 
-    const videoRef = useRef<HTMLVideoElement>(null);
+
     const hlsRef = useRef<Hls | null>(null);
     const lastCurrentTimeRef = useRef(0);
     const [deducted, setDeducted] = useState(false);
