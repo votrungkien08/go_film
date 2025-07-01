@@ -110,4 +110,19 @@ class AuthController extends Controller
             ], 500);
         }
     }
+    public function getAllUser(Request $request)
+    {
+        try {
+            $user = User::all();
+            return response()->json([
+                'message' => 'User details fetched successfully',
+                'user' => $user,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to fetch user details',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

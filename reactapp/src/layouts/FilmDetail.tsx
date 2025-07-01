@@ -17,7 +17,7 @@ import { easeIn, motion } from 'framer-motion';
 import Hls from 'hls.js';
 import { useWatchHistories } from '../hooks/useWatchHistories';
 import { useIncreaseView } from '../hooks/useIncreaseView';
-
+import { RotateCcw, RotateCw, Pause ,Play, Maximize  } from 'lucide-react';
 dayjs.extend(relativeTime);
 
 const FilmDetail = () => {
@@ -39,7 +39,7 @@ const FilmDetail = () => {
 
     const { comments, commentsLoading, commentsError, comment, setComment, handlePostComment } = useComments(film?.id, isLoggedIn);
     const { rating, setRating, showRating, averageRating, handlePostRating } = useRating(film?.id, isLoggedIn);
-    const { isFavorite, handleToggleFavorite } = useFavorite(film?.id, isLoggedIn);
+    const { isFavorite,likeCount, handleToggleFavorite } = useFavorite(film?.id, isLoggedIn);
     const [tab, setTab] = useState<'comment' | 'rating' | 'info'>('comment');
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
     
@@ -52,8 +52,116 @@ const FilmDetail = () => {
     // Ref cho video element và HLS instance
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
-    
-    const { handleTimeUpdate} = useWatchHistories(selectedEpisode, videoRef);
+
+    // State quản lý thời gian hiện tại và tổng thời gian của video
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+
+
+
+    const handleLoadedMetadata = () => {
+        const video = videoRef.current;
+        if (video) {
+            setDuration(video.duration);
+        }
+    };
+
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const video = videoRef.current;
+        const seekTime = parseFloat(e.target.value);
+        if (video) {
+            video.currentTime = seekTime;
+            setCurrentTime(seekTime);
+        }
+    };
+    const formatTime = (time: number): string => {
+        const minutes = Math.floor(time / 60)
+            .toString()
+            .padStart(2, '0');
+        const seconds = Math.floor(time % 60)
+            .toString()
+            .padStart(2, '0');
+        return `${minutes}:${seconds}`;
+    };
+
+
+    // skip 10s
+    const skipForward = () => {
+        if (videoRef.current) {
+        videoRef.current.currentTime += 10; // tua tới 10s
+        }
+    };
+    // back 10s
+    const skipBackward = () => {
+        if (videoRef.current) {
+        videoRef.current.currentTime -= 10; // tua lui 10s
+        }
+    };
+    // state quản lý việc hiển thị controls
+    const [showControls, setShowControls] = useState(true);
+    let controlsTimeout = useRef<NodeJS.Timeout | null>(null);
+    const resetControlsTimer = () => {
+        setShowControls(true);
+
+        if (controlsTimeout.current) {
+            clearTimeout(controlsTimeout.current);
+        }
+
+        controlsTimeout.current = setTimeout(() => {
+            setShowControls(false);
+        }, 3000); // 5 giây
+    };
+
+    // state quản lý trạng thái phát video
+    const [isPlaying, setIsPlaying] = useState(false);
+    // di chuyển chuột để reset controls
+    const handleMouseMove = () => {
+        resetControlsTimer();
+    };
+    const pauseVideo = () => {
+        if (videoRef.current) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+            resetControlsTimer();
+        }
+    };
+    const playVideo = () => {
+        if (videoRef.current) {
+            videoRef.current.play();
+            setIsPlaying(true);
+            resetControlsTimer();
+        }
+    };
+    const videoWrapperRef = useRef<HTMLDivElement>(null);
+
+    const toggleFullScreen = () => {
+        const videoContainer = videoWrapperRef.current; // ref cho div chứa video và các nút
+
+        if (!document.fullscreenElement) {
+            if (videoContainer?.requestFullscreen) {
+            videoContainer.requestFullscreen();
+            } else if ((videoContainer as any).webkitRequestFullscreen) {
+            (videoContainer as any).webkitRequestFullscreen();
+            } else if ((videoContainer as any).mozRequestFullScreen) {
+            (videoContainer as any).mozRequestFullScreen();
+            } else if ((videoContainer as any).msRequestFullscreen) {
+            (videoContainer as any).msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+            document.exitFullscreen();
+            } else if ((document as any).webkitExitFullscreen) {
+            (document as any).webkitExitFullscreen();
+            } else if ((document as any).mozCancelFullScreen) {
+            (document as any).mozCancelFullScreen();
+            } else if ((document as any).msExitFullscreen) {
+            (document as any).msExitFullscreen();
+            }
+        }
+    };
+
+
+    const { handleTimeUpdate} = useWatchHistories(selectedEpisode, videoRef, setCurrentTime);
     const { handleViewIncrement } = useIncreaseView({ filmId: film?.id, videoRef, selectedEpisode });
     // Function để khởi tạo HLS player
     const initializeHLS = (videoUrl: string) => {
@@ -122,19 +230,108 @@ const FilmDetail = () => {
     };
 
     // Effect để khởi tạo HLS khi selectedEpisode thay đổi
+    // useEffect(() => {
+    //     // if (selectedEpisode?.episode_url) {
+    //     //     initializeHLS(selectedEpisode.episode_url);
+    //     // }
+
+    //     // // Cleanup function
+    //     // return () => {
+    //     //     if (hlsRef.current) {
+    //     //         hlsRef.current.destroy();
+    //     //         hlsRef.current = null;
+    //     //     }
+    //     // };
+    //     const video = videoRef.current;
+
+    //     if (selectedEpisode?.episode_url) {
+    //         initializeHLS(selectedEpisode.episode_url);
+    //     }
+
+    //     if (video) {
+    //         const handlePlay = () => {
+    //             setIsPlaying(true);
+    //             resetControlsTimer();
+    //         };
+
+    //         const handlePause = () => {
+    //             setIsPlaying(false);
+    //             resetControlsTimer();
+    //         };
+
+    //         video.addEventListener('play', handlePlay);
+    //         video.addEventListener('pause', handlePause);
+
+    //         return () => {
+    //             video.removeEventListener('play', handlePlay);
+    //             video.removeEventListener('pause', handlePause);
+    //         };
+    //     }
+    // }, [selectedEpisode]);
     useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowLeft') skipBackward();
+            if (e.key === 'ArrowRight') skipForward();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        const video = videoRef.current;
+        if (!video) {
+            return;
+        }
+        const updateCurrentTime = () => {
+            setCurrentTime(video.currentTime);
+        };
+
+        video.addEventListener('timeupdate', updateCurrentTime);
         if (selectedEpisode?.episode_url) {
             initializeHLS(selectedEpisode.episode_url);
         }
 
-        // Cleanup function
+        
+
+        const handlePlay = () => {
+            setIsPlaying(true);
+            resetControlsTimer();
+        };
+
+        const handlePause = () => {
+            setIsPlaying(false);
+            resetControlsTimer();
+        };
+
+        const handleFullscreenChange = () => {
+            const isFullscreen =
+                document.fullscreenElement ||
+                (document as any).webkitFullscreenElement ||
+                (document as any).mozFullScreenElement ||
+                (document as any).msFullscreenElement;
+
+            if (isFullscreen) {
+                // Luôn hiển thị controls khi fullscreen và reset timer
+                setShowControls(true);
+                resetControlsTimer();
+            }
+        };
+
+        if (video) {
+            video.addEventListener("play", handlePlay);
+            video.addEventListener("pause", handlePause);
+            video.addEventListener("mousemove", resetControlsTimer);
+        }
+
+        document.addEventListener("fullscreenchange", handleFullscreenChange);
+        document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+        document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+        document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
         return () => {
+            video.removeEventListener('timeupdate', updateCurrentTime);
             if (hlsRef.current) {
                 hlsRef.current.destroy();
                 hlsRef.current = null;
             }
         };
-    }, [selectedEpisode]);
+}, [selectedEpisode]);
 
     if (error) {
         return (
@@ -200,17 +397,19 @@ const FilmDetail = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
-                        <div className="relative aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
+                        <div ref={videoWrapperRef}  className="relative aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
                             {selectedEpisode ? (
                                 <video
                                     ref={videoRef}
-                                    controls
+                                    // controls
                                     className="w-full h-full object-cover"
+                                    onLoadedMetadata={handleLoadedMetadata}
                                     onTimeUpdate={() => {handleTimeUpdate(); handleViewIncrement()}}
                                     poster={film.thumb}
                                     crossOrigin="anonymous"
                                     playsInline
                                     preload="metadata"
+                                    onMouseMove={handleMouseMove}
                                 >
                                     Trình duyệt của bạn không hỗ trợ phát video.
                                 </video>
@@ -219,7 +418,61 @@ const FilmDetail = () => {
                                     <p>Không có video để phát</p>
                                 </div>
                             )}
+                            {showControls && (
+                                <>
+                                
+                                    <div  className="absolute top-1/2 left-1/2 -translate-x-1/2 flex gap-6">
+                                        <button onClick={skipBackward} className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition">
+                                        <RotateCcw className="w-6 h-6 text-white" />
+                                        </button>
+                                        {isPlaying ? (
+                                            <button onClick={pauseVideo} className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition">
+                                                <Pause className="w-6 h-6 text-white" />
+                                            </button>
+
+                                        ) : (
+                                            <button onClick={playVideo} className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition">
+                                                <Play className="w-6 h-6 text-white" />
+                                            </button>
+
+                                        )}
+                                        <button onClick={skipForward} className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition">
+                                            <RotateCw className="w-6 h-6 text-white" />
+                                        </button>
+                                        
+
+                                        
+                                    </div>
+
+                                    <div className='absolute bottom-4 left-0 w-full px-4 z-50 pointer-events-auto'>
+                                            <input
+                                                type="range"
+                                                min={0}
+                                                max={duration}
+                                                step="0.1"
+                                                value={currentTime}
+                                                onChange={handleSeek}
+                                                className="w-full accent-red-500"
+                                                />
+                                            <div className='flex items-center justify-between '>
+                                                <div className=" text-white text-sm mt-1">
+                                                    <span>{formatTime(currentTime)}</span>/
+                                                    <span>{formatTime(duration)}</span>
+                                                </div>
+
+                                                <button onClick={toggleFullScreen} className="p-2    bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition">
+                                                    <Maximize className="w-6 h-6 text-white" />
+                                                </button>
+                                            </div>    
+                                    </div>
+                                </>
+                                
+                                
+
+                            )}
                         </div>
+
+                        
 
                         {/* Danh sách tập */}
                         <div className="mt-4">
@@ -423,6 +676,7 @@ const FilmDetail = () => {
                                         className="w-8 h-8 text-gray-500 ml-4 stroke-orange-500 cursor-pointer"
                                     />
                                 )}
+                                <span className='ml-2'>{likeCount}</span>
                             </div>
                             <div className="space-y-2">
                                 <div className="flex items-center space-x-3 text-white mt-4">

@@ -7,16 +7,27 @@ import { toast } from 'sonner';
 interface FavoriteData {
   isFavorite: boolean;
   handleToggleFavorite: () => Promise<void>;
+  likeCount: number;
 }
-
+// toggle like
 export const useFavorite = (filmId: number | undefined, isLoggedIn: boolean): FavoriteData => {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [likeCount, setLikeCount] = useState(0);
     // check favorite
 
   useEffect(() => {
     if (!filmId || !isLoggedIn) {
       setIsFavorite(false);
       return;
+    }
+    const fetchCountFavorites = async () => {
+      if (!filmId) return;
+      try {
+        const res = await axios.get(`http://localhost:8000/api/favorite-film/${filmId}`);
+        setLikeCount(res.data.likeCount || 0);
+      } catch (err) {
+        console.error('Lỗi khi fetch likeCount:', err);
+      }
     }
     const checkFavorite = async () => {
       try {
@@ -30,6 +41,7 @@ export const useFavorite = (filmId: number | undefined, isLoggedIn: boolean): Fa
         console.error('Lỗi khi kiểm tra yêu thích:', err.response?.data || err.message);
       }
     };
+    fetchCountFavorites()
     checkFavorite();
   }, [filmId, isLoggedIn]);
 
@@ -60,5 +72,5 @@ export const useFavorite = (filmId: number | undefined, isLoggedIn: boolean): Fa
     }
   }, [isFavorite, filmId, isLoggedIn]);
 
-  return { isFavorite, handleToggleFavorite };
+  return { isFavorite, likeCount, handleToggleFavorite };
 };

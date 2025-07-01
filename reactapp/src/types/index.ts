@@ -39,6 +39,7 @@ export interface Film {
   is_premium: boolean;
   point_required: number | null;
   film_episodes: Episode[];
+  favorite_count?: number;
 }
 
 export interface Comment {
@@ -67,4 +68,12 @@ export interface WatchHistories {
   episodes_id: number;
   watch_at: number;
   progress_time: number
+}
+
+export interface Users {
+  id: number
+  name: string;
+  email: string;
+  role: string;
+  points: number
 }

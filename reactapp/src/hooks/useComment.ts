@@ -13,7 +13,7 @@ interface CommentsData {
   handlePostComment: () => Promise<void>;
 }
 
-export const useComments = (filmId: number | undefined, isLoggedIn: boolean): CommentsData => {
+export const useComments = (filmId: number | undefined, isLoggedIn: boolean, fetchAll: boolean =false): CommentsData => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentsError, setCommentsError] = useState('');
@@ -21,12 +21,22 @@ export const useComments = (filmId: number | undefined, isLoggedIn: boolean): Co
     // Lấy danh sách bình luận
 
   useEffect(() => {
-    if (!filmId) return;
     const fetchComments = async () => {
       setCommentsLoading(true);
       setCommentsError('');
       try {
-        const response = await axios.get(`http://localhost:8000/api/film/comments/${filmId}`);
+        let response;
+        if(fetchAll) {
+          response = await axios.get(`http://localhost:8000/api/comments`);
+
+        }
+        else if (filmId) {
+          response = await axios.get(`http://localhost:8000/api/film/comments/${filmId}`);
+
+        } else {
+          setComments([]);
+          return;
+        }
         console.log('đây là comment nè',response.data);
         setComments(response.data.comments);
       } catch (err: any) {

@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { toast } from 'sonner';
 import { useAdminComments } from '../hooks/useAdminComments';
+import { number } from 'framer-motion';
 interface Episode {
     episode_number: number;
     episode_title: string;
@@ -56,8 +57,14 @@ const AdminPage = () => {
     const [error, setError] = useState('');
     const [activeSection, setActiveSection] = useState('dashboard');
     const [showAddFilmForm, setShowAddFilmForm] = useState(false);
+
+    // const [showEditFilmForm, setShowEditFilmForm] = useState(false);
+
     const [films, setFilms] = useState<Film[]>([]);
     const navigate = useNavigate();
+
+    // kiểm tra submit
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // State cho form thêm/sửa phim
     const [filmData, setFilmData] = useState<{
@@ -66,7 +73,7 @@ const AdminPage = () => {
         title_film: string;
         thumb: string;
         trailer: string | null;
-        film_type: boolean;
+        film_type: number;
         year_id: string;
         country_id: string;
         actor: string;
@@ -74,14 +81,14 @@ const AdminPage = () => {
         content: string;
         view: number;
         genre_id: number[];
-        is_premium: boolean;
+        is_premium: number;
         point_required: string;
     }>({
         slug: '',
         title_film: '',
         thumb: '',
         trailer: '',
-        film_type: true,
+        film_type: 0, // 0 cho phim lẻ, 1 cho phim bộ
         year_id: '',
         country_id: '',
         actor: '',
@@ -89,7 +96,7 @@ const AdminPage = () => {
         content: '',
         view: 0,
         genre_id: [],
-        is_premium: false,
+        is_premium: 0,  
         point_required: '',
     });
     const [episodes, setEpisodes] = useState<Episode[]>([
@@ -114,7 +121,9 @@ const AdminPage = () => {
     const [settingError, setSettingError] = useState('');
     const [settingSuccess, setSettingSuccess] = useState('');
 
-    
+    //Thêm state cho file uploads
+    const [trailerFile, setTrailerFile] = useState(null);
+    const [episodeFiles, setEpisodeFiles] = useState({});
 
     // Hàm xử lý khi nhấn nút "Sửa"
     const handleEditFilm = (film: Film) => {
@@ -124,7 +133,7 @@ const AdminPage = () => {
             title_film: film.title_film,
             thumb: film.thumb,
             trailer: film.trailer,
-            film_type: film.film_type,
+            film_type: Number(film.film_type),
             year_id: film.year?.id.toString() || '',
             country_id: film.country?.id.toString() || '',
             actor: film.actor,
@@ -142,172 +151,239 @@ const AdminPage = () => {
         setShowAddFilmForm(true);
     };
 
-    // Hàm xử lý submit form (thêm hoặc sửa)
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setFormError('');
-        setFormSuccess('');
+    //Hàm xử lý submit form (thêm hoặc sửa)
 
-        // Kiểm tra validation
-        if (!filmData.year_id || isNaN(Number(filmData.year_id))) {
-            setFormError('Vui lòng chọn năm phát hành hợp lệ.');
-            return;
-        }
-        if (!filmData.country_id || isNaN(Number(filmData.country_id))) {
-            setFormError('Vui lòng chọn quốc gia hợp lệ.');
-            return;
-        }
-        if (filmData.genre_id.length === 0) {
-            setFormError('Vui lòng chọn ít nhất một thể loại.');
-            return;
-        }
-        if (!filmData.film_type && episodes.length === 0) {
-            setFormError('Phim bộ cần ít nhất một tập.');
-            return;
-        }
-        if (!filmData.film_type && episodes.some(ep => !ep.episode_number || !ep.episode_url)) {
-            setFormError('Tất cả tập phim bộ cần số tập và URL hợp lệ.');
-            return;
-        }
-        if (filmData.is_premium && (!filmData.point_required || Number(filmData.point_required) < 0)) {
-            setFormError('Vui lòng nhập số điểm yêu cầu hợp lệ cho phim premium.');
-            return;
-        }
 
-        const payload = {
-            ...filmData,
-            year_id: Number(filmData.year_id),
-            country_id: Number(filmData.country_id),
-            film_type: filmData.film_type,
-            trailer: filmData.trailer || null,
-            film_episodes: episodes,
-            point_required: filmData.is_premium ? Number(filmData.point_required) || null : null,
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+    setIsSubmitting(true);
+    console.log('filmData before submit:', filmData);
+    console.log('episodes before submit:', episodes); // Log để kiểm tra episodes
+    // Kiểm tra validation
+    if (!filmData.title_film || filmData.title_film.trim() === '') {
+        setFormError('Vui lòng nhập tiêu đề phim.');
+        setIsSubmitting(false);
+        return;
+    }
+    if (!filmData.year_id || isNaN(Number(filmData.year_id))) {
+        setFormError('Vui lòng chọn năm phát hành hợp lệ.');
+        setIsSubmitting(false);
+        return;
+    }
+    if (!filmData.country_id || isNaN(Number(filmData.country_id))) {
+        setFormError('Vui lòng chọn quốc gia hợp lệ.');
+        setIsSubmitting(false);
+        return;
+    }
+    if (filmData.genre_id.length === 0) {
+        setFormError('Vui lòng chọn ít nhất một thể loại.');
+        setIsSubmitting(false);
+        return;
+    }
+    if (!filmData.film_type && episodes.length === 0) { // Chỉ kiểm tra khi là phim bộ
+        setFormError('Phim bộ cần ít nhất một tập.');
+        setIsSubmitting(false);
+        return;
+    }
+    
+    if (!filmData.film_type && episodes.some(ep => !ep.episode_number || isNaN(Number(ep.episode_number)))) {
+        setFormError('Tất cả tập phim bộ cần số tập hợp lệ.');
+        setIsSubmitting(false);
+        return;
+    }
+    if (filmData.is_premium && (!filmData.point_required || Number(filmData.point_required) < 0)) {
+        setFormError('Vui lòng nhập số điểm yêu cầu hợp lệ cho phim premium.');
+        setIsSubmitting(false);
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('title_film', filmData.title_film.trim());
+    formData.append('thumb', filmData.thumb || '');
+    formData.append('film_type', filmData.film_type.toString()); // 0 cho phim lẻ, 1 cho phim bộ
+    formData.append('year_id', filmData.year_id.toString());
+    formData.append('country_id', filmData.country_id.toString());
+    formData.append('actor', filmData.actor || '');
+    formData.append('director', filmData.director || '');
+    formData.append('content', filmData.content || '');
+    formData.append('view', filmData.view.toString());
+    formData.append('is_premium', filmData.is_premium ? 1 : 0);
+    if (filmData.is_premium) {
+        formData.append('point_required', filmData.point_required?.toString() || '0');
+    }
+    filmData.genre_id.forEach((genreId: number) => {
+        formData.append('genre_id[]', genreId.toString());
+    });
+    console.log('Trailer file to upload:', trailerFile);
+
+    // Thêm trailer với video_type
+    if (trailerFile) {
+        formData.append('trailer_video', trailerFile);
+    } else if (filmData.trailer) {
+        formData.append('trailer', filmData.trailer);
+    } else {
+        setFormError('Vui lòng chọn trailer cho phim.');
+        setIsSubmitting(false);
+        return;
+    }
+
+    // Thêm episodes chỉ khi là phim bộ (film_type = false)
+// Gửi tập duy nhất nếu là phim lẻ (film_type = false)
+
+if (filmData.film_type === 0 && episodes.length > 0) {
+    console.log('episodeFiles phim lẻ:', episodeFiles);
+
+  const ep = episodes[0];
+  formData.append(`film_episodes[0][episode_number]`, ep.episode_number.toString());
+  formData.append(`film_episodes[0][episode_title]`, ep.episode_title || '');
+  formData.append(`film_episodes[0][duration]`, ep.duration || '');
+  
+    if (episodeFiles[0]) {
+    formData.append(`film_episodes[0][video]`, episodeFiles[0]);
+    } else if (ep.episode_url && ep.episode_url.trim() !== '') {
+    formData.append(`film_episodes[0][episode_url]`, ep.episode_url.trim());
+    } else {
+    setFormError('Vui lòng chọn video hoặc nhập URL cho phim lẻ.');
+    setIsSubmitting(false);
+    return;
+    }
+}
+console.log('film_type khi submit:', filmData.film_type); // ✅ in ra 0 hoặc 1
+
+if (filmData.film_type === 1) {
+  console.log('>> Đang xử lý phim bộ');
+} else {
+  console.log('>> Đang xử lý phim lẻ');
+}
+if (filmData.film_type === 1 && episodes.length > 0) {
+  episodes.forEach((ep, index) => {
+    console.log('episodeFiles phim bộ:', episodeFiles);
+    console.log(`episodeFiles[${index}]:`, episodeFiles[index]);
+    console.log(`ep.episode_url:`, ep.episode_url);
+    formData.append(`film_episodes[${index}][episode_number]`, ep.episode_number.toString());
+    formData.append(`film_episodes[${index}][episode_title]`, ep.episode_title || '');
+    formData.append(`film_episodes[${index}][duration]`, ep.duration || '');
+    
+    if (episodeFiles[index]) {
+    formData.append(`film_episodes[${index}][video]`, episodeFiles[index]);
+    } else if (ep.episode_url && ep.episode_url.trim() !== '') {
+    formData.append(`film_episodes[${index}][episode_url]`, ep.episode_url.trim());
+    } else {
+    setFormError(`Vui lòng chọn video hoặc nhập URL cho tập ${ep.episode_number}`);
+    setIsSubmitting(false);
+    return;
+    }
+  });
+}
+    try {
+        const token = localStorage.getItem('token');
+        let response;
+        if (isEditing && filmData.id) {
+        // Gọi API cập nhật
+        response = await axios.post(
+            `http://localhost:8000/api/updateFilm/${filmData.id}`,
+            formData,
+            {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data',
+            },
+            }
+        );
+        } else {
+        // Gọi API thêm mới
+        response = await axios.post(
+            'http://localhost:8000/api/addFilm',
+            formData,
+            {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data',
+            },
+            }
+        );
+        }
+        // let response = await axios.post(
+        //     'http://localhost:8000/api/addFilm',
+        //     formData,
+        //     {
+        //         headers: {
+        //             Authorization: `Bearer ${token}`,
+        //             'Content-Type': 'multipart/form-data',
+        //         },
+        //     }
+        // );
+        const newFilm = response.data.data || response.data;
+        const year = years.find(y => y.id === Number(filmData.year_id));
+        const country = countries.find(c => c.id === Number(filmData.country_id));
+        const selectedGenres = genres.filter(g => filmData.genre_id.includes(g.id));
+
+        const updatedFilmWithDetails = {
+            ...newFilm,
+            year: year || null,
+            country: country || null,
+            genres: selectedGenres || [],
+            film_episodes: newFilm.film_episodes || (filmData.film_type ? [] : episodes.map(ep => ({
+                ...ep,
+                episode_url: newFilm.film_episodes?.find(e => e.episode_number === ep.episode_number)?.episode_url || ep.episode_url,
+            }))),
         };
-
-        try {
-            const token = localStorage.getItem('token');
-            let response;
-            if (isEditing) {
-                // Gửi yêu cầu PUT để cập nhật phim
-                response = await axios.put(
-                    `http://localhost:8000/api/updateFilm/${filmData.id}`,
-                    payload,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }
-                );
-
-                // Xử lý phản hồi
-                let updatedFilm = response.data.data || response.data || {};
-                if (Object.keys(updatedFilm).length === 0) {
-                    // Nếu API không trả về dữ liệu phim, sử dụng payload và state hiện có
-                    updatedFilm = {
-                        id: filmData.id,
-                        slug: filmData.slug,
-                        title_film: filmData.title_film,
-                        thumb: filmData.thumb,
-                        trailer: filmData.trailer,
-                        film_type: filmData.film_type,
-                        actor: filmData.actor,
-                        director: filmData.director,
-                        content: filmData.content,
-                        view: filmData.view,
-                        is_premium: filmData.is_premium,
-                        point_required: filmData.is_premium ? Number(filmData.point_required) || null : null,
-                        film_episodes: episodes,
-                    };
-                }
-
-                // Lấy thông tin year, country và genres từ danh sách hiện có
-                const year = years.find(y => y.id === Number(filmData.year_id));
-                const country = countries.find(c => c.id === Number(filmData.country_id));
-                const selectedGenres = genres.filter(g => filmData.genre_id.includes(g.id));
-
-                // Cập nhật dữ liệu phim với year, country và genres đầy đủ
-                const updatedFilmWithDetails = {
-                    ...updatedFilm,
-                    year: year || null,
-                    country: country || null,
-                    genres: selectedGenres || [],
-                    film_episodes: updatedFilm.film_episodes || episodes,
-                };
-
-                setFormSuccess('Cập nhật phim thành công!');
-                alert('Cập nhật phim thành công!');
-                setFilms(films.map(f => f.id === filmData.id ? updatedFilmWithDetails : f));
-            } else {
-                // Gửi yêu cầu POST để thêm phim mới
-                response = await axios.post(
-                    'http://localhost:8000/api/addFilm',
-                    payload,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }
-                );
-
-                // Xử lý phản hồi
-                const newFilm = response.data.data || response.data;
-                const year = years.find(y => y.id === Number(filmData.year_id));
-                const country = countries.find(c => c.id === Number(filmData.country_id));
-                const selectedGenres = genres.filter(g => filmData.genre_id.includes(g.id));
-
-                // Thêm dữ liệu phim mới với year, country và genres đầy đủ
-                const newFilmWithDetails = {
-                    ...newFilm,
-                    year: year || null,
-                    country: country || null,
-                    genres: selectedGenres || [],
-                    film_episodes: newFilm.film_episodes || episodes,
-                };
-
-                setFormSuccess('Thêm phim thành công!');
-                alert('Thêm phim thành công!');
-                setFilms([...films, newFilmWithDetails]);
-            }
-
-            setShowAddFilmForm(false);
-            setIsEditing(false);
-            setFilmData({
-                slug: '',
-                title_film: '',
-                thumb: '',
-                trailer: '',
-                film_type: true,
-                year_id: '',
-                country_id: '',
-                actor: '',
-                director: '',
-                content: '',
-                view: 0,
-                genre_id: [],
-                is_premium: false,
-                point_required: '',
-            });
-            setEpisodes([{ episode_number: 1, episode_title: '', episode_url: '', duration: '' }]);
-        } catch (err: any) {
-            // Cải thiện xử lý lỗi
-            let errorMessage = 'Lỗi không xác định khi cập nhật phim';
-            if (err.response) {
-                errorMessage = err.response.data?.error || `Lỗi từ server (mã ${err.response.status})`;
-                const errorDetails = err.response.data?.errors
-                    ? Object.values(err.response.data.errors).flat().join(', ')
-                    : '';
-                errorMessage += errorDetails ? `: ${errorDetails}` : '';
-            } else if (err.request) {
-                errorMessage = 'Không nhận được phản hồi từ server. Vui lòng kiểm tra kết nối mạng.';
-            } else {
-                errorMessage = `Lỗi: ${err.message}`;
-            }
-            setFormError(errorMessage);
-            console.error('Chi tiết lỗi:', err);
+        if (isEditing) {
+            setFormSuccess('Cập nhật phim thành công!');
+            alert('Cập nhật phim thành công!');
+            // Cập nhật lại trong danh sách phim
+            setFilms(films.map(f => f.id === newFilm.id ? updatedFilmWithDetails : f));
+        } else  {
+            setFormSuccess('Thêm phim thành công!');
+            alert('Thêm phim thành công!');
+            setFilms([...films, updatedFilmWithDetails]);
         }
-    };
+        setShowAddFilmForm(false);
+        setIsEditing(false);
+        setFilmData({
+            id: 0,
+            slug: '',
+            title_film: '',
+            thumb: '',
+            trailer: '',
+            film_type: newFilm.film_type,
+            year_id: '',
+            country_id: '',
+            actor: '',
+            director: '',
+            content: '',
+            view: 0,
+            genre_id: [],
+            is_premium: false,
+            point_required: '',
+        });
+        console.log('newFilm.film_type after submit:', newFilm.film_type);
+        setEpisodes([{ episode_number: 1, episode_title: '', episode_url: '', duration: '' }]);
+        setTrailerFile(null);
+        setEpisodeFiles({});
+        setIsSubmitting(false);
+    } catch (err: any) {
+        let errorMessage = 'Lỗi không xác định khi thêm phim';
+        if (err.response) {
+            errorMessage = err.response.data?.error || `Lỗi từ server (mã ${err.response.status})`;
+            const errorDetails = err.response.data?.errors
+                ? Object.values(err.response.data.errors).flat().join(', ')
+                : '';
+            errorMessage += errorDetails ? `: ${errorDetails}` : '';
+            setFormError(errorMessage);
+            console.error('Lỗi chi tiết:', err.response.data);
+        } else if (err.request) {
+            errorMessage = 'Không nhận được phản hồi từ server. Vui lòng kiểm tra kết nối mạng.';
+        } else {
+            errorMessage = `Lỗi: ${err.message}`;
+        }
+        setFormError(errorMessage);
+        console.error('Chi tiết lỗi:', err);
+        setIsSubmitting(false);
+    }
+};
     const handleDeleteFilm = async (filmId: number) => {
         const confirmDelete = window.confirm('Bạn có chắc muốn xóa phim này?');
         if (!confirmDelete) {
@@ -360,7 +436,7 @@ const AdminPage = () => {
                             title_film: '',
                             thumb: '',
                             trailer: '',
-                            film_type: true,
+                            film_type: 0,
                             year_id: '',
                             country_id: '',
                             actor: '',
@@ -387,23 +463,12 @@ const AdminPage = () => {
                     <form onSubmit={handleSubmit}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-gray-300">Slug</label>
-                                <input
-                                    type="text"
-                                    name="slug"
-                                    value={filmData.slug}
-                                    onChange={handleInputChange}
-                                    className="w-full p-2 bg-gray-700 text-white rounded"
-                                    required
-                                />
-                            </div>
-                            <div>
                                 <label className="block text-gray-300">Tiêu Đề Phim</label>
                                 <input
                                     type="text"
                                     name="title_film"
                                     value={filmData.title_film}
-                                    onChange={handleInputChange}
+                                    onChange={(e) => setFilmData({ ...filmData, title_film: e.target.value })}
                                     className="w-full p-2 bg-gray-700 text-white rounded"
                                     required
                                 />
@@ -419,20 +484,57 @@ const AdminPage = () => {
                                     required
                                 />
                             </div>
-                            <div>
-                                <label className="block text-gray-300">Trailer URL</label>
+                            {/* <div>
+                                <label className="block text-gray-300">File Trailer</label>
                                 <input
-                                    type="text"
-                                    name="trailer"
-                                    value={filmData.trailer ?? ''}
-                                    onChange={handleInputChange}
-                                    className="w-full p-2 bg-gray-700 text-white rounded"
-                                    placeholder="Nhập URL trailer (tùy chọn)"
+                                    type="file"
+                                    accept='video/mp4'
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            const allowedTypes = ['video/mp4', 'video/mov', 'video/avi'];
+                                            if (!allowedTypes.includes(file.type)) {
+                                                setFormError('Vui lòng chọn file video định dạng MP4, MOV hoặc AVI.');
+                                                return;
+                                            }
+                                            setTrailerFile(file);
+                                            setFilmData(prev => ({ ...prev, trailer: '' }));
+                                        }
+                                    }}
+                                    className="w-full p-2 bg-gray-700 text-white rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#ff4c00] file:text-white hover:file:bg-[#e04300]"
                                 />
-                            </div>
+                            </div> */}
+                            <div>
+                                <label className="block text-gray-300">File Trailer</label>
+                                <input
+                                    type="file"
+                                    accept="video/mp4, video/mov, video/avi"
+                                    onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        const allowedTypes = ['video/mp4', 'video/mov', 'video/avi'];
+                                        if (!allowedTypes.includes(file.type)) {
+                                        setFormError('Vui lòng chọn file video định dạng MP4, MOV hoặc AVI.');
+                                        return;
+                                        }
+                                        setTrailerFile(file); // <- để gửi file mới lên server
+                                        setFilmData(prev => ({ ...prev, trailer: '' })); // xóa link cũ để backend xử lý lại
+                                    }
+                                    }}
+                                    className="w-full p-2 bg-gray-700 text-white rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#ff4c00] file:text-white hover:file:bg-[#e04300]"
+                                />
+
+                                {/* 👇 Hiển thị URL trailer cũ nếu có */}
+                                {!trailerFile && filmData.trailer && (
+                                    <div className="mt-2 text-sm text-blue-400">
+                                    Đã có trailer: <a href={filmData.trailer} target="_blank" className="underline">Xem trailer</a>
+                                    </div>
+                                )}
+                                </div>
+
                             <div>
                                 <label className="block text-gray-300">Loại Phim</label>
-                                <select
+                                {/* <select
                                     name="film_type"
                                     value={filmData.film_type.toString()}
                                     onChange={(e) => setFilmData(prev => ({ ...prev, film_type: e.target.value === 'true' }))}
@@ -441,7 +543,23 @@ const AdminPage = () => {
                                 >
                                     <option value="true">Phim Lẻ</option>
                                     <option value="false">Phim Bộ</option>
+                                </select> */}
+                                <select
+                                    name="film_type"
+                                    value={filmData.film_type}
+                                    onChange={(e) =>
+                                        setFilmData((prev) => ({
+                                        ...prev,
+                                        film_type: Number(e.target.value), // chuyển về số 0/1
+                                        }))
+                                    }
+                                    className="w-full p-2 bg-gray-700 text-white rounded"
+                                    required
+                                    >
+                                    <option value={0}>Phim Lẻ</option>
+                                    <option value={1}>Phim Bộ</option>
                                 </select>
+
                             </div>
                             <div>
                                 <label className="block text-gray-300">Năm Phát Hành</label>
@@ -595,11 +713,27 @@ const AdminPage = () => {
                                     <div>
                                         <label className="block text-gray-300">URL Video</label>
                                         <input
-                                            type="text"
-                                            value={episode.episode_url}
-                                            onChange={(e) => handleEpisodeChange(index, 'episode_url', e.target.value)}
-                                            className="w-full p-2 bg-gray-700 text-white rounded"
+                                            type="file"
+                                            accept='video/mp4,video/mov,video/avi'
+                                            onChange={(e) => {
+                                                const file = e.target.files[0];
+                                                if (file) {
+                                                    const allowedTypes = ['video/mp4', 'video/mov', 'video/avi'];
+                                                    if (!allowedTypes.includes(file.type)) {
+                                                        setFormError('Vui lòng chọn file video định dạng MP4, MOV hoặc AVI.');
+                                                        return;
+                                                    }
+                                                    setEpisodeFiles(prev => ({ ...prev, [index]: file }));
+                                                    handleEpisodeChange(index, 'episode_url', '');
+                                                }
+                                            }}
+                                            className="w-full p-2 bg-gray-600 text-white rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#ff4c00] file:text-white hover:file:bg-[#e04300]"
                                         />
+                                        {episode.episode_url && (
+                                            
+                                            <label  className="block text-sm text-gray-300 mb-1">Video hiện tại: <a target="_blank" className='underline' href={episode.episode_url}>Xem</a></label>
+                                            
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-gray-300">Thời Lượng</label>
@@ -627,6 +761,7 @@ const AdminPage = () => {
                                 type="button"
                                 onClick={addEpisode}
                                 className="bg-[#ff4c00] text-white px-4 py-2 rounded hover:bg-[#e04300] mt-2"
+                                disabled={filmData.film_type && episodes.length >= 1} // Disable for Phim Lẻ with 1+ episodes
                             >
                                 Thêm Tập
                             </button>
@@ -643,7 +778,7 @@ const AdminPage = () => {
                                         title_film: '',
                                         thumb: '',
                                         trailer: '',
-                                        film_type: true,
+                                        film_type: 0,
                                         year_id: '',
                                         country_id: '',
                                         actor: '',
@@ -662,9 +797,10 @@ const AdminPage = () => {
                             </button>
                             <button
                                 type="submit"
+                                disabled={isSubmitting}
                                 className="bg-[#ff4c00] text-white px-4 py-2 rounded hover:bg-[#e04300]"
                             >
-                                {isEditing ? 'Cập Nhật Phim' : 'Thêm Phim'}
+                                {isSubmitting ? 'Đang xử lý...' : isEditing ? 'Cập Nhật Phim' : 'Thêm Phim'}
                             </button>
                         </div>
                     </form>
@@ -863,7 +999,14 @@ const AdminPage = () => {
                 setYears(yearsResponse.data.years);
                 setCountries(countriesResponse.data.country);
                 setGenres(genresResponse.data.genres);
-                setFilms(filmsResponse.data);
+                // setFilms(filmsResponse.data);
+                setFilms(filmsResponse.data.map((film: any) => ({
+                    ...film,
+                    film_type: film.film_type === 1 ? false : true, // 0 = Phim Lẻ (true), 1 = Phim Bộ (false)
+                    year: film.year ? { id: film.year.id, release_year: film.year.release_year } : null,
+                    country: film.country ? { id: film.country.id, country_name: film.country.country_name } : null,
+                    genres: film.genres || [],
+                })));
             } catch (err: any) {
                 console.error('Lỗi khi lấy dữ liệu:', err.response?.data || err.message);
                 setFormError('Không thể tải dữ liệu năm, quốc gia, thể loại hoặc phim.');
@@ -898,6 +1041,7 @@ const AdminPage = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
+        console.log(`Updating ${name} to:`, value);
         setFilmData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -917,6 +1061,15 @@ const AdminPage = () => {
     };
 
     const addEpisode = () => {
+        if (filmData.film_type === 0 && episodes.length >= 1) {
+            setFormError('Phim lẻ chỉ được phép có một tập.');
+            return;
+        }
+        if (filmData.film_type === 1 && episodes.length >= 100) {
+            setFormError('Số tập phim bộ đã đạt giới hạn tối đa (100 tập).');
+            return;
+        }
+
         setEpisodes(prev => [
             ...prev,
             { episode_number: prev.length + 1, episode_title: '', episode_url: '', duration: '' }
@@ -924,7 +1077,15 @@ const AdminPage = () => {
     };
 
     const removeEpisode = (index: number) => {
-        setEpisodes(prev => prev.filter((_, i) => i !== index));
+        // setEpisodes(prev => prev.filter((_, i) => i !== index));
+        setEpisodes(prev => {
+        const newEpisodes = prev.filter((_, i) => i !== index);
+        // If Phim Lẻ and no episodes remain, ensure at least 1 episode
+        if (filmData.film_type === 0 && newEpisodes.length === 0) {
+            return [{ episode_number: 1, episode_title: '', episode_url: '', duration: '' }];
+        }
+        return newEpisodes;
+    });
     };
 
     const renderDashboard = () => (

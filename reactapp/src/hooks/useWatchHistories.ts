@@ -4,7 +4,7 @@ import {WatchHistories} from '../types';
 import { toast } from 'sonner';
 
 
-export const useWatchHistories = (selectedEpisode: any,videoRef: React.RefObject<HTMLVideoElement>) => {
+export const useWatchHistories = (selectedEpisode: any,videoRef: React.RefObject<HTMLVideoElement>, setCurrentTime?: (time: number) => void) => {
     const [watchHistory, setWatchHistory] = useState<WatchHistories[]>([]);
     const token = localStorage.getItem('token');
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -15,6 +15,7 @@ export const useWatchHistories = (selectedEpisode: any,videoRef: React.RefObject
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
+             if (setCurrentTime) setCurrentTime(currentTime); 
             saveTimeoutRef.current = setTimeout(() => { 
                     fetch('http://localhost:8000/api/store-histories',{
                     method: 'POST',
@@ -52,7 +53,7 @@ export const useWatchHistories = (selectedEpisode: any,videoRef: React.RefObject
         }
 
         fetchWatchHistories();
-    }, [token]);
+    }, [token,selectedEpisode?.id]);
 
 
     useEffect(() => {
@@ -64,6 +65,8 @@ export const useWatchHistories = (selectedEpisode: any,videoRef: React.RefObject
                 const setProgress = () => {
                     video.currentTime = currentHistory.progress_time;
                     console.log('Set currentTime to:', currentHistory.progress_time);
+                    console.log('⏪ Selected episode:', selectedEpisode?.id);
+                    console.log('⏱️ Found history:', currentHistory);
                     // Auto-play the video
                     // video.play().catch((err) => {
                     //     console.error('Failed to play video:', err);
@@ -79,15 +82,12 @@ export const useWatchHistories = (selectedEpisode: any,videoRef: React.RefObject
                 }
             }
         }
-    },[watchHistory, selectedEpisode,videoRef]);
-
-    useEffect(() => {
-        const video = videoRef.current;
         if (video) {
             video.addEventListener('timeupdate', handleTimeUpdate);
             return () => video.removeEventListener('timeupdate', handleTimeUpdate);
         }
-    });
+    },[watchHistory, selectedEpisode,videoRef]);
+
 
     return {watchHistory,videoRef,handleTimeUpdate};
 

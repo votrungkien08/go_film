@@ -178,6 +178,7 @@ const MainLayout = () => {
   const isFilmDetail = location.pathname.startsWith('/film/');
   const isFilmList = location.pathname === '/films';
   const isHistories = location.pathname === '/histories';
+  const isFavorites = location.pathname === '/favorites';
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -216,7 +217,7 @@ const MainLayout = () => {
           </div> */}
           <div className="px-4  overflow-hidden">
             <Header />
-            {!isFilmDetail && !isFilmList && !isHistories && (
+            {!isFilmDetail && !isFilmList && !isHistories && !isFavorites &&(
               <>
                 <motion.div
                   ref={nominateRef}

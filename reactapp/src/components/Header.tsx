@@ -572,10 +572,19 @@ const Header = () => {
                                 <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.points}</p>
                             </div>
                             <button
-                                onClick={() => {navigate('/histories'); setIsPanelOpen(false);}}
+                                onClick={() => {console.log('🔁 Đã bấm nút Lịch sử phim');;navigate('/histories'); setIsPanelOpen(false);}}
                                 className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
                             >
                                 Lịch Sử Phim
+                                
+                            </button>
+
+                            <button
+                            
+                                onClick={() => {console.log('🔁 Đã bấm nút Phim Yêu Thích');;navigate('/favorites'); setIsPanelOpen(false);}}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            >
+                                Phim Yêu Thích
                                 
                             </button>
                             

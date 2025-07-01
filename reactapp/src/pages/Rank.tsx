@@ -27,10 +27,7 @@ const Rank = () => {
     const navigate = useNavigate();
     const [films, setFilms] = useState<Film[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const getEpisodeNumber = (number: string): number => {
-        const match = number.match(/\d+/); // 
-        return match ? parseInt(match[0]) : 0;
-    };
+
     useEffect(() => {
         const fetchFilms = async () => {
             try {
@@ -69,17 +66,17 @@ const Rank = () => {
                 <div className="col-span-10 gap-4 ">
                     <div className="grid grid-cols-8 gap-4 mb-4 shadow shadow-gray-500/50 ">
                         <div className="col-span-4 flex items-center h-12">
-                            <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" style={{filter: 'invert(53%) sepia(94%) saturate(749%) hue-rotate(353deg) brightness(101%) contrast(101%)'}} />
+                            <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" style={theme === 'dark'|| theme === 'system' ? {filter: 'invert(100%) sepia(100%) saturate(2%) hue-rotate(162deg) brightness(105%) contrast(101%)'} : {}}  />
                             <h1 className="ml-2  font-bold">BẢNG XẾP HẠNG</h1>
                         </div>
-                        <div className="col-span-4 flex items-center justify-end">
+                        <div onClick={() => navigate('/films?rank=true')} className="col-span-4 flex items-center justify-end cursor-pointer">
                             <h1
-                                className="mr-2  font-bold cursor-pointer"
-                                onClick={() => navigate('/films')} // Tùy chọn: dẫn đến trang danh sách phim
+                                className="mr-2  font-bold "
+                                 // Tùy chọn: dẫn đến trang danh sách phim
                             >
                                 XEM TẤT CẢ
                             </h1>
-                            <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" />
+                            <img src="/img/movie_4-512.png" alt="Logo" className="w-10 h-10" style={theme === 'dark'|| theme === 'system' ? {filter: 'invert(100%) sepia(100%) saturate(2%) hue-rotate(162deg) brightness(105%) contrast(101%)'} : {}}  />
                         </div>
                     </div>
                     <div className="group relative">

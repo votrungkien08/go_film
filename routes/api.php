@@ -41,6 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // favorite
     Route::post('addFavorite', [FavoriteController::class, 'addFavorite']);
     Route::delete('removeFavorite/{idFilm}', [FavoriteController::class, 'removeFavorite']);
+    Route::get('/favorites', [FavoriteController::class, 'getUserFilmFavorite']);
+
 
     // VNPay payment
     Route::post('/vnpay/create', [TransactionController::class, 'createPayment']);
@@ -50,6 +52,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
+
+// get user 
+    Route::get('/get-all-users', [AuthController::class, 'getAllUser']);
+
+
 // episode
 Route::get('/episode/{episodeId}', [EpisodesController::class, 'getFilmByEpisodeId']);
 
@@ -57,6 +64,7 @@ Route::get('/episode/{episodeId}', [EpisodesController::class, 'getFilmByEpisode
 // favorite
 Route::get('/film/{idFilm}/favorite', [FavoriteController::class, 'isFavorite']);
 Route::get('/favorite', [FavoriteController::class, 'getTopFavorite']);
+Route::get('/favorite-film/{filmId}', [FavoriteController::class, 'getLike']);
 
 
 
@@ -73,12 +81,12 @@ Route::post('/test-file', function (Request $request) {
 Route::get('/cloudinary-test', [CloudinaryController::class, 'testCloudinary']);
 
 Route::post('/store-film', [CloudinaryController::class, 'uploadVideo']);
-Route::get('/get-videos', [CloudinaryController::class, 'getVideosByPhim']);
+Route::get('/get-videos', [CloudinaryController::class, 'getVideosByFilm']);
 
 
 
 Route::post('/addFilm', [FilmController::class, 'store']);
-Route::put('/updateFilm/{id}', [FilmController::class, 'update']);
+Route::post('/updateFilm/{id}', [FilmController::class, 'update']);
 Route::get('/films', [FilmController::class, 'index']);
 Route::get('/film/{slug}', [FilmController::class, 'show']);
 
