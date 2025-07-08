@@ -93,19 +93,28 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            // if(!$user) {
-            //     return response()->json([
-            //         'message' => 'not login',
-            //         'user'=>null
-            //     ]);
-            // }
             return response()->json([
-                'message' => 'User details fetched successfully',
+                'message' => 'Fetch thông tin người dùng thành công',
                 'user' => $user->only(['id', 'name', 'email', 'points', 'role']),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to fetch user details',
+                'message' => 'Fetch thông tin người dùng thất bại',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    public function getAllUser(Request $request)
+    {
+        try {
+            $user = User::all();
+            return response()->json([
+                'message' => 'Fetch thông tin người dùng thành công',
+                'user' => $user,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Fetch thông tin người dùng thất bại',
                 'error' => $e->getMessage(),
             ], 500);
         }

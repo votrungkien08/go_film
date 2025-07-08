@@ -14,6 +14,24 @@
   color: #fff !important;
 } */
 
+/* Chiều rộng thanh cuộn */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+/* Thanh cuộn track */
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+/* Thanh cuộn thumb (phần kéo) */
+::-webkit-scrollbar-thumb {
+    background: #ff0000;
+    border-radius: 5px;
+}
+
+
+
 html.light {
   background-color: #f5f5f5 !important;
   color: #111 !important;
@@ -56,6 +74,9 @@ html.dark {
   background-color: #525252 !important;
 }
 
+.simplebar-placeholder {
+    height: 50px !important;
+}
 
 // text
 @media (prefers-color-scheme: dark) {

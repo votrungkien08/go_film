@@ -132,4 +132,39 @@ class FavoriteController extends Controller
             ],500);
         }
     }
+
+
+    public function getUserFilmFavorite(Request $request) {
+        try {
+            $user = $request->user();
+
+            $favorites = $user->favorites()->with('film')->get()->pluck('film');
+
+            return response()->json([
+                'message' => 'fetch success favorite',
+                'favorites' => $favorites
+            ],200);
+        } catch(Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage()
+            ],500);
+        }
+    }
+
+    public function getLike($idFilm) {
+        try {
+            $film = Film::find($idFilm);
+
+            $likeCount = Favorite::where('film_id',$idFilm)->count();
+            return response()->json([
+                'message' => 'fetch success favorite',
+                'film' => $film,
+                'likeCount' => $likeCount
+            ],200);
+        } catch(Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage()
+            ],500);
+        }
+    }
 }

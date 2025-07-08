@@ -42,16 +42,28 @@ Route::middleware('auth:sanctum')->group(function () {
     // favorite
     Route::post('addFavorite', [FavoriteController::class, 'addFavorite']);
     Route::delete('removeFavorite/{idFilm}', [FavoriteController::class, 'removeFavorite']);
+    Route::get('/favorites', [FavoriteController::class, 'getUserFilmFavorite']);
+
 
     // VNPay payment
     Route::post('/vnpay/create', [TransactionController::class, 'createPayment']);
+    Route::get('/total-transaction-amount', [TransactionController::class, 'getTotalSuccessAmount']);
+    Route::get('/payment-histories', [TransactionController::class, 'getUserPaymentHistories']);
+    Route::get('/transaction-amount-by-month', [TransactionController::class, 'getAmountByMonth']);
 
     // watch history
     Route::get('/watch-histories', [WatchHistoriesController::class, 'getWatchHistory']);
     Route::post('/store-histories', [WatchHistoriesController::class, 'store']);
     Route::post('/films/deduct-points', [FilmController::class, 'deductPoints']);
     Route::post('/films/reward-points', [FilmController::class, 'rewardPointsForNormalFilm']);
+
+
 });
+
+
+// get user 
+Route::get('/get-all-users', [AuthController::class, 'getAllUser']);
+
 
 // episode
 Route::get('/episode/{episodeId}', [EpisodesController::class, 'getFilmByEpisodeId']);
@@ -60,6 +72,7 @@ Route::get('/episode/{episodeId}', [EpisodesController::class, 'getFilmByEpisode
 // favorite
 Route::get('/film/{idFilm}/favorite', [FavoriteController::class, 'isFavorite']);
 Route::get('/favorite', [FavoriteController::class, 'getTopFavorite']);
+Route::get('/favorite-film/{filmId}', [FavoriteController::class, 'getLike']);
 
 
 
@@ -76,12 +89,12 @@ Route::post('/test-file', function (Request $request) {
 Route::get('/cloudinary-test', [CloudinaryController::class, 'testCloudinary']);
 
 Route::post('/store-film', [CloudinaryController::class, 'uploadVideo']);
-Route::get('/get-videos', [CloudinaryController::class, 'getVideosByPhim']);
+Route::get('/get-videos', [CloudinaryController::class, 'getVideosByFilm']);
 
 
 
 Route::post('/addFilm', [FilmController::class, 'store']);
-Route::put('/updateFilm/{id}', [FilmController::class, 'update']);
+Route::post('/updateFilm/{id}', [FilmController::class, 'update']);
 Route::get('/films', [FilmController::class, 'index']);
 Route::get('/film/{slug}', [FilmController::class, 'show']);
 
@@ -113,4 +126,4 @@ Route::post('/chatbot', [ChatbotController::class, 'handle']);
 
 //Route::get('/film/{id}', [FilmController::class, 'getFilmById']);
 
-//>>>>>>> 0bf23a4 (commit detail film and comment)
+Route::get('/view-stats-by-month', [FilmController::class, 'getViewStatsByMonth']);

@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-
+import {motion} from 'framer-motion';
 interface Film {
     id: number;
     slug: string;
     title_film: string;
     thumb: string;
     film_type: boolean;
-    year: { release_year: number };
-    country: { country_name: string };
-    genres: { id: number; genre_name: string }[];
+    view: number;
+    year: { release_year: number } | null | undefined;
+    country: { country_name: string } | null | undefined;
+    genres: { id: number; genre_name: string }[] | undefined;
+    created_at: string;
     film_episodes: {
         id: number;
         episode_number: number;
@@ -57,48 +59,100 @@ const FilmList = () => {
                 setLoading(true);
                 const params = new URLSearchParams(location.search);
 
+                // gọi favorite từ URL
+                const isFavorite = params.get('favorite') === 'true';
+                // gọi rank từ URL
+                const isRank = params.get('rank') === 'true';
+
+                // goi update từ URL
+                const isUpdate = params.get('update') === 'true';
+                const apiUrl = isFavorite ? 'http://localhost:8000/api/favorite' : isRank  ? 'http://localhost:8000/api/films' : isUpdate ? 'http://localhost:8000/api/films' : 'http://localhost:8000/api/filter-films';
+                
                 // Build the new parameter structure to match your FilmController
                 const requestParams: any = {};
 
-                // Handle genre parameter (can be multiple)
-                if (params.has('genre')) {
-                    const genreParam = params.get('genre');
-                    if (genreParam) {
-                        // Convert slug back to display name
-                        requestParams.genre = convertSlugToName(genreParam);
+                if (!isFavorite && !isRank && !isUpdate) {
+                    if (params.has('genre')) {
+                        const genreParam = params.get('genre');
+                        if (genreParam) {
+                            requestParams.genre = convertSlugToName(genreParam);
+                        }
+                    }
+                    if (params.has('country')) {
+                        const countryParam = params.get('country');
+                        if (countryParam) {
+                            requestParams.country = convertSlugToName(countryParam);
+                        }
+                    }
+                    if (params.has('year')) {
+                        requestParams.year = params.get('year');
+                    }
+                    if (params.has('type')) {
+                        requestParams.type = params.get('type');
+                    }
+                    if (params.has('search')) {
+                        requestParams.search = params.get('search');
                     }
                 }
-
-                // Handle country parameter
-                if (params.has('country')) {
-                    const countryParam = params.get('country');
-                    if (countryParam) {
-                        // Convert slug back to display name
-                        requestParams.country = convertSlugToName(countryParam);
-                    }
+                // sắp xếp theo view cho rank
+                if (isRank) {
+                    requestParams.sort = 'view';
+                    requestParams.order = 'desc';
                 }
 
-                // Handle year parameter
-                if (params.has('year')) {
-                    requestParams.year = params.get('year');
+                if(isUpdate) {
+                    requestParams.sort = 'created_at';
+                    requestParams.order = 'desc';
+                    requestParams.limit = 50; // Giới hạn số lượng phim cập nhật
                 }
 
-                // Handle film type parameter
-                if (params.has('type')) {
-                    requestParams.type = params.get('type');
-                }
+                // // Handle genre parameter (can be multiple)
+                // if (params.has('genre')) {
+                //     const genreParam = params.get('genre');
+                //     if (genreParam) {
+                //         // Convert slug back to display name
+                //         requestParams.genre = convertSlugToName(genreParam);
+                //     }
+                // }
 
-                // Handle search parameter (keep as is)
-                if (params.has('search')) {
-                    requestParams.search = params.get('search');
-                }
+                // // Handle country parameter
+                // if (params.has('country')) {
+                //     const countryParam = params.get('country');
+                //     if (countryParam) {
+                //         // Convert slug back to display name
+                //         requestParams.country = convertSlugToName(countryParam);
+                //     }
+                // }
 
-                const response = await axios.get('http://localhost:8000/api/filter-films', {
+                // // Handle year parameter
+                // if (params.has('year')) {
+                //     requestParams.year = params.get('year');
+                // }
+
+                // // Handle film type parameter
+                // if (params.has('type')) {
+                //     requestParams.type = params.get('type');
+                // }
+
+                // // Handle search parameter (keep as is)
+                // if (params.has('search')) {
+                //     requestParams.search = params.get('search');
+                // }
+
+                const response = await axios.get(apiUrl, {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-                    params: requestParams,
+                    params: isFavorite ? {} : requestParams
                 });
-
-                setFilms(response.data);
+                let fetchedFilms = response.data.film || response.data;
+                if (isRank) {
+                    fetchedFilms = [...fetchedFilms].sort((a, b) => b.view - a.view);
+                }
+                if( isUpdate) {
+                    fetchedFilms = [...fetchedFilms].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                }
+                // console.log('Danh sách phim1:', response.data.film);
+                // console.log('Danh sách phim2:', response.data);
+                setFilms(fetchedFilms);
                 setLoading(false);
             } catch (err: any) {
                 setError('Không thể tải danh sách phim');
@@ -118,8 +172,21 @@ const FilmList = () => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h2 className="text-2xl font-bold text-white mb-6">Danh sách phim</h2>
+        <motion.div 
+            initial={{ opacity: 0, y: 100,scale:0.8 }}
+            animate={{ opacity: 1, y: 0,scale:1 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+        className="container mx-auto px-4 py-8 min-h-[1000px] pt-[70px]">
+            <h2 className="text-2xl font-bold  mb-6">
+                {new URLSearchParams(location.search).get('favorite') === 'true'
+                    ? 'Danh Sách Phim Đề Cử'
+                    : new URLSearchParams(location.search).get('rank') === 'true'
+                    ? 'Danh Sách Phim Xếp Hạng'
+                    : new URLSearchParams(location.search).get('update') === 'true'
+                    ? 'Danh Sách Phim Mới Cập Nhật'
+                    : 'Danh Sách Phim'}
+            </h2>
             {films.length === 0 ? (
                 <p className="text-gray-400">Không tìm thấy phim nào.</p>
             ) : (
@@ -140,13 +207,13 @@ const FilmList = () => {
                                     {film.title_film}
                                 </h3>
                                 <p className="text-sm text-gray-400">
-                                    {film.year.release_year}  {film.country.country_name}
+                                    {film.year?.release_year || 'N/A'} 
                                 </p>
                                 <p className="text-sm text-gray-400">
-                                    {film.country.country_name}
+                                    {film.country?.country_name || 'N/A'}
                                 </p>
                                 <p className="text-sm text-gray-400">
-                                    {film.genres.map((g) => g.genre_name).join(', ')}
+                                    {(film.genres ?? []).map((g) => g.genre_name).join(', ') || 'N/A'}
                                 </p>
                                 <p className="text-sm text-gray-400">
                                     {film.film_type ? 'Phim lẻ' : 'Phim bộ'}
@@ -159,7 +226,7 @@ const FilmList = () => {
                     ))}
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 };
 

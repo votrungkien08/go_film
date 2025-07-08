@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
-import { useAuthPanel } from '../utils/auth';
+import { useAuthPanel } from '@/utils/auth'; // Updated to use alias @
 import { toast } from 'sonner';
 import { ModeToggle } from './mode-toggle';
-import { useTheme } from "../components/theme-provider";
+import { useTheme } from './theme-provider'; // Updated to use local theme-provider
 import { motion } from 'framer-motion';
 
 interface Genre {
@@ -54,24 +54,26 @@ const Header = () => {
     const [hoverPosition, setHoverPosition] = useState({
         left: 0,
         width: 0,
-        opacity: 0
+        opacity: 0,
     });
 
     const handleHover = (e: React.MouseEvent<HTMLHeadingElement>) => {
         const target = e.currentTarget;
         const rect = target.getBoundingClientRect();
-        const containerRect = refTab.current.getBoundingClientRect();
-        setHoverPosition({
-            left: rect.left - containerRect.left,
-            width: rect.width,
-            opacity: 1
-        });
+        const containerRect = refTab.current?.getBoundingClientRect();
+        if (containerRect) {
+            setHoverPosition({
+                left: rect.left - containerRect.left,
+                width: rect.width,
+                opacity: 1,
+            });
+        }
     };
 
     const handleMouseLeave = () => {
         setHoverPosition((prev) => ({
             ...prev,
-            opacity: 0
+            opacity: 0,
         }));
     };
 
@@ -199,7 +201,7 @@ const Header = () => {
                 setTimeout(() => {
                     toast.success('Thanh toán thành công! Điểm đã được cộng vào tài khoản.', {
                         duration: 5000,
-                        position: 'top-center'
+                        position: 'top-center',
                     });
                 }, 500);
 
@@ -225,7 +227,7 @@ const Header = () => {
                 setTimeout(() => {
                     toast.error('Thanh toán thất bại. Vui lòng thử lại.', {
                         duration: 5000,
-                        position: 'top-center'
+                        position: 'top-center',
                     });
                 }, 500);
                 setTimeout(() => {
@@ -235,7 +237,7 @@ const Header = () => {
                 setTimeout(() => {
                     toast.error('Lỗi thanh toán. Vui lòng liên hệ hỗ trợ.', {
                         duration: 5000,
-                        position: 'top-center'
+                        position: 'top-center',
                     });
                 }, 500);
                 setTimeout(() => {
@@ -309,7 +311,7 @@ const Header = () => {
             setTimeout(() => {
                 setIsPanelOpen(false);
                 if (response.data.user.role === 'admin') {
-                    navigate('/admin');
+                    navigate('/dashboard');
                 }
                 window.dispatchEvent(new Event('loginSuccess'));
             }, 1000);
@@ -365,11 +367,19 @@ const Header = () => {
     };
 
     return (
-        <div className={`h-[60px] w-full fixed top-0 left-0 z-50 px-4 backdrop-blur-lg ${theme === 'light' ? 'shadow shadow-blue-700/20' : ''} ${theme === 'dark' ? 'shadow shadow-white/20' : ''} ${theme === 'system' ? 'shadow shadow-orange-500/20' : ''}`}>
+        <div
+            className={`h-[60px] w-full fixed top-0 left-0 z-50 px-4 backdrop-blur-lg ${theme === 'light' ? 'shadow shadow-blue-700/20' : ''
+                } ${theme === 'dark' ? 'shadow shadow-white/20' : ''} ${theme === 'system' ? 'shadow shadow-orange-500/20' : ''
+                }`}
+        >
             <div className="grid grid-cols-12 gap-2 h-full items-center">
                 <div className="col-span-2 flex items-center cursor-pointer h-full">
                     <Link to="/" className="flex items-center h-full">
-                        <img src="/img/gofilm.png" alt="logo" className="mt-[10px] h-[50px] object-contain" />
+                        <img
+                            src="/img/gofilm.png"
+                            alt="logo"
+                            className="mt-[10px] h-[50px] object-contain"
+                        />
                     </Link>
                 </div>
 
@@ -378,7 +388,7 @@ const Header = () => {
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-                            onMouseEnter={(e) => handleHover(e)}
+                            onMouseEnter={handleHover}
                             onMouseLeave={handleMouseLeave}
                         >
                             THỂ LOẠI
@@ -407,7 +417,7 @@ const Header = () => {
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                            onMouseEnter={(e) => handleHover(e)}
+                            onMouseEnter={handleHover}
                             onMouseLeave={handleMouseLeave}
                         >
                             QUỐC GIA
@@ -436,7 +446,7 @@ const Header = () => {
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => setShowYearDropdown(!showYearDropdown)}
-                            onMouseEnter={(e) => handleHover(e)}
+                            onMouseEnter={handleHover}
                             onMouseLeave={handleMouseLeave}
                         >
                             NĂM
@@ -465,7 +475,7 @@ const Header = () => {
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => handleFilmTypeSelect('true')}
-                            onMouseEnter={(e) => handleHover(e)}
+                            onMouseEnter={handleHover}
                             onMouseLeave={handleMouseLeave}
                         >
                             PHIM LẺ
@@ -475,7 +485,7 @@ const Header = () => {
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
                             onClick={() => handleFilmTypeSelect('false')}
-                            onMouseEnter={(e) => handleHover(e)}
+                            onMouseEnter={handleHover}
                             onMouseLeave={handleMouseLeave}
                         >
                             PHIM BỘ
@@ -483,9 +493,9 @@ const Header = () => {
                     </div>
 
                     <motion.div
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         animate={hoverPosition}
-                        className='absolute bottom-0 left-0 h-[4px] bg-[#ff4c00] rounded-full'
+                        className="absolute bottom-0 left-0 h-[4px] bg-[#ff4c00] rounded-full"
                     />
                 </div>
                 <div tabIndex={0} className="group col-span-3 h-full flex items-center relative cursor-pointer">
@@ -493,11 +503,16 @@ const Header = () => {
                         <input
                             type="search"
                             placeholder="Tìm kiếm"
-                            className={`h-[30px] w-full pl-2 border rounded-2xl outline-none group-hover:border-[#ff4c00] ${theme === 'light' ? 'placeholder:text-black border-black' : ''} ${theme === 'dark' ? 'placeholder:text-white border-white' : ''} ${theme === 'system' ? 'system-placeholder:text-white' : ''}`}
+                            className={`h-[30px] w-full pl-2 border rounded-2xl outline-none group-hover:border-[#ff4c00] ${theme === 'light' ? 'placeholder:text-black border-black' : ''
+                                } ${theme === 'dark' ? 'placeholder:text-white border-white' : ''} ${theme === 'system' ? 'system-placeholder:text-white' : ''
+                                }`}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
-                        <button type="submit" className="w-8 h-8 absolute right-0 top-1/2 transform -translate-y-1/2">
+                        <button
+                            type="submit"
+                            className="w-8 h-8 absolute right-0 top-1/2 transform -translate-y-1/2"
+                        >
                             <MagnifyingGlassIcon className="h-5 w-5" />
                         </button>
                     </form>
@@ -510,16 +525,23 @@ const Header = () => {
                     className="col-span-1 flex items-center justify-end cursor-pointer"
                     onClick={() => setIsPanelOpen(true)}
                 >
-                    <UserCircleIcon className={`h-10 w-10 border rounded-full ${theme === 'dark' ? 'border-white' : ''} ${theme === 'light' ? 'border-black' : ''}`} />
+                    <UserCircleIcon
+                        className={`h-10 w-10 border rounded-full ${theme === 'dark' ? 'border-white' : ''
+                            } ${theme === 'light' ? 'border-black' : ''}`}
+                    />
                 </div>
             </div>
 
             {isPanelOpen && (
-                <div className="fixed inset-0 h-screen backdrop-blur-3xl z-40" onClick={() => setIsPanelOpen(false)}></div>
+                <div
+                    className="fixed inset-0 h-screen backdrop-blur-3xl z-40"
+                    onClick={() => setIsPanelOpen(false)}
+                ></div>
             )}
 
             <div
-                className={`fixed top-0 right-0 h-screen w-[400px] bg-[#2c3e50] bg-opacity-100 backdrop-blur-lg border-l p-6 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                className={`fixed top-0 right-0 h-screen w-[400px] bg-[#2c3e50] bg-opacity-100 backdrop-blur-lg border-l p-6 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'
+                    }`}
             >
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-white">
@@ -534,72 +556,89 @@ const Header = () => {
                 </div>
 
                 {isLoggedIn && user ? (
-                    <div className="space-y-4">
-                        <div className="mb-4">
-                            <label className="block text-sm text-gray-300 mb-2">Họ và tên</label>
-                            <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.name}</p>
+                    showPaymentForm ? (
+                        <form onSubmit={handleBuyPoints} className="space-y-4">
+                            <div className="relative">
+                                <label htmlFor="points" className="block text-sm text-gray-300 mb-2">
+                                    Số điểm muốn mua (1 điểm = 1000 VND)
+                                </label>
+                                <input
+                                    type="number"
+                                    name="points"
+                                    value={pointsToBuy}
+                                    onChange={(e) => setPointsToBuy(e.target.value)}
+                                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                    placeholder="Nhập số điểm"
+                                    required
+                                    min="1"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
+                            >
+                                Thanh Toán Qua VNPay
+                            </button>
+                            <button
+                                type="button"
+                                className="w-full bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer font-semibold mt-2"
+                                onClick={() => setShowPaymentForm(false)}
+                            >
+                                Quay Lại
+                            </button>
+                        </form>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="mb-4">
+                                <label className="block text-sm text-gray-300 mb-2">Họ và tên</label>
+                                <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">
+                                    {user.name}
+                                </p>
+                            </div>
+                            <div className="mb-6">
+                                <label className="block text-sm text-gray-300 mb-2">Điểm</label>
+                                <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">
+                                    {user.points}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    console.log('🔁 Đã bấm nút Lịch sử phim');
+                                    navigate('/histories');
+                                    setIsPanelOpen(false);
+                                }}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            >
+                                Lịch Sử Phim
+                            </button>
+                            <button
+                                onClick={() => {
+                                    //console.log('🔁 Đã bấm nút Phim Yêu Thích');
+                                    navigate('/favorites');
+                                    setIsPanelOpen(false);
+                                }}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            >
+                                Phim Yêu Thích
+                            </button>
+                            <button
+                                onClick={() => navigate('/buy-points')}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            >
+                                Mua Điểm
+                            </button>
+                            <button onClick={() => navigate('/payment-history')}
+                                className='w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2'>
+                                Lịch sử thanh toán
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
+                            >
+                                Đăng Xuất
+                            </button>
                         </div>
-                        <div className="mb-6">
-                            <label className="block text-sm text-gray-300 mb-2">Điểm</label>
-                            <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.points}</p>
-                        </div>
-                        {showPaymentForm ? (
-                            <form onSubmit={handleBuyPoints} className="space-y-4">
-                                <div className="relative">
-                                    <label htmlFor="points" className="block text-sm text-gray-300 mb-2">
-                                        Số điểm muốn mua (1 điểm = 1000 VND)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="points"
-                                        value={pointsToBuy}
-                                        onChange={(e) => setPointsToBuy(e.target.value)}
-                                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                        placeholder="Nhập số điểm"
-                                        required
-                                        min="1"
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
-                                >
-                                    Thanh Toán Qua VNPay
-                                </button>
-                                <button
-                                    type="button"
-                                    className="w-full bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer font-semibold mt-2"
-                                    onClick={() => setShowPaymentForm(false)}
-                                >
-                                    Quay Lại
-                                </button>
-                            </form>
-                        ) : (
-                            <>
-                                <button
-                                    onClick={() => {
-                                        navigate('/histories');
-                                        setIsPanelOpen(false);
-                                    }}
-                                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
-                                >
-                                    Lịch Sử Phim
-                                </button>
-                                <button
-                                    onClick={() => setShowPaymentForm(true)}
-                                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
-                                >
-                                    Mua Điểm
-                                </button>
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
-                                >
-                                    Đăng Xuất
-                                </button>
-                            </>
-                        )}
-                    </div>
+                    )
                 ) : (
                     <form onSubmit={isLoginForm ? handleLogin : handleRegister} className="space-y-4">
                         {!isLoginForm && (
@@ -648,7 +687,10 @@ const Header = () => {
                         </div>
                         {!isLoginForm && (
                             <div className="relative">
-                                <label htmlFor="confirmPassword" className="block text-sm text-gray-300 mb-2">
+                                <label
+                                    htmlFor="confirmPassword"
+                                    className="block text-sm text-gray-300 mb-2"
+                                >
                                     Nhập lại mật khẩu
                                 </label>
                                 <input
@@ -680,7 +722,12 @@ const Header = () => {
                                     className="text-[#ff4c00] ml-2 hover:underline cursor-pointer font-semibold hover:text-[#e04300] transition-colors"
                                     onClick={() => {
                                         setIsLoginForm(!isLoginForm);
-                                        setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+                                        setFormData({
+                                            name: '',
+                                            email: '',
+                                            password: '',
+                                            confirmPassword: '',
+                                        });
                                     }}
                                 >
                                     {isLoginForm ? 'Đăng ký ngay' : 'Đăng nhập'}

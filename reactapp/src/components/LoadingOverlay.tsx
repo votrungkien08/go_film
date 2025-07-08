@@ -43,7 +43,7 @@ const LoadingOverlay = ({ onLoadingComplete }) => {
 
       {/* Thanh dọc ở giữa */}
       <div
-        className={`w-1 bg-black transition-all duration-1000 ${
+        className={`w-1 bg-black z-100 transition-all duration-1000 ${
           isExpanding ? 'h-full' : 'h-24'
         } ${isSplitting ? 'opacity-0' : 'opacity-100'}`}
       />

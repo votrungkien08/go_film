@@ -104,17 +104,19 @@ const Update = () => {
                 <div className="col-span-10">
                 <div className="grid grid-cols-10 gap-4 mb-4  shadow shadow-gray-500/50 ">
                     <div className="col-span-5 flex items-center h-12 ">
-                            <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" />
+                            <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" style={theme === 'dark'|| theme === 'system' ? {filter: 'invert(100%) sepia(100%) saturate(2%) hue-rotate(162deg) brightness(105%) contrast(101%)'} : {}}  />
+
                             <h1 className="ml-2  font-bold">PHIM MỚI CẬP NHẬT</h1>
                         </div>
-                        <div className="col-span-5 flex items-center justify-end">
+                        <div onClick={() => navigate('/films?update=true')} className="col-span-5 flex items-center justify-end cursor-pointer">
                             <h1
-                                className="mr-2  font-bold cursor-pointer"
-                                onClick={() => navigate('/films')} // Tùy chọn: dẫn đến trang danh sách phim
+                                className="mr-2  font-bold "
+                                 // Tùy chọn: dẫn đến trang danh sách phim
                             >
                                 XEM TẤT CẢ
                             </h1>
-                            <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" />
+                            <img src="/img/movie_4-512.png" alt="Logo" className="w-10 h-10" style={theme === 'dark'|| theme === 'system' ? {filter: 'invert(100%) sepia(100%) saturate(2%) hue-rotate(162deg) brightness(105%) contrast(101%)'} : {}}  />
+
                         </div>
                     </div>
                     <div className="col-span-10 relative group">

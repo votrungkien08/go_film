@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
-use app\Models\Film;
-use app\Models\Film_episodes;
+use App\Models\Film;
+use App\Models\Film_episodes;
 // use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Log;
 use Cloudinary\Api\Ping;
@@ -18,81 +18,567 @@ use Cloudinary\Api\AdminApi;              // 🎯 Admin API
 class CloudinaryController extends Controller
 {
 
+// public function uploadVideo(Request $request)
+// {
+//     $request->validate([
+//         'title_film'   => 'required|string',
+//         'video_type'   => 'required|in:trailer,episode',
+//         'episode_number' => 'required_if:video_type,episode|string|nullable',
+//         'episode_title' => 'required_if:video_type,episode|string|nullable',
+//         'duration' => 'required|string',
+//         'video'      => 'required|file|mimetypes:video/mp4,video/*',
+//     ]);
+
+//     $path = $request->file('video')->getRealPath();
+//     $filename = $request->file('video')->getClientOriginalName();
+//     $titleSlug = Str::slug($request->title_film, '-');
+//     $videoType = $request->video_type;
+
+//     $cloudinary = new \Cloudinary\Cloudinary([
+//         'cloud' => [
+//             'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+//             'api_key'    => env('CLOUDINARY_KEY'),
+//             'api_secret' => env('CLOUDINARY_SECRET'),
+//         ],
+//         'url' => ['secure' => true],
+//     ]);
+
+//     // Xử lý tùy theo loại video
+//     if ($videoType === 'trailer') {
+//         $folder = "videos/{$titleSlug}/trailer";
+//         $public_id = 'trailer';
+//         $context = [];
+//     } else {
+//         $episodeSlug = Str::slug($request->episode_title ?? "tap-{$request->episode_number}");
+//         $folder = "videos/{$titleSlug}";
+//         $public_id = $episodeSlug;
+//         $context = [
+//             'episode_number' => $request->episode_number,
+//             'episode_title' => $request->episode_title,
+//             'duration' => $request->duration,
+//         ];
+//     }
+
+//     try {
+//         $upload = $cloudinary->uploadApi()->upload($path, [
+//             'resource_type' => 'video',
+//             'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
+//             'public_id' => $public_id,
+//             'folder' => $folder,
+//             'context' => $context,
+//         ]);
+
+//         if ($videoType === 'trailer') {
+//             // Cập nhật cột trailer trong bảng phim
+//             // Giả sử bạn có hàm tìm phim theo slug hoặc ID
+//             $film = Film::where('slug', $titleSlug)->first();
+//             if ($film) {
+//                 $film->trailer = $upload['secure_url'];
+//                 $film->save();
+//             }
+//         }
+
+//         return response()->json([
+//             'type' => $videoType,
+//             'episode_url' => $upload['secure_url'],
+//         ]);
+//     } catch (\Exception $e) {
+//         Log::error('❌ Upload lỗi', ['message' => $e->getMessage()]);
+//         return response()->json(['error' => 'Lỗi khi upload video: ' . $e->getMessage()], 500);
+//     }
+// }
+
 public function uploadVideo(Request $request)
 {
-    Log::info('🔑 Cloud URL', ['url' => config('cloudinary.cloud_url')]);
-    Log::info('🚀 Nhận request uploadVideo', $request->all());
-
     $request->validate([
-        'title_film'   => 'required|string',
-        'episode_number'     => 'required|string',
-        'episode_title'    => 'required|string',
-        'duration' => 'required|string',
-        'video'      => 'required|file|mimetypes:video/mp4,video/*',
+        'title_film' => 'required|string',
+        'video' => 'nullable|file|mimetypes:video/mp4',
+        'film_episodes.*.video' => 'nullable|file|mimetypes:video/mp4',
     ]);
 
-    $path = $request->file('video')->getRealPath();
-    $filename = $request->file('video')->getClientOriginalName();
-    $filesize = $request->file('video')->getSize();
-
-    Log::info('📁 File upload info', [
-        'path' => $path,
-        'filename' => $filename,
-        'filesize_mb' => $filesize / 1024 / 1024,
-        'file_exists' => file_exists($path),
+    $titleSlug = Str::slug($request->title_film, '-');
+    $cloudinary = new \Cloudinary\Cloudinary([
+        'cloud' => [
+            'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+            'api_key' => env('CLOUDINARY_KEY'),
+            'api_secret' => env('CLOUDINARY_SECRET'),
+        ],
+        'url' => ['secure' => true],
     ]);
-    $titile_film_slug = Str::slug($request->title_film, '-'); 
-    $titleslug = Str::slug($request->episode_title, '-');
-    $public_id = $titleslug;
+
+    $response = [
+        'title_film' => $request->title_film,
+    ];
+
     try {
-        $cloudinary = new \Cloudinary\Cloudinary([
-            'cloud' => [
-                'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
-                'api_key'    => env('CLOUDINARY_KEY'),
-                'api_secret' => env('CLOUDINARY_SECRET'),
-            ],
-            'url' => ['secure' => true],
-        ]);
-    
-        Log::info('📤 Bắt đầu gửi file lên Cloudinary', ['filename' => $filename]);
-    
-        // Thêm context metadata
-        $context = "so_tap={$request->so_tap}|ten_tap={$request->ten_tap}|thoi_luong={$request->thoi_luong}";
-        
-        $upload = $cloudinary->uploadApi()->upload($path, [
-            'resource_type' => 'video',
-            'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
-            'public_id' => $public_id,
-            'folder' => "videos/{$titile_film_slug}",
-            'context' => $context  // Thêm metadata vào đây
-        ]);
-    
-        Log::info('✅ Upload video thành công', ['response' => $upload]);
-        return response()->json([
-            'title_film'   => $request->title_film,
-            'episode_number'     => $request->episode_number,
-            'episode_title'    => $request->episode_title,
-            'duration' => $request->duration,
-            'episode_url'   => $upload['secure_url'],
-        ]);
+        // Upload trailer nếu có
+        if ($request->hasFile('video')) {
+            $path = $request->file('video')->getRealPath();
+            $folder = "videos/{$titleSlug}";
+            $public_id = 'trailer';
+
+            $upload = $cloudinary->uploadApi()->upload($path, [
+                'resource_type' => 'video',
+                'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
+                'public_id' => $public_id,
+                'folder' => $folder,
+            ]);
+
+            $response['trailer_url'] = $upload['secure_url'];
+        }
+
+        // Upload episodes nếu có
+        if ($request->has('film_episodes')) {
+            $episodes = $request->film_episodes;
+            $episodeDetails = [];
+
+            foreach ($episodes as $index => $episode) {
+                $path = $episode['video']->getRealPath();
+                $episodeSlug = Str::slug($episode['episode_title'] ?? "tap-{$episode['episode_number']}");
+                $folder = "videos/{$titleSlug}";
+                $public_id = $episodeSlug . '-' . ($index + 1);
+
+                $upload = $cloudinary->uploadApi()->upload($path, [
+                    'resource_type' => 'video',
+                    'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
+                    'public_id' => $public_id,
+                    'folder' => $folder,
+                    'context' => [
+                        'episode_number' => $episode['episode_number'],
+                        'episode_title' => $episode['episode_title'],
+                        'duration' => $episode['duration'],
+                    ],
+                ]);
+
+                $episodeDetails[] = [
+                    'episode_number' => $episode['episode_number'],
+                    'episode_title' => $episode['episode_title'],
+                    'episode_url' => $upload['secure_url'],
+                    'duration' => $episode['duration'],
+                ];
+            }
+
+            $response['episodes'] = $episodeDetails;
+        }
+
+        return response()->json($response, 200);
     } catch (\Exception $e) {
-        Log::error('❌ Upload video lỗi', ['message' => $e->getMessage()]);
+        Log::error('❌ Upload lỗi', ['message' => $e->getMessage()]);
         return response()->json(['error' => 'Lỗi khi upload video: ' . $e->getMessage()], 500);
     }
 }
-public function getVideosByPhim(Request $request)
-{
-    $tenPhim = $request->query('ten_phim');
-    if (!$tenPhim || !is_string($tenPhim)) {
-        return response()->json(['error' => 'Thiếu hoặc sai kiểu ten_phim'], 400);
-    }
-    
-    $tenphimslug = Str::slug($tenPhim, '-');
-    $folder = "videos/{$tenphimslug}";
 
-    Log::info('📥 Nhận request getVideosByPhim', [
-        'ten_phim' => $tenPhim,
-        'tenphimslug' => $tenphimslug,
+// public function getVideosByFilm(Request $request)
+// {
+//     $title_film = $request->query('title_film');
+//     if (!$title_film || !is_string($title_film)) {
+//         return response()->json(['error' => 'Thiếu hoặc sai kiểu title_film'], 400);
+//     }
+    
+//     $slug = Str::slug($title_film, '-');
+//     $folder = "videos/{$slug}";
+
+//     Log::info('📥 Nhận request getVideosByFilm', [
+//         'title_film' => $title_film,
+//         'slug' => $slug,
+//         'folder' => $folder,
+//     ]);
+
+//     try {
+//         $cloudinary = new Cloudinary([
+//             'cloud' => [
+//                 'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+//                 'api_key' => env('CLOUDINARY_KEY'),
+//                 'api_secret' => env('CLOUDINARY_SECRET'),
+//             ],
+//             'url' => ['secure' => true],
+//         ]);
+
+//         $resources = $cloudinary->adminApi()->assets([
+//             'type' => 'upload',
+//             'prefix' => $folder,
+//             'resource_type' => 'video',
+//             'max_results' => 100,
+//             'context' => true,
+//         ]);
+
+//         Log::info('📋 Phản hồi từ Cloudinary', ['resources' => $resources]);
+
+//         if (!isset($resources['resources']) || empty($resources['resources'])) {
+//             // Thử lấy tất cả video nếu không tìm thấy trong thư mục
+//             $allResources = $cloudinary->adminApi()->assets([
+//                 'type' => 'upload',
+//                 'resource_type' => 'video',
+//                 'max_results' => 100,
+//                 'context' => true,
+//             ]);
+//             Log::info('📋 Phản hồi từ Cloudinary (không prefix)', ['all_resources' => $allResources]);
+
+//             return response()->json([
+//                 'message' => 'Không tìm thấy video cho phim này trong thư mục: ' . $folder,
+//             ], 404);
+//         }
+
+//         $videos = collect($resources['resources'])->map(function ($video) use ($request) {
+//             $episode_number = 'Không xác định';
+//             $episode_title = 'Không xác định';
+//             $duration = 'N/A';
+
+//             if (isset($video['context']) && isset($video['context']['custom'])) {
+//                 $contextData = $video['context']['custom'];
+//                 $episode_number = $contextData['episode_number'] ?? 'Không xác định';
+//                 $episode_title = $contextData['episode_title'] ?? 'Không xác định';
+//                 $duration = $contextData['duration'] ?? 'N/A';
+//             } else {
+//                 $publicId = $video['public_id'];
+//                 $parts = explode('/', $publicId);
+//                 $filename = end($parts);
+
+//                 if (preg_match('/tap-(\d+)/', $filename, $matches)) {
+//                     $episode_number = $matches[1] . ' tập';
+//                     $episode_title = 'Tập ' . $matches[1];
+//                 }
+
+//                 if (isset($video['duration'])) {
+//                     $duration = round($video['duration']) . ' phút';
+//                 }
+//             }
+
+//             return [
+//                 'title_film' => $request->query('title_film'),
+//                 'episode_number' => $episode_number,
+//                 'episode_title' => $episode_title,
+//                 'duration' => $duration,
+//                 'episode_url' => $video['secure_url'],
+//             ];
+//         });
+
+//         return response()->json([
+//             'videos' => $videos,
+//         ]);
+//     } catch (\Exception $e) {
+//         Log::error('❌ Lỗi khi lấy video', ['message' => $e->getMessage()]);
+//         return response()->json([
+//             'error' => 'Lỗi khi lấy video: ' . $e->getMessage(),
+//         ], 500);
+//     }
+// }
+// public function getVideosByFilm(Request $request)
+// {
+//     $title_film = $request->query('title_film');
+//     if (!$title_film || !is_string($title_film)) {
+//         return response()->json(['error' => 'Thiếu hoặc sai kiểu title_film'], 400);
+//     }
+    
+//     $slug = Str::slug($title_film, '-');
+//     $folder = "videos/{$slug}";
+
+//     Log::info('📥 Nhận request getVideosByFilm', [
+//         'title_film' => $title_film,
+//         'slug' => $slug,
+//         'folder' => $folder,
+//     ]);
+
+//     try {
+//         $cloudinary = new Cloudinary([
+//             'cloud' => [
+//                 'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+//                 'api_key' => env('CLOUDINARY_KEY'),
+//                 'api_secret' => env('CLOUDINARY_SECRET'),
+//             ],
+//             'url' => ['secure' => true],
+//         ]);
+
+//         $resources = $cloudinary->adminApi()->assets([
+//             'type' => 'upload',
+//             'prefix' => $folder,
+//             'resource_type' => 'video',
+//             'max_results' => 100,
+//             'context' => true,
+//         ]);
+
+//         Log::info('📋 Phản hồi từ Cloudinary', ['resources' => $resources]);
+
+//         if (!isset($resources['resources']) || empty($resources['resources'])) {
+//             return response()->json([
+//                 'message' => 'Không tìm thấy video cho phim này trong thư mục: ' . $folder,
+//             ], 404);
+//         }
+
+//         $videos = collect($resources['resources'])->map(function ($video) use ($request) {
+//             $episode_number = 'Không xác định';
+//             $episode_title = 'Không xác định';
+//             $duration = 'N/A';
+//             $is_trailer = false;
+
+//             if (isset($video['context']) && isset($video['context']['custom'])) {
+//                 $contextData = $video['context']['custom'];
+//                 $episode_number = $contextData['episode_number'] ?? 'Không xác định';
+//                 $episode_title = $contextData['episode_title'] ?? 'Không xác định';
+//                 $duration = $contextData['duration'] ?? 'N/A';
+//                 $is_trailer = isset($contextData['is_trailer']) && $contextData['is_trailer'] === 'true';
+//             } else {
+//                 $publicId = $video['public_id'];
+//                 $parts = explode('/', $publicId);
+//                 $filename = end($parts);
+
+//                 if (preg_match('/tap-(\d+)/', $filename, $matches)) {
+//                     $episode_number = $matches[1] . ' tập';
+//                     $episode_title = 'Tập ' . $matches[1];
+//                 } elseif (str_contains($filename, 'trailer')) {
+//                     $is_trailer = true;
+//                     $episode_title = 'Trailer';
+//                 }
+
+//                 if (isset($video['duration'])) {
+//                     $duration = round($video['duration']) . ' phút';
+//                 }
+//             }
+
+//             return [
+//                 'title_film' => $request->query('title_film'),
+//                 'episode_number' => $episode_number,
+//                 'episode_title' => $episode_title,
+//                 'duration' => $duration,
+//                 'episode_url' => $video['secure_url'],
+//                 'is_trailer' => $is_trailer,
+//             ];
+//         });
+
+//         return response()->json([
+//             'videos' => $videos,
+//         ]);
+//     } catch (\Exception $e) {
+//         Log::error('❌ Lỗi khi lấy video', ['message' => $e->getMessage()]);
+//         return response()->json([
+//             'error' => 'Lỗi khi lấy video: ' . $e->getMessage(),
+//         ], 500);
+//     }
+// }
+
+// public function getVideosByFilm(Request $request)
+// {
+//     $title_film = $request->query('title_film');
+//     if (!$title_film || !is_string($title_film)) {
+//         return response()->json(['error' => 'Thiếu hoặc sai kiểu title_film'], 400);
+//     }
+    
+//     $slug = Str::slug($title_film, '-');
+//     $folder = "videos/{$slug}";
+
+//     Log::info('📥 Nhận request getVideosByFilm', [
+//         'title_film' => $title_film,
+//         'slug' => $slug,
+//         'folder' => $folder,
+//     ]);
+
+//     try {
+//         $cloudinary = new Cloudinary([
+//             'cloud' => [
+//                 'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+//                 'api_key' => env('CLOUDINARY_KEY'),
+//                 'api_secret' => env('CLOUDINARY_SECRET'),
+//             ],
+//             'url' => ['secure' => true],
+//         ]);
+
+//         $resources = $cloudinary->adminApi()->assets([
+//             'type' => 'upload',
+//             'prefix' => $folder . '/', // Đảm bảo khớp với thư mục upload
+//             'resource_type' => 'video',
+//             'max_results' => 100,
+//             'context' => true,
+//         ]);
+
+//         Log::info('📋 Phản hồi từ Cloudinary', ['resources' => $resources]);
+
+//         if (!isset($resources['resources']) || empty($resources['resources'])) {
+//             return response()->json([
+//                 'message' => 'Không tìm thấy video cho phim này trong thư mục: ' . $folder,
+//             ], 404);
+//         }
+
+//         $response = [
+//             'title_film' => $title_film,
+//             'slug' => $slug,
+//         ];
+
+//         $trailer_url = null;
+//         $episodes = [];
+
+//         foreach ($resources['resources'] as $video) {
+//             $episode_number = 'Không xác định';
+//             $episode_title = 'Không xác định';
+//             $duration = 'N/A';
+
+//             if (isset($video['context']) && isset($video['context']['custom'])) {
+//                 $contextData = $video['context']['custom'];
+//                 $episode_number = $contextData['episode_number'] ?? 'Không xác định';
+//                 $episode_title = $contextData['episode_title'] ?? 'Không xác định';
+//                 $duration = $contextData['duration'] ?? 'N/A';
+//             } else {
+//                 $publicId = $video['public_id'];
+//                 $filename = explode('/', $publicId);
+//                 $filename = end($filename);
+
+//                 if (preg_match('/tap-(\d+)/', $filename, $matches)) {
+//                     $episode_number = $matches[1] . ' tập';
+//                     $episode_title = 'Tập ' . $matches[1];
+//                 } elseif (str_contains($filename, 'trailer')) {
+//                     $episode_title = 'Trailer';
+//                 }
+
+//                 if (isset($video['duration'])) {
+//                     $duration = round($video['duration']) . ' phút';
+//                 }
+//             }
+
+//             if (str_contains($video['public_id'], 'trailer')) {
+//                 $trailer_url = $video['secure_url'];
+//             } else {
+//                 $episodes[] = [
+//                     'episode_number' => $episode_number,
+//                     'episode_title' => $episode_title,
+//                     'episode_url' => $video['secure_url'],
+//                 ];
+//             }
+//         }
+
+//         if ($trailer_url) {
+//             $response['trailer_url'] = $trailer_url;
+//         }
+//         if (!empty($episodes)) {
+//             $response['episodes'] = $episodes;
+//         }
+
+//         return response()->json($response);
+//     } catch (\Exception $e) {
+//         Log::error('❌ Lỗi khi lấy video', ['message' => $e->getMessage()]);
+//         return response()->json([
+//             'error' => 'Lỗi khi lấy video: ' . $e->getMessage(),
+//         ], 500);
+//     }
+// }
+// public function getVideosByFilm(Request $request)
+// {
+//     // Lấy slug từ query parameters
+//     $slug = $request->query('slug');
+//     if (!$slug || !is_string($slug)) {
+//         return response()->json(['error' => 'Thiếu hoặc sai kiểu slug'], 400);
+//     }
+
+//     $folder = "videos/{$slug}";
+
+//     Log::info('📥 Nhận request getVideosByFilm', [
+//         'slug' => $slug,
+//         'folder' => $folder,
+//     ]);
+
+//     try {
+//         $cloudinary = new Cloudinary([
+//             'cloud' => [
+//                 'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+//                 'api_key' => env('CLOUDINARY_KEY'),
+//                 'api_secret' => env('CLOUDINARY_SECRET'),
+//             ],
+//             'url' => ['secure' => true],
+//         ]);
+
+//         $resources = $cloudinary->adminApi()->assets([
+//             'type' => 'upload',
+//             'prefix' => $folder . '/', // Đảm bảo khớp với thư mục upload
+//             'resource_type' => 'video',
+//             'max_results' => 100,
+//             'context' => true,
+//         ]);
+
+//         Log::info('📋 Phản hồi từ Cloudinary', ['resources' => $resources]);
+
+//         if (!isset($resources['resources']) || empty($resources['resources'])) {
+//             return response()->json([
+//                 'message' => 'Không tìm thấy video cho phim này trong thư mục: ' . $folder,
+//             ], 404);
+//         }
+
+//         $response = [
+//             'slug' => $slug,
+//         ];
+
+//         $trailer_url = null;
+//         $episodes = [];
+
+//         foreach ($resources['resources'] as $video) {
+//             $episode_number = 'Không xác định';
+//             $episode_title = 'Không xác định';
+//             $duration = 'N/A';
+
+//             if (isset($video['context']) && isset($video['context']['custom'])) {
+//                 $contextData = $video['context']['custom'];
+//                 $episode_number = $contextData['episode_number'] ?? 'Không xác định';
+//                 $episode_title = $contextData['episode_title'] ?? 'Không xác định';
+//                 $duration = $contextData['duration'] ?? 'N/A';
+//             } else {
+//                 $publicId = $video['public_id'];
+//                 $filename = explode('/', $publicId);
+//                 $filename = end($filename);
+
+//                 if (preg_match('/tap-(\d+)/', $filename, $matches)) {
+//                     $episode_number = $matches[1] . ' tập';
+//                     $episode_title = 'Tập ' . $matches[1];
+//                 } elseif (str_contains($filename, 'trailer')) {
+//                     $episode_title = 'Trailer';
+//                 }
+
+//                 if (isset($video['duration'])) {
+//                     $duration = round($video['duration']) . ' phút';
+//                 }
+//             }
+
+//             if (str_contains($video['public_id'], 'trailer')) {
+//                 $trailer_url = $video['secure_url'];
+//             } else {
+//                 $episodes[] = [
+//                     'episode_number' => $episode_number,
+//                     'episode_title' => $episode_title,
+//                     'episode_url' => $video['secure_url'],
+//                 ];
+//             }
+//         }
+
+//         // Lấy title_film từ context của trailer (nếu có) hoặc để trống
+//         $title_film = 'Không xác định';
+//         if ($trailer_url && isset($resources['resources'][0]['context']['custom']['title_film'])) {
+//             $title_film = $resources['resources'][0]['context']['custom']['title_film'];
+//         }
+
+//         $response['title_film'] = $title_film;
+
+//         if ($trailer_url) {
+//             $response['trailer_url'] = $trailer_url;
+//         }
+//         if (!empty($episodes)) {
+//             $response['episodes'] = $episodes;
+//         }
+
+//         return response()->json($response);
+//     } catch (\Exception $e) {
+//         Log::error('❌ Lỗi khi lấy video', ['message' => $e->getMessage()]);
+//         return response()->json([
+//             'error' => 'Lỗi khi lấy video: ' . $e->getMessage(),
+//         ], 500);
+//     }
+// }
+public function getVideosByFilm(Request $request)
+{
+    $slug = $request->query('slug');
+    if (!$slug || !is_string($slug)) {
+        return response()->json(['error' => 'Thiếu hoặc sai kiểu slug'], 400);
+    }
+
+    $folder = "videos/{$slug}";
+
+    Log::info('📥 Nhận request getVideosByFilm', [
+        'slug' => $slug,
         'folder' => $folder,
     ]);
 
@@ -108,7 +594,7 @@ public function getVideosByPhim(Request $request)
 
         $resources = $cloudinary->adminApi()->assets([
             'type' => 'upload',
-            'prefix' => $folder,
+            'prefix' => $folder . '/',
             'resource_type' => 'video',
             'max_results' => 100,
             'context' => true,
@@ -117,65 +603,73 @@ public function getVideosByPhim(Request $request)
         Log::info('📋 Phản hồi từ Cloudinary', ['resources' => $resources]);
 
         if (!isset($resources['resources']) || empty($resources['resources'])) {
-            // Thử lấy tất cả video nếu không tìm thấy trong thư mục
-            $allResources = $cloudinary->adminApi()->assets([
-                'type' => 'upload',
-                'resource_type' => 'video',
-                'max_results' => 100,
-                'context' => true,
-            ]);
-            Log::info('📋 Phản hồi từ Cloudinary (không prefix)', ['all_resources' => $allResources]);
-
             return response()->json([
                 'message' => 'Không tìm thấy video cho phim này trong thư mục: ' . $folder,
             ], 404);
         }
 
-        $videos = collect($resources['resources'])->map(function ($video) use ($request) {
-            $soTap = 'Không xác định';
-            $tenTap = 'Không xác định';
-            $thoiLuong = 'N/A';
+        $response = [
+            'slug' => $slug,
+        ];
+
+        $trailer_url = null;
+        $episodes = [];
+
+        foreach ($resources['resources'] as $video) {
+            $episode_number = 'Không xác định';
+            $episode_title = 'Không xác định';
+            $duration = 'N/A';
 
             if (isset($video['context']) && isset($video['context']['custom'])) {
                 $contextData = $video['context']['custom'];
-                $soTap = $contextData['so_tap'] ?? 'Không xác định';
-                $tenTap = $contextData['ten_tap'] ?? 'Không xác định';
-                $thoiLuong = $contextData['thoi_luong'] ?? 'N/A';
+                $title_film = $contextData['title_film'] ?? 'Không xác định';
+                $episode_number = $contextData['episode_number'] ?? 'Không xác định';
+                $episode_title = $contextData['episode_title'] ?? 'Không xác định';
+                $duration = $contextData['duration'] ?? 'N/A';
             } else {
                 $publicId = $video['public_id'];
-                $parts = explode('/', $publicId);
-                $filename = end($parts);
+                $filename = explode('/', $publicId);
+                $filename = end($filename);
 
                 if (preg_match('/tap-(\d+)/', $filename, $matches)) {
-                    $soTap = $matches[1] . ' tập';
-                    $tenTap = 'Tập ' . $matches[1];
+                    $episode_number = $matches[1] . ' tập';
+                    $episode_title = 'Tập ' . $matches[1];
+                } elseif (str_contains($filename, 'trailer')) {
+                    $episode_title = 'Trailer';
                 }
 
                 if (isset($video['duration'])) {
-                    $thoiLuong = round($video['duration']) . ' phút';
+                    $duration = round($video['duration']) . ' phút';
                 }
             }
 
-            return [
-                'ten_phim' => $request->query('ten_phim'),
-                'so_tap' => $soTap,
-                'ten_tap' => $tenTap,
-                'thoi_luong' => $thoiLuong,
-                'link_tap' => $video['secure_url'],
-            ];
-        });
+            $response['title_film'] = $title_film;
 
-        return response()->json([
-            'videos' => $videos,
-        ]);
+            if (str_contains($video['public_id'], 'trailer')) {
+                $trailer_url = $video['secure_url'];
+            } else {
+                $episodes[] = [
+                    'episode_number' => $episode_number,
+                    'episode_title' => $episode_title,
+                    'duration' => $duration,
+                    'episode_url' => $video['secure_url'],
+                ];
+            }
+        }
+
+        if ($trailer_url) {
+            $response['trailer_url'] = $trailer_url;
+        }
+        if (!empty($episodes)) {
+            $response['episodes'] = $episodes;
+        }
+
+        return response()->json($response);
     } catch (\Exception $e) {
         Log::error('❌ Lỗi khi lấy video', ['message' => $e->getMessage()]);
-        return response()->json([
-            'error' => 'Lỗi khi lấy video: ' . $e->getMessage(),
-        ], 500);
+        return response()->json(['error' => 'Lỗi khi lấy video: ' . $e->getMessage()], 500);
     }
 }
-
 public function testCloudinary()
 {
     $cloudinary = new Cloudinary([

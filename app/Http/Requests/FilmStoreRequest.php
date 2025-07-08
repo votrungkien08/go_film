@@ -3,49 +3,38 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-
+use Illuminate\Support\Facades\Log;
 class FilmStoreRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
 
-    public function rules(): array
+
+    public function rules()
     {
         $filmId = $this->route('id'); // Lấy ID từ route khi cập nhật
-
+        Log::info('Request data in FilmStoreRequest:', request()->all());
         return [
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('Film', 'slug')->ignore($filmId), // Bỏ qua slug hiện tại khi cập nhật
-            ],
-            'title_film' => 'required|string|max:255',
-            'thumb' => 'required|string|max:255',
-            'trailer' => 'nullable|string|max:255',
-            'film_type' => 'required|boolean',
-            'year_id' => 'required|exists:year,id',
-            'country_id' => 'required|exists:country,id',
+            'title_film' => 'required|string',
+            'thumb' => 'required|url',
+            'film_type' => 'required|integer',
+            'year_id' => 'required|integer',
+            'country_id' => 'required|integer',
             'actor' => 'required|string',
             'director' => 'required|string',
             'content' => 'required|string',
-            'view' => 'required|integer|min:0',
-            'genre_id' => 'required|array|min:1',
+            'view' => 'required|integer',
+            'genre_id' => 'required|array',
             'genre_id.*' => 'integer|exists:genre,id',
-            'film_episodes' => 'required_if:film_type,false|array|min:1',
-            'film_episodes.*.episode_number' => 'required|integer|min:1',
-            'film_episodes.*.episode_title' => 'nullable|string',
-            'film_episodes.*.episode_url' => 'required|url',
-            'film_episodes.*.duration' => 'nullable|string',
-            'is_premium' => 'boolean',
-            'point_required' => [
-                'nullable',
-                'integer',
-                'min:0',
-                Rule::requiredIf($this->is_premium),
-            ],
+'trailer_video' => 'nullable|file|mimes:mp4',
+'film_episodes' => 'required|array',
+'film_episodes.*.episode_number' => 'required|string',
+        'film_episodes.*.episode_title' => 'nullable|string',
+        'film_episodes.*.duration' => 'nullable|string',
+
+'film_episodes.*.video' => 'required|file|mimes:mp4',
+
+
+
+
         ];
     }
 
@@ -54,10 +43,9 @@ class FilmStoreRequest extends FormRequest
         return [
             'slug.required' => 'Slug là bắt buộc.',
             'slug.unique' => 'Slug đã tồn tại.',
-            'title_film.required' => 'Tiêu đề phim là bắt buộc.',
             'thumb.required' => 'Thumbnail là bắt buộc.',
             'film_type.required' => 'Loại phim là bắt buộc.',
-            'film_type.boolean' => 'Loại phim phải là true hoặc false.',
+            'film_type.integer' => 'Loại phim phải là true hoặc false.',
             'year_id.required' => 'Năm phát hành là bắt buộc.',
             'year_id.exists' => 'Năm phát hành không hợp lệ.',
             'country_id.required' => 'Quốc gia là bắt buộc.',
@@ -74,8 +62,6 @@ class FilmStoreRequest extends FormRequest
             'film_episodes.*.episode_number.required' => 'Số tập là bắt buộc.',
             'film_episodes.*.episode_number.integer' => 'Số tập phải là số nguyên.',
             'film_episodes.*.episode_number.min' => 'Số tập phải lớn hơn hoặc bằng 1.',
-            'film_episodes.*.episode_url.required' => 'URL video là bắt buộc.',
-            'film_episodes.*.episode_url.url' => 'URL video không hợp lệ.',
             'is_premium.boolean' => 'Trạng thái premium phải là true hoặc false.',
             'point_required.required' => 'Số điểm yêu cầu là bắt buộc cho phim premium.',
             'point_required.integer' => 'Số điểm yêu cầu phải là số nguyên.',

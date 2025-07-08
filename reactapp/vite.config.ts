@@ -7,6 +7,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
+      'src': path.resolve(__dirname, 'src'),  // <-- alias @ trỏ đến src
+      // '@mui/system': '@mui/system/esm'
       '@': path.resolve(__dirname, 'src'),
     },
     dedupe: ['react', 'react-dom'], // THÊM MỚI: Ngăn nhiều bản sao React
