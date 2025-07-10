@@ -42,7 +42,17 @@ const Update = () => {
                 setError('Không thể tải danh sách phim.');
             }
         };
+        const trackAdView = async () => {
+            try {
+            await axios.post('http://localhost:8000/api/track-ad', {
+                event_type: 'view',
+            });
+            } catch (error) {
+            console.error('Không thể gửi sự kiện quảng cáo:', error);
+            }
+        };
         fetchFilms();
+        trackAdView();
     }, []);
     const updateFilm = [...films]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -96,6 +106,17 @@ const Update = () => {
     //     );
     // }
 
+    const handleAdClickBanner = async () => {
+        try {
+            await axios.post('http://localhost:8000/api/track-ad', {
+            event_type: 'click',
+            });
+            window.open("https://shop.kafela.vn/", "_blank"); // chuyển trang sau khi gửi log
+        } catch (error) {
+            console.error("Không thể ghi nhận click:", error);
+            window.open("https://shop.kafela.vn/", "_blank"); // vẫn mở trang nếu lỗi
+        }
+    };
 
     return (
         <>
@@ -103,6 +124,12 @@ const Update = () => {
                 <div className="col-span-1"></div>
                 <div className="col-span-10">
                 <div className="grid grid-cols-10 gap-4 mb-4  shadow shadow-gray-500/50 ">
+                    <div className="col-span-10 cursor-pointer">
+                        <a onClick={handleAdClickBanner}  rel="noopener noreferrer">
+                            <img className="w-full" src="/img/qc1.gif" alt="" />
+                        </a>
+                        
+                    </div>
                     <div className="col-span-5 flex items-center h-12 ">
                             <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" style={theme === 'dark'|| theme === 'system' ? {filter: 'invert(100%) sepia(100%) saturate(2%) hue-rotate(162deg) brightness(105%) contrast(101%)'} : {}}  />
 

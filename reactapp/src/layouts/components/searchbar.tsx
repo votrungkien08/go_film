@@ -32,11 +32,7 @@ export function Searchbar({ sx, ...other }: BoxProps) {
   return (
     <ClickAwayListener onClickAway={handleClose}>
       <div>
-        {!open && (
-          <IconButton onClick={handleOpen}>
-            <Iconify icon="eva:search-fill" />
-          </IconButton>
-        )}
+
 
         <Slide direction="down" in={open} mountOnEnter unmountOnExit>
           <Box

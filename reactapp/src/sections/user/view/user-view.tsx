@@ -25,6 +25,7 @@ import { emptyRows, applyFilter, getComparator } from '../utils';
 import { useUser } from 'src/hooks/useUser';
 import type { Users } from 'src/types';
 import type { UserProps } from '../user-table-row';
+import { AlignCenter } from 'lucide-react';
 
 // ----------------------------------------------------------------------
 
@@ -92,6 +93,8 @@ export function UserView() {
                   { id: 'email', label: 'Email' },
                   { id: 'role', label: 'Role' },
                   { id: 'point', label: 'Point' },
+                  { id: 'action', label: 'Action', align: 'center'},
+
                 ]}
               />
               <TableBody>

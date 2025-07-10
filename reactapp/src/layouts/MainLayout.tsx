@@ -182,10 +182,6 @@ const MainLayout = () => {
   const isFilmList = location.pathname === '/films';
   const isHistories = location.pathname === '/histories';
   const isFavorites = location.pathname === '/favorites';
-    const location = useLocation();
-    const isFilmDetail = location.pathname.startsWith('/film/');
-    const isFilmList = location.pathname === '/films';
-    const isHistories = location.pathname === '/histories';
 
 
     const [isLoading, setIsLoading] = useState(true);

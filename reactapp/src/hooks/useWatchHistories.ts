@@ -15,7 +15,10 @@ export const useWatchHistories = (selectedEpisode: any,videoRef: React.RefObject
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
-             if (setCurrentTime) setCurrentTime(currentTime); 
+             if (setCurrentTime) {
+                setCurrentTime(currentTime);
+            }
+                
             saveTimeoutRef.current = setTimeout(() => { 
                     fetch('http://localhost:8000/api/store-histories',{
                     method: 'POST',

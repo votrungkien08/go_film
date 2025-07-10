@@ -15,6 +15,8 @@ use App\Http\Controllers\RatingController;
 use App\Http\Controllers\WatchHistoriesController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\AdEventController;
+use App\Http\Controllers\RevenueExportController;
 use App\Models\Film;
 use App\Models\Film_episodes;
 use App\Models\Watch_histories;
@@ -53,8 +55,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/store-histories', [WatchHistoriesController::class, 'store']);
     Route::post('/films/deduct-points', [FilmController::class, 'deductPoints']);
     Route::post('/films/reward-points', [FilmController::class, 'rewardPointsForNormalFilm']);
+
+// Route::get('/admin/export-monthly-revenue', [AdEventController::class, 'monthlyRevenue']);
 });
 
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    //revenue ad
+    Route::get('/admin/export-monthly-revenue', [AdEventController::class, 'monthlyAdRevenue']);
+    Route::get('/admin/monthly-revenue-range', [AdEventController::class, 'monthlyAdRevenueRange']);
+    // revenue customer
+    Route::get('/admin/monthly-customer-revenue', [TransactionController::class, 'monthlyCustomerRevenue']);
+    Route::get('/admin/monthly-customer-revenue-range', [TransactionController::class, 'monthlyCustomerRevenueRange']);
+    Route::post('/track-ad', [AdEventController::class, 'track']);
+
+
+});
+Route::get('/admin/export-revenue-summary', [RevenueExportController::class, 'exportSummary']);
+
+// track ad event
 
 // get user 
     Route::get('/get-all-users', [AuthController::class, 'getAllUser']);

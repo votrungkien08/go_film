@@ -21,7 +21,7 @@ export function FilmTableHead({ order, orderBy, onSort, headLabel }: FilmTableHe
     <TableHead>
       <TableRow>
         {headLabel.map((head) => (
-          <TableCell key={head.id}>
+          <TableCell key={head.id} className={head.width}>
             <TableSortLabel
               active={orderBy === head.id}
               direction={orderBy === head.id ? order : 'asc'}

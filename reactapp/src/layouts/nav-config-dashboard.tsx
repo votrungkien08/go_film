@@ -14,40 +14,40 @@ export type NavItem = {
 
 export const navData = [
   {
-    title: 'Dashboard',
+    title: 'Bảng Điều Khiển',
     path: '/dashboard',
     icon: icon('ic-analytics'),
   },
   {
-    title: 'User',
+    title: 'Quản Lý Người Dùng',
     path: '/dashboard/user',
     icon: icon('ic-user'),
   },
-  {
-    title: 'Product',
-    path: '/dashboard/products',
-    icon: icon('ic-cart'),
-    info: (
-      <Label color="error" variant="inverted">
-        +3
-      </Label>
-    ),
-  },
-  {
-    title: 'Blog',
-    path: '/dashboard/blog',
-    icon: icon('ic-blog'),
-  },
-  {
-    title: 'Sign in',
-    path: '/dashboard/sign-in',
-    icon: icon('ic-lock'),
-  },
-  {
-    title: 'Not found',
-    path: '/dashboard/404',
-    icon: icon('ic-disabled'),
-  },
+  // {
+  //   title: 'Product',
+  //   path: '/dashboard/products',
+  //   icon: icon('ic-cart'),
+  //   info: (
+  //     <Label color="error" variant="inverted">
+  //       +3
+  //     </Label>
+  //   ),
+  // },
+  // {
+  //   title: 'Blog',
+  //   path: '/dashboard/blog',
+  //   icon: icon('ic-blog'),
+  // },
+  // {
+  //   title: 'Sign in',
+  //   path: '/dashboard/sign-in',
+  //   icon: icon('ic-lock'),
+  // },
+  // {
+  //   title: 'Not found',
+  //   path: '/dashboard/404',
+  //   icon: icon('ic-disabled'),
+  // },
   {
     title: 'Quản Lý Phim',
     path: '/dashboard/films',
@@ -62,5 +62,10 @@ export const navData = [
     title: 'Add',
     path: '/dashboard/add',
     icon: icon('ic-add'),
+  },
+  {
+    title: 'Quản Lý Doanh Thu',
+    path: '/dashboard/revenue',
+    icon: icon('ic-revenue'),
   },
 ];

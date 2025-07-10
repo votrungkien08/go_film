@@ -25,6 +25,7 @@ import  BlogPage  from './pages/blog';
 import  CommentPage  from './pages/comments';
 import  FilmPage  from './pages/film-control';
 import  AddPage  from './pages/add';
+import  RevenuePage  from './pages/revenue';
 
 import { ParallaxProvider } from '../src/utils/ParallaxContext';
 import { MUIThemeProvider } from 'src/theme/theme-provider';
@@ -89,6 +90,7 @@ function App() {
                 <Route path="comment" element={<CommentPage />} />
                 <Route path="films" element={<FilmPage />} />
                 <Route path="add" element={<AddPage />} />
+                <Route path="revenue" element={<RevenuePage />} />
               </Route>
             </Route>
 

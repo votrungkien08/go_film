@@ -436,6 +436,7 @@ public function update(Request $request, $id)
                     'duration' => $episode['duration'] ?? '',
                 ]);
             }
+
             Log::info('Episodes updated', ['film_id' => $film->id]);
 
             $newGenreIds = $request->genre_id;
@@ -454,13 +455,7 @@ public function update(Request $request, $id)
                 'message' => 'Cập nhật phim thành công',
                 'data' => $film,
             ], 200);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('❌ Error updating film', ['message' => $e->getMessage()]);
-            return response()->json([
-                'error' => 'Lỗi khi cập nhật phim: ' . $e->getMessage(),
-            ], 500);
-        }
+        } 
 
         // 🔄 Gắn thể loại
         $film->genres()->sync($request->input('genre_id', []));

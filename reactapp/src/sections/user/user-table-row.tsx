@@ -8,11 +8,13 @@ import TableRow from '@mui/material/TableRow';
 // import MenuList from '@mui/material/MenuList';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { useUser } from 'src/hooks/useUser';  
+// import { GripVertical } from 'lucide-react';
 // ----------------------------------------------------------------------
 
 export type UserProps = {
@@ -30,9 +32,11 @@ type UserTableRowProps = {
   row: UserProps;
   selected: boolean;
   onSelectRow: () => void;
+  onEdit: (user: UserProps) => void;
+  onDelete: (id: string) => void;
 };
 
-export function UserTableRow({ row, selected, onSelectRow }: UserTableRowProps) {
+export function UserTableRow({ row, selected, onSelectRow, onEdit ,onDelete }: UserTableRowProps) {
   const {allUsers} = useUser();
 
   return (
@@ -56,7 +60,15 @@ export function UserTableRow({ row, selected, onSelectRow }: UserTableRowProps) 
 
         <TableCell>{row.role}</TableCell>
         <TableCell>{row.points}</TableCell>
-
+        {/* <TableCell><GripVertical className='cursor-pointer' /></TableCell> */}
+        <TableCell align='center' >
+          <Button variant="text" color="primary" onClick={() => onEdit(row)}>
+            Sửa
+          </Button>
+          <Button variant="text" color="error" onClick={() => onDelete(row.id)}>
+            Xoá
+          </Button>
+        </TableCell>
 
       </TableRow>
 

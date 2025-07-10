@@ -2,7 +2,7 @@ import { Episode } from './index';
 // src/types/index.ts
 export interface Episode {
   id?: number;
-  episode_number: number;
+  episode_number: string;
   episode_title: string;
   episode_url: string;
   duration: string;

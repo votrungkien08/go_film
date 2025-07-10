@@ -1,6 +1,7 @@
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
 import { Film } from './types'; // Giả sử bạn có file types.ts chứa interface Film
 
 interface FilmTableRowProps {
@@ -19,17 +20,22 @@ export function FilmTableRow({ film, onEdit, onDelete }: FilmTableRowProps) {
       <TableCell>{film.country?.country_name || 'N/A'}</TableCell>
       <TableCell>{film.film_type ? 'Phim Lẻ' : 'Phim Bộ'}</TableCell>
       <TableCell>{film.director}</TableCell>
-      <TableCell>{film.actor}</TableCell>
+      <TableCell><div className='line-clamp-3'>{film.actor}</div></TableCell>
+      
+      <TableCell><div className='line-clamp-3'>{film.content}</div></TableCell>
+      
       <TableCell>{film.view}</TableCell>
       <TableCell>{film.is_premium ? 'Có' : 'Không'}</TableCell>
       <TableCell>{film.is_premium ? film.point_required || '0' : 'N/A'}</TableCell>
-      <TableCell>
-        <Button variant="contained" color="primary" onClick={onEdit} sx={{ mr: 1 }}>
-          Sửa
-        </Button>
-        <Button variant="contained" color="error" onClick={onDelete}>
-          Xóa
-        </Button>
+      <TableCell >
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+            <Button variant="contained" color="primary" onClick={onEdit}>
+              Sửa
+            </Button>
+            <Button variant="contained" color="error" onClick={onDelete}>
+              Xóa
+            </Button>
+          </Box>
       </TableCell>
     </TableRow>
   );

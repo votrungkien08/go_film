@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PaymentSuccess;
+use Illuminate\Support\Carbon;
+
 class TransactionController extends Controller
 {
     public function createPayment(Request $request)
@@ -194,4 +196,78 @@ class TransactionController extends Controller
         ]);
         return redirect($frontendUrl . '/?payment=error&message=invalid_hash');
     }
+
+
+    public function monthlyCustomerRevenue(Request $request)
+    {
+        try {
+            $month = $request->input('month', now()->month);
+            $year = $request->input('year', now()->year);
+
+            $start = Carbon::create($year, $month, 1)->startOfMonth();
+            $end = Carbon::create($year, $month, 1)->endOfMonth();
+
+            $transactions = Transaction::where('status', 'success')
+                ->whereBetween('updated_at', [$start, $end])
+                ->get();
+
+            $totalAmount = $transactions->sum('amount');
+            $totalTransactions = $transactions->count();
+
+            return response()->json([
+                'month' => $month,
+                'year' => $year,
+                'transaction_count' => $totalTransactions,
+                'total_amount' => $totalAmount,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Lỗi khi lấy doanh thu khách hàng theo tháng',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function monthlyCustomerRevenueRange(Request $request)
+    {
+        try {
+            $year = $request->input('year', now()->year);
+
+            $months = [];
+            $transactionCounts = [];
+            $amounts = [];
+
+            for ($month = 1; $month <= 12; $month++) {
+                $start = Carbon::create($year, $month, 1)->startOfMonth();
+                $end = Carbon::create($year, $month, 1)->endOfMonth();
+
+                $transactions = Transaction::where('status', 'success')
+                    ->whereBetween('updated_at', [$start, $end])
+                    ->get();
+
+                $monthlyAmount = $transactions->sum('amount');
+                $monthlyCount = $transactions->count();
+
+                $months[] = "$month/$year";
+                $amounts[] = $monthlyAmount;
+                $transactionCounts[] = $monthlyCount;
+            }
+
+            return response()->json([
+                'title' => 'Doanh thu từ khách hàng theo tháng',
+                'subheader' => "Năm {$year}",
+                'categories' => $months,
+                'series' => [
+                    ['name' => 'Doanh thu', 'data' => $amounts],
+                    ['name' => 'Số giao dịch', 'data' => $transactionCounts],
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Lỗi khi lấy dữ liệu doanh thu khách hàng',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }

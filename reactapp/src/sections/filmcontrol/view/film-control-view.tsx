@@ -470,7 +470,7 @@ export function FilmControlView() {
 
   return (
     <DashboardContent>
-      <Box sx={{ mb: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ mb: 5, display: 'flex', justifyContent: 'space-evenly', alignItems: 'center' }}>
         <Typography variant="h4">Quản lý phim</Typography>
         <Button
           variant="contained"
@@ -536,25 +536,26 @@ export function FilmControlView() {
         />
         <Scrollbar sx={{ width: '100%', height: 'auto', maxHeight: 'none' }}>
           <TableContainer sx={{ height: 'auto', overflow: 'visible' }}>
-            <Table sx={{ minWidth: 1200 }}>
+            <Table sx={{ minWidth: 1200 , tableLayout: 'fixed' }}>
               <FilmTableHead
                 order={table.order}
                 orderBy={table.orderBy}
                 rowCount={films.length}
                 onSort={table.onSort}
                 headLabel={[
-                  { id: 'id', label: 'ID' },
-                  { id: 'title_film', label: 'Tiêu đề' },
-                  { id: 'genres', label: 'Thể loại' },
-                  { id: 'year', label: 'Năm phát hành' },
-                  { id: 'country', label: 'Quốc gia' },
-                  { id: 'film_type', label: 'Loại phim' },
-                  { id: 'director', label: 'Đạo diễn' },
-                  { id: 'actor', label: 'Diễn viên' },
-                  { id: 'view', label: 'Lượt xem' },
-                  { id: 'is_premium', label: 'Premium' },
-                  { id: 'point_required', label: 'Điểm yêu cầu' },
-                  { id: '', label: 'Hành động' },
+                  { id: 'id', label: 'ID',width: 'w-10' },
+                  { id: 'title_film', label: 'Tiêu đề', width: 'w-20' },
+                  { id: 'genres', label: 'Thể loại' ,width: 'w-20'},
+                  { id: 'year', label: 'Năm phát hành',width: 'w-20' },
+                  { id: 'country', label: 'Quốc gia',width: 'w-20' },
+                  { id: 'film_type', label: 'Loại phim',width: 'w-20' },
+                  { id: 'director', label: 'Đạo diễn',width: 'w-20' },
+                  { id: 'actor', label: 'Diễn viên', width: 'w-20' },
+                  { id: 'content', label: 'Nội dung', width: 'w-20' },
+                  { id: 'view', label: 'Lượt xem',width: 'w-20' },
+                  { id: 'is_premium', label: 'Premium',width: 'w-20' },
+                  { id: 'point_required', label: 'Điểm yêu cầu',width: 'w-20' },
+                  { id: '', label: 'Hành động',width: 'w-20' },
                 ]}
               />
               <TableBody>

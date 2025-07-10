@@ -40,7 +40,17 @@ const Rank = () => {
                 setError('Không thể tải danh sách phim.');
             }
         };
+        const trackAdView = async () => {
+            try {
+            await axios.post('http://localhost:8000/api/track-ad', {
+                event_type: 'view',
+            });
+            } catch (error) {
+            console.error('Không thể gửi sự kiện quảng cáo:', error);
+            }
+        };
         fetchFilms();
+        trackAdView();
     }, []);
     const scrollRef = useRef<HTMLDivElement>(null);
     const scrollLeft = () => {
@@ -57,6 +67,18 @@ const Rank = () => {
     const topFilms = [...films]
         .sort((a, b) => b.view - a.view)
         .slice(0, 10);
+
+    const handleAdClickBanner = async () => {
+        try {
+            await axios.post('http://localhost:8000/api/track-ad', {
+            event_type: 'click',
+            });
+            window.open("https://shop.kafela.vn/", "_blank"); // chuyển trang sau khi gửi log
+        } catch (error) {
+            console.error("Không thể ghi nhận click:", error);
+            window.open("https://shop.kafela.vn/", "_blank"); // vẫn mở trang nếu lỗi
+        }
+    };
     return (
         <>
             <div className="grid grid-cols-12 min-h-80 gap-4 py-4">
@@ -65,6 +87,12 @@ const Rank = () => {
 
                 <div className="col-span-10 gap-4 ">
                     <div className="grid grid-cols-8 gap-4 mb-4 shadow shadow-gray-500/50 ">
+                        <div className="col-span-10 cursor-pointer">
+                            <a onClick={handleAdClickBanner} rel="noopener noreferrer">
+                                <img  className="w-full" src="/img/qc2.gif" alt="" />
+                            </a>
+                            
+                        </div>
                         <div className="col-span-4 flex items-center h-12">
                             <img src="/img/logofilm.png" alt="Logo" className="w-10 h-10" style={theme === 'dark'|| theme === 'system' ? {filter: 'invert(100%) sepia(100%) saturate(2%) hue-rotate(162deg) brightness(105%) contrast(101%)'} : {}}  />
                             <h1 className="ml-2  font-bold">BẢNG XẾP HẠNG</h1>
