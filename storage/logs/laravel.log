@@ -10900,3 +10900,5 @@
 [2025-07-08 20:13:20] local.INFO: Credentials: {"email":"baoanh@gmail.com","password":"baoanh123"} 
 [2025-07-08 20:13:20] local.INFO: User authenticated: {"id":2,"name":"Bao Anh Nguyen","email":"baoanh@gmail.com","role":"admin","points":20,"email_verified_at":null} 
 [2025-07-08 20:13:20] local.INFO: Token created: {"token":"95|6Tk9giUkaRYiixwbVbfm589O9ZWymYjaVKsHvGfS972d10a6"} 
+[2025-07-10 17:52:40] local.INFO: Received store watch history request {"user_id":2,"request_data":{"episode_id":33,"progress_time":519}} 
+[2025-07-10 17:52:40] local.INFO: Watch history stored successfully {"user_id":2,"episode_id":33,"progress_time":519} 
