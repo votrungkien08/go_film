@@ -21,8 +21,8 @@ export function CommentView() {
     console.log('lady and gentement',comments);
   return (
     <DashboardContent>
-      <Box sx={{ mb: 5 }}>
-        <Typography variant="h4">Bình luận</Typography>
+      <Box sx={{ mb: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Typography variant="h4">Tương Tác</Typography>
       </Box>
 
       <Card sx={{ width: '100%', height: '100%' }}>

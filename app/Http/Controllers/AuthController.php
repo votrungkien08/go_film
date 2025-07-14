@@ -4,7 +4,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-
+use Illuminate\Support\Facades\Password;
 class AuthController extends Controller
 {
     public function register(Request $request)
@@ -40,7 +40,7 @@ class AuthController extends Controller
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'register fialed',
+                'message' => 'Email đã được đăng ký vui lòng nhập email khác',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -93,19 +93,13 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            // if(!$user) {
-            //     return response()->json([
-            //         'message' => 'not login',
-            //         'user'=>null
-            //     ]);
-            // }
             return response()->json([
-                'message' => 'User details fetched successfully',
+                'message' => 'Fetch thông tin người dùng thành công',
                 'user' => $user->only(['id', 'name', 'email', 'points', 'role']),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to fetch user details',
+                'message' => 'Fetch thông tin người dùng thất bại',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -115,13 +109,175 @@ class AuthController extends Controller
         try {
             $user = User::all();
             return response()->json([
-                'message' => 'User details fetched successfully',
+                'message' => 'Lấy thông tin người dùng thành công',
                 'user' => $user,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to fetch user details',
+                'message' => 'Lấy thông tin người dùng thất bại',
                 'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    // public function getAllUser(Request $request)
+    // {
+    //     try {
+    //         $user = User::all();
+    //         return response()->json([
+    //             'message' => 'User details fetched successfully',
+    //             'user' => $user,
+    //         ], 200);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Failed to fetch user details',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
+    public function updateUser(Request $request, $id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:user,email,' . $user->id,
+                'points' => 'nullable|integer|min:0',
+                'role' => 'required|in:user,admin',
+            ]);
+
+            $user->update($validated);
+
+            return response()->json([
+                'message' => 'Cập nhật người dùng thành công',
+                'user' => $user->only(['id', 'name', 'email', 'points', 'role']),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Cập nhật người dùng thất bại',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }   
+    public function deleteUser($id)
+    {
+        try {
+            if(Auth::user()->role !== 'admin') {
+                return response()->json([
+                    'message' => 'Bạn không có quyền xoá người dùng',
+                ], 403);
+            }
+            $user = User::findOrFail($id);
+            $user->delete();
+
+            return response()->json([
+                'message' => 'Xoá người dùng thành công',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Xoá người dùng thất bại',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    public function addUser(Request $request)
+    {
+        try {
+            if(Auth::user()->role !== 'admin') {
+                return response()->json([
+                    'message' => 'Bạn không có quyền thêm người dùng',
+                ], 403);
+            }
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:user',
+                'password' => 'required|string|min:8|confirmed',
+                'role' => 'required|in:user,admin',
+                'points' => 'nullable|integer|min:0',
+            ]);
+
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => $validated['role'],
+                'points' => $validated['points'] ?? 0,
+            ]);
+
+            return response()->json([
+                'message' => 'Thêm người dùng thành công',
+                'user' => $user->only(['id', 'name', 'email', 'points', 'role']),
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Thêm người dùng thất bại',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function resetPassword(Request $request) {
+        try {
+            $request->validate([
+                'token' => 'required',
+                'email' => 'required|email',
+                'password' => 'required|min:8|confirmed',
+
+            ]);
+
+            $status = Password::reset(
+                $request->only('email', 'password', 'password_confirmation', 'token'),
+                function ($user, $password) {
+                    $user->forceFill([
+                        'password' => Hash::make($password),
+                    ])->save();
+                }
+            );
+
+            if ($status === Password::PASSWORD_RESET) {
+                return response()->json([
+                    'message' => 'Đổi mật khẩu thành công!',
+                    'status' => $status,
+                ]);
+            } else {
+                return response()->json([
+                    'message' => 'Không thể đặt lại mật khẩu.',
+                    'error' => __($status),
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+            'message' => 'Đã xảy ra lỗi khi đặt lại mật khẩu.',
+            'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    public function sendResetLinkEmail(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email',
+            ]);
+
+            $status = Password::sendResetLink(
+                $request->only('email'),
+            );
+
+            if ($status === Password::RESET_LINK_SENT) {
+                return response()->json([
+                    'message' => 'Đã gửi email đặt lại mật khẩu!',
+                    'status' => $status,
+                ]);
+            } else {
+                return response()->json([
+                    'message' => 'Không thể gửi email đặt lại mật khẩu.',
+                    'error' => __($status),
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+            'message' => 'Đã xảy ra lỗi khi gửi email khôi phục mật khẩu.',
+            'error' => $e->getMessage(),
             ], 500);
         }
     }

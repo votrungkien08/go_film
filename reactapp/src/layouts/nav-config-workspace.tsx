@@ -6,7 +6,7 @@ export const _workspaces: WorkspacesPopoverProps['data'] = [
   {
     id: 'team-1',
     name: 'Go Film',
-    plan: 'Free',
+    plan: '',
     logo: '/img/gofilmicon.png',
   },
 

@@ -8,6 +8,21 @@ use Illuminate\Support\Facades\Log;
 
 class RatingController extends Controller
 {
+    public function index() {
+        try {
+            $ratings = Rating::with('user', 'film')->get();
+            return response()->json([
+                'message' => 'Ratings fetched successfully',
+                'ratings' => $ratings,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching ratings: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Error fetching ratings',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
     public function postRating(Request $request)
     {
         try {

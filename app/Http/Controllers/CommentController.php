@@ -11,7 +11,7 @@ class CommentController extends Controller
     public function index(Request $request)
     {
         try {
-            $comments = Comment::with('user')->get();
+            $comments = Comment::with('user','film')->orderBy('created_at', 'desc')->get();
 
             return response()->json([
                 'status' => 'success',

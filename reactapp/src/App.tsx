@@ -22,11 +22,11 @@ import  SignInPage  from './pages/sign-in';
 import  UserPage  from './pages/user';
 import  ProductsPage  from './pages/products';
 import  BlogPage  from './pages/blog';
-import  CommentPage  from './pages/comments';
+import  InteractionPage  from './pages/interact';
 import  FilmPage  from './pages/film-control';
 import  AddPage  from './pages/add';
 import  RevenuePage  from './pages/revenue';
-
+import PaymentHistory from './components/PaymentHistory';
 import { ParallaxProvider } from '../src/utils/ParallaxContext';
 import { MUIThemeProvider } from 'src/theme/theme-provider';
 
@@ -35,7 +35,7 @@ import { MUIThemeProvider } from 'src/theme/theme-provider';
 function App() {
   return (
     <>
-          <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <Router>
           <Routes>
             {/* Các route sử dụng MainLayout */}
@@ -52,7 +52,6 @@ function App() {
             <Route element={<ProtectedAdminRoute />}>
               <Route path="/admin" element={<AdminPage />} />
             </Route>
-            
             {/* <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<DashboardPage  />} />
             </Route> */}
@@ -87,7 +86,7 @@ function App() {
                 <Route path="blog" element={<BlogPage />} />
                 <Route path="sign-in" element={<SignInPage />} />
                 <Route path="404" element={<DashboardPage />} />
-                <Route path="comment" element={<CommentPage />} />
+                <Route path="interaction" element={<InteractionPage />} />
                 <Route path="films" element={<FilmPage />} />
                 <Route path="add" element={<AddPage />} />
                 <Route path="revenue" element={<RevenuePage />} />
@@ -96,7 +95,7 @@ function App() {
 
             {/* Route cho trang BuyPoints, độc lập, không dùng MainLayout */}
             <Route path="/buy-points" element={<BuyPoints />} />
-
+            <Route path="/payment-history" element={<PaymentHistory />} />
           </Routes>
         </Router>
         <Toaster
@@ -129,6 +128,7 @@ function App() {
         />
       </ThemeProvider>
       
+
 
     </>
   );

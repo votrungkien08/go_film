@@ -2,6 +2,7 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+
 import { Film } from './types'; // Giả sử bạn có file types.ts chứa interface Film
 
 interface FilmTableRowProps {
@@ -36,6 +37,7 @@ export function FilmTableRow({ film, onEdit, onDelete }: FilmTableRowProps) {
               Xóa
             </Button>
           </Box>
+
       </TableCell>
     </TableRow>
   );

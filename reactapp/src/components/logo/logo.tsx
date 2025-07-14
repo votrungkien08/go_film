@@ -187,9 +187,10 @@ export function Logo({
       {...other}
     >
     <img
+    className=' object-contain  h-full'
     src="/img/gofilm.png" // ← Thay bằng tên file ảnh của bạn
     alt="Logo"
-    style={{ width: isSingle ? 40 : 102, height: isSingle ? 40 : 36 }}
+    
 />
     </LogoRoot>
   );

@@ -270,4 +270,66 @@ class TransactionController extends Controller
         }
     }
 
+    public function getTotalSuccessAmount()
+    {
+        try {
+            $totalAmount = Transaction::where('status', 'success')
+                ->sum('amount');
+
+            return response()->json([
+                'total_amount' => $totalAmount,
+                'message' => 'Lấy tổng số tiền giao dịch thành công'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy tổng số tiền giao dịch:', [
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'message' => 'Không thể lấy tổng số tiền giao dịch',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function getUserPaymentHistories(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                Log::warning('Bạn cần đăng nhập để xem lịch sử thanh toán');
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            $transactions = Transaction::where('user_id', $user->id)
+                ->select('id', 'points', 'amount', 'txn_ref', 'status', 'created_at', 'updated_at')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+
+                'message' => 'Lấy lịch sử giao dịch thành công',
+                'transactions' => $transactions,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy lịch sử giao dịch:', [
+                'error' => $e->getMessage(),
+                'user_id' => $user->id ?? 'unknown',
+            ]);
+            return response()->json([
+                'message' => 'Không thể lấy lịch sử giao dịch',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function getAmountByMonth()
+    {
+        $months = request()->input('months', 12); // Mặc định lấy 12 tháng gần nhất
+        $result = \DB::table('transactions')
+            ->selectRaw('DATE_FORMAT(created_at, "%m-%Y") as month, SUM(amount) as total_amount')
+            ->where('created_at', '>=', now()->subMonths($months))
+            ->where('status', 'success')
+            ->groupByRaw('DATE_FORMAT(created_at, "%m-%Y")')
+            ->orderBy('month')
+            ->get();
+        return response()->json($result);
+    }
 }

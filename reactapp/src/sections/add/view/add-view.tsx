@@ -181,7 +181,7 @@ export function AddView() {
   return (
     <DashboardContent>
       <Box sx={{ mb: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4">Quản lý Cài Đặt</Typography>
+        <Typography variant="h4">Quản lý doanh mục</Typography>
       </Box>
       {renderSettingsForm()}
     </DashboardContent>

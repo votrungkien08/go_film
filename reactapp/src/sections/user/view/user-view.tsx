@@ -26,13 +26,25 @@ import { useUser } from 'src/hooks/useUser';
 import type { Users } from 'src/types';
 import type { UserProps } from '../user-table-row';
 import { AlignCenter } from 'lucide-react';
+import { Dialog,DialogTitle,DialogContent, TextField, DialogActions, MenuItem } from '@mui/material';
+import { all } from 'axios';
+
 
 // ----------------------------------------------------------------------
 
 export function UserView() {
-  const table = useTable();
-  const { allUsers } = useUser();
   const [filterName, setFilterName] = useState('');
+  const [openNewUserDialog, setOpenNewUserDialog] = useState(false);
+  const [newUser, setNewUser] = useState<Users>({
+    name: '',
+    email: '',
+    password: '',
+    role: '',
+    points: 0,
+    avatarUrl: '',
+  });
+  const table = useTable();
+  const { allUsers, handleDeleteUser, handleUpdateUser, handleAddUser } = useUser();
 
   const dataFiltered: UserProps[] = applyFilter({
     inputData: allUsers,
@@ -52,14 +64,15 @@ export function UserView() {
         }}
       >
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          Users
+          Người dùng
         </Typography>
         <Button
+          onClick={() => setOpenNewUserDialog(true)}
           variant="contained"
           color="inherit"
           startIcon={<Iconify icon="mingcute:add-line" />}
         >
-          New user
+          Thêm người dùng mới
         </Button>
       </Box>
 
@@ -89,11 +102,11 @@ export function UserView() {
                   )
                 }
                 headLabel={[
-                  { id: 'name', label: 'Name' },
+                  { id: 'name', label: 'Tên' },
                   { id: 'email', label: 'Email' },
-                  { id: 'role', label: 'Role' },
-                  { id: 'point', label: 'Point' },
-                  { id: 'action', label: 'Action', align: 'center'},
+                  { id: 'role', label: 'Vai trò' },
+                  { id: 'point', label: 'Điểm' },
+                  { id: 'action', label: 'Hành động', align: 'center'},
 
                 ]}
               />
@@ -109,6 +122,8 @@ export function UserView() {
                       row={row}
                       selected={table.selected.includes(row.id)}
                       onSelectRow={() => table.onSelectRow(row.id)}
+                      onDelete={handleDeleteUser}
+                      onEdit={handleUpdateUser}
                     />
                   ))}
 
@@ -133,6 +148,76 @@ export function UserView() {
           onRowsPerPageChange={table.onChangeRowsPerPage}
         />
       </Card>
+
+      <Dialog open={openNewUserDialog} onClose={() => setOpenNewUserDialog(false)}
+              maxWidth="sm"
+              fullWidth  
+      >
+        <DialogTitle>Thêm người dùng mới</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <TextField
+            sx={{ mt: 2 }}
+            label="Tên"
+            required
+            value={newUser.name}
+            onChange={(e) => {setNewUser({ ...newUser, name: e.target.value })}}
+          />
+          <TextField
+            label="Email"
+            type='email'
+            required
+            value={newUser.email}
+            onChange={(e) => {setNewUser({ ...newUser, email: e.target.value })}}
+          />
+          <TextField
+            label="Mật khẩu"
+            type='password'
+            required
+            value={newUser.password}
+            onChange={(e) => {setNewUser({ ...newUser, password: e.target.value })}}
+          />
+          <TextField
+            label="Nhập lại mật khẩu"
+            type='password'
+            required
+            value={newUser.password_confirmation}
+            onChange={(e) => {setNewUser({ ...newUser, password_confirmation: e.target.value })}}
+          />
+          <TextField
+            select
+            label="Vai trò"
+            required
+            value={newUser.role}
+            onChange={(e) => {setNewUser({ ...newUser, role: e.target.value })}}
+            
+          >
+            <MenuItem value="user">User</MenuItem>
+            <MenuItem value="admin">Admin</MenuItem>
+          </TextField>
+          <TextField
+            label="Điểm"
+            required
+            type='number'
+            value={newUser.points || 0}
+            onChange={(e) => {setNewUser({ ...newUser, points: parseInt(e.target.value) || 0 })}}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button color='inherit' variant='contained' onClick={() => setOpenNewUserDialog(false)}>Hủy</Button>
+          <Button variant='contained' color='primary' onClick={() => {
+            handleAddUser(newUser);
+            setOpenNewUserDialog(false);
+            setNewUser({
+                name: '',
+                email: '',
+                password: '',
+                password_confirmation: '',
+                role: '',
+                points: 0
+            });
+          }}>Thêm</Button>
+        </DialogActions>
+      </Dialog>
     </DashboardContent>
   );
 }

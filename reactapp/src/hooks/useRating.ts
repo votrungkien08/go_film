@@ -37,24 +37,27 @@ export const useRating = (filmId: number | undefined, isLoggedIn: boolean): Rati
   }, [filmId, isLoggedIn]);
     // get rating film
 
-  useEffect(() => {
+  const fetchRatings = useCallback(async () => {
     if (!filmId) return;
-    const fetchRatings = async () => {
-      try {
-        const response = await fetch(`http://localhost:8000/api/film/getRating/${filmId}`);
-        const data = await response.json();
-        if (data.rating) {
-          setShowRating(data.rating);
-          const total = data.rating.reduce((sum: number, r: Rating) => sum + r.rating, 0);
-          const avg = data.rating.length ? total / data.rating.length : 0;
-          setAverageRating(avg);
-        }
-      } catch (err: any) {
-        console.error('Lỗi khi lấy danh sách đánh giá:', err.message);
+    try {
+      const response = await fetch(`http://localhost:8000/api/film/getRating/${filmId}`);
+      const data = await response.json();
+      if (data.rating) {
+        setShowRating(data.rating);
+        const total = data.rating.reduce((sum: number, r: Rating) => sum + r.rating, 0);
+        const avg = data.rating.length ? total / data.rating.length : 0;
+        setAverageRating(avg);
       }
-    };
-    fetchRatings();
+    } catch (err: any) {
+      console.error('Lỗi khi lấy danh sách đánh giá:', err.message);
+    }
   }, [filmId]);
+
+  useEffect(() => {
+    fetchRatings();
+  }, [fetchRatings]);
+  
+
     // Xử lý gửi đánh giá
 
   const handlePostRating = useCallback(async () => {
@@ -78,6 +81,8 @@ export const useRating = (filmId: number | undefined, isLoggedIn: boolean): Rati
         headers: { Authorization: `Bearer ${token}` },
       });
       setRating(response.data.rating || null);
+
+      await fetchRatings();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi gửi đánh giá.');
     }

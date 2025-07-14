@@ -1,4 +1,4 @@
-import { Label } from 'src/components/label';
+// import { Label } from 'src/components/label';
 import { SvgColor } from 'src/components/svg-color';
 
 // ----------------------------------------------------------------------
@@ -15,6 +15,7 @@ export type NavItem = {
 export const navData = [
   {
     title: 'Bảng Điều Khiển',
+
     path: '/dashboard',
     icon: icon('ic-analytics'),
   },
@@ -48,18 +49,20 @@ export const navData = [
   //   path: '/dashboard/404',
   //   icon: icon('ic-disabled'),
   // },
+
+
   {
     title: 'Quản Lý Phim',
     path: '/dashboard/films',
     icon: icon('ic-film'),
   },
   {
-    title: 'Comment',
-    path: '/dashboard/comment',
+    title: 'Quản lý Tương Tác',
+    path: '/dashboard/interaction',
     icon: icon('ic-comment'),
   },
   {
-    title: 'Add',
+    title: 'Quản Lý Doanh Mục',
     path: '/dashboard/add',
     icon: icon('ic-add'),
   },
@@ -68,4 +71,5 @@ export const navData = [
     path: '/dashboard/revenue',
     icon: icon('ic-revenue'),
   },
+
 ];

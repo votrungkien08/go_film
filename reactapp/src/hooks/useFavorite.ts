@@ -16,7 +16,7 @@ export const useFavorite = (filmId: number | undefined, isLoggedIn: boolean): Fa
     // check favorite
 
   useEffect(() => {
-    if (!filmId || !isLoggedIn) {
+    if (!filmId) {
       setIsFavorite(false);
       return;
     }
@@ -41,13 +41,13 @@ export const useFavorite = (filmId: number | undefined, isLoggedIn: boolean): Fa
         console.error('Lỗi khi kiểm tra yêu thích:', err.response?.data || err.message);
       }
     };
-    fetchCountFavorites()
     checkFavorite();
+    fetchCountFavorites()
   }, [filmId, isLoggedIn]);
 
   const handleToggleFavorite = useCallback(async () => {
     if (!isLoggedIn) {
-      toast.error('Vui lòng đăng nhập để thêm/xóa yêu thích.');
+      toast.error('Vui lòng đăng nhập để thêm yêu thích.');
       return;
     }
     try {
@@ -57,6 +57,7 @@ export const useFavorite = (filmId: number | undefined, isLoggedIn: boolean): Fa
           headers: { Authorization: `Bearer ${token}` },
         });
         setIsFavorite(false);
+        setLikeCount(prev => Math.max(0, prev - 1));
         toast.success('Đã xóa khỏi danh sách yêu thích!');
       } else {
         await axios.post(
@@ -65,6 +66,7 @@ export const useFavorite = (filmId: number | undefined, isLoggedIn: boolean): Fa
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setIsFavorite(true);
+        setLikeCount(prev => Math.max(0, prev + 1));
         toast.success('Đã thêm vào danh sách yêu thích!');
       }
     } catch (err: any) {

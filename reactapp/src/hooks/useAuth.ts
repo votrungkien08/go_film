@@ -5,6 +5,7 @@ interface AuthData {
   isLoggedIn: boolean;
   user: User | null;
   checkLoginStatus: () => Promise<void>;
+  logout: () => void;
 }
 
 export const useAuth = (): AuthData => {
@@ -49,6 +50,12 @@ export const useAuth = (): AuthData => {
       setUser(null);
     }
   };
+  const logout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setUser(null);
+    window.dispatchEvent(new Event('logoutSuccess')); // Gửi sự kiện để sync
+  };
   // Kiểm tra trạng thái đăng nhập khi component mount và khi nhận sự kiện loginSuccess/logoutSuccess
   useEffect(() => {
     checkLoginStatus();
@@ -65,5 +72,5 @@ export const useAuth = (): AuthData => {
     };
   }, []);
 
-  return { isLoggedIn, user, checkLoginStatus };
+  return { isLoggedIn, user, checkLoginStatus, logout };
 };

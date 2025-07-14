@@ -35,6 +35,7 @@ export function AnalyticsWebsiteVisits({ title, subheader, chart, sx, ...other }
     xaxis: { categories: chart.categories },
     legend: { show: true },
     tooltip: { y: { formatter: (value: number) => `${value} visits` } },
+
     ...chart.options,
   });
 
@@ -43,7 +44,8 @@ export function AnalyticsWebsiteVisits({ title, subheader, chart, sx, ...other }
       <CardHeader title={title} subheader={subheader} />
 
       <Chart
-        type="bar"
+
+        type={chart.options?.chart?.type || "bar"}
         series={chart.series}
         options={chartOptions}
         slotProps={{ loading: { p: 2.5 } }}

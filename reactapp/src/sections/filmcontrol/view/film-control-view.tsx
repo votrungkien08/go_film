@@ -470,7 +470,8 @@ export function FilmControlView() {
 
   return (
     <DashboardContent>
-      <Box sx={{ mb: 5, display: 'flex', justifyContent: 'space-evenly', alignItems: 'center' }}>
+
+      <Box sx={{ mb: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4">Quản lý phim</Typography>
         <Button
           variant="contained"
@@ -537,6 +538,7 @@ export function FilmControlView() {
         <Scrollbar sx={{ width: '100%', height: 'auto', maxHeight: 'none' }}>
           <TableContainer sx={{ height: 'auto', overflow: 'visible' }}>
             <Table sx={{ minWidth: 1200 , tableLayout: 'fixed' }}>
+
               <FilmTableHead
                 order={table.order}
                 orderBy={table.orderBy}
@@ -556,6 +558,7 @@ export function FilmControlView() {
                   { id: 'is_premium', label: 'Premium',width: 'w-20' },
                   { id: 'point_required', label: 'Điểm yêu cầu',width: 'w-20' },
                   { id: '', label: 'Hành động',width: 'w-20' },
+
                 ]}
               />
               <TableBody>

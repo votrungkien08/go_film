@@ -20,6 +20,7 @@ type Props = CardProps & {
   title: string;
   total: number;
   percent: number;
+
   color?: PaletteColorKey;
   icon: React.ReactNode;
   chart: {

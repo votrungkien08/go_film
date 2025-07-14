@@ -17,8 +17,8 @@ export function CommentTableRow({ comment, toggleBlockComment }: Props) {
   return (
     <TableRow hover>
       <TableCell>{comment.id}</TableCell>
-      <TableCell>{comment.user_id}</TableCell>
-      <TableCell>{comment.film_id}</TableCell>
+      <TableCell>{comment.user.name}</TableCell>
+      <TableCell>{comment.film.title_film}</TableCell>
       <TableCell className='line-clamp-2'>{comment.comment.length > 100 ? `${comment.comment.slice(0, 100)}...` : comment.comment}</TableCell>
       <TableCell>
         <button onClick={() => toggleBlockComment(comment.id)}

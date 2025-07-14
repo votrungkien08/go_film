@@ -11,11 +11,13 @@ import MenuList from '@mui/material/MenuList';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
+import {  UserCircleIcon } from '@heroicons/react/24/solid';
 
 import { useRouter, usePathname } from 'src/routes/hooks';
 
 import { _myAccount } from 'src/_mock';
 
+import { useAuth } from 'src/hooks/useAuth';
 // ----------------------------------------------------------------------
 
 export type AccountPopoverProps = IconButtonProps & {
@@ -28,6 +30,7 @@ export type AccountPopoverProps = IconButtonProps & {
 };
 
 export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps) {
+  const { user, logout } = useAuth();
   const router = useRouter();
 
   const pathname = usePathname();
@@ -64,9 +67,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         }}
         {...other}
       >
-        <Avatar src={_myAccount.photoURL} alt={_myAccount.displayName} sx={{ width: 1, height: 1 }}>
-          {_myAccount.displayName.charAt(0).toUpperCase()}
-        </Avatar>
+        <UserCircleIcon className="w-full h-full text-white" />
       </IconButton>
 
       <Popover
@@ -83,11 +84,11 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
       >
         <Box sx={{ p: 2, pb: 1.5 }}>
           <Typography variant="subtitle2" noWrap>
-            {_myAccount?.displayName}
+            {user?.name}
           </Typography>
 
           <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
-            {_myAccount?.email}
+            {user?.email}
           </Typography>
         </Box>
 
@@ -129,7 +130,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         <Box sx={{ p: 1 }}>
-          <Button fullWidth color="error" size="medium" variant="text">
+          <Button onClick={() => {logout(); router.push('/')}} fullWidth color="error" size="medium" variant="text">
             Logout
           </Button>
         </Box>

@@ -86,7 +86,22 @@ export function LanguagePopover({ data = [], sx, ...other }: LanguagePopoverProp
 
   return (
     <>
-
+      {/* <IconButton
+        aria-label="Languages button"
+        onClick={onOpen}
+        sx={[
+          (theme) => ({
+            p: 0,
+            width: 40,
+            height: 40,
+            ...(open && { bgcolor: theme.vars.palette.action.selected }),
+          }),
+          ...(Array.isArray(sx) ? sx : [sx]),
+        ]}
+        {...other}
+      >
+        {renderFlag(currentLang?.label, currentLang?.icon)}
+      </IconButton> */}
 
       {renderMenuList()}
     </>

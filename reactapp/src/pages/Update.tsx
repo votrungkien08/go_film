@@ -36,6 +36,7 @@ const Update = () => {
                 const response = await axios.get('http://localhost:8000/api/films', {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                 });
+                console.log('response phim cap nhat',response.data);
                 setFilms(response.data);
             } catch (err: any) {
                 console.error('Lỗi khi lấy danh sách phim:', err.response?.data || err.message);
@@ -44,9 +45,9 @@ const Update = () => {
         };
         const trackAdView = async () => {
             try {
-            await axios.post('http://localhost:8000/api/track-ad', {
-                event_type: 'view',
-            });
+            await axios.post('http://localhost:8000/api/track-ad', 
+                { event_type: 'view', },
+            );
             } catch (error) {
             console.error('Không thể gửi sự kiện quảng cáo:', error);
             }
@@ -124,6 +125,8 @@ const Update = () => {
                 <div className="col-span-1"></div>
                 <div className="col-span-10">
                 <div className="grid grid-cols-10 gap-4 mb-4  shadow shadow-gray-500/50 ">
+
+                    {/* banner */}
                     <div className="col-span-10 cursor-pointer">
                         <a onClick={handleAdClickBanner}  rel="noopener noreferrer">
                             <img className="w-full" src="/img/qc1.gif" alt="" />

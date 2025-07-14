@@ -1,7 +1,7 @@
 import { CONFIG } from 'src/config-global';
 
-import { ProductsView } from 'src/sections/comment/view';
-import { CommentView } from '../sections/comment/view/comment-view';
+import { ProductsView } from 'src/sections/interact/view';
+import { InteractionView } from '../sections/interact/view/view-interact';
 
 // ----------------------------------------------------------------------
 
@@ -10,7 +10,7 @@ export default function Page() {
     <>
       <title>{`Comment - ${CONFIG.appName}`}</title>
 
-      <CommentView />
+      <InteractionView />
     </>
   );
 }

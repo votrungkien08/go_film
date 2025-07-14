@@ -33,6 +33,14 @@ class FavoriteController extends Controller
     //             ], 500);
     //     }
     // }
+    public function index() {
+        $favorites = Favorite::with(['user', 'film'])->get();
+
+        return response()->json([
+            'status' => 'success',
+            'favorites' => $favorites,
+        ]);
+    }
     public function isFavorite($filmId)
     {
         try {

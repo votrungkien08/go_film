@@ -21,11 +21,19 @@ use App\Models\Film;
 use App\Models\Film_episodes;
 use App\Models\Watch_histories;
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register']);
+// reset pass
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('/send-password-reset', [AuthController::class, 'sendResetLinkEmail']);
 Route::middleware('auth:sanctum')->group(function () {
+    //user
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'getUser']);
+
+
+
+
 
     // comment
     Route::post('/film/postComment', [CommentController::class, 'postComment']);
@@ -34,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // rating
     Route::post('/film/postRating', [RatingController::class, 'postRating']);
-    Route::post('/film/watch-history', [WatchHistoriesController::class, 'store']);
+    // Route::post('/film/watch-history', [WatchHistoriesController::class, 'store']);
     Route::get('/film/rating/{filmId}', [RatingController::class, 'getUserRating'])->middleware('auth:sanctum');
     Route::post('/addyears', [YearController::class, 'store']);
     Route::post('/addcountries', [CountryController::class, 'store']);
@@ -49,6 +57,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // VNPay payment
     Route::post('/vnpay/create', [TransactionController::class, 'createPayment']);
+    Route::get('/total-transaction-amount', [TransactionController::class, 'getTotalSuccessAmount']);
+    Route::get('/payment-histories', [TransactionController::class, 'getUserPaymentHistories']);
+    Route::get('/transaction-amount-by-month', [TransactionController::class, 'getAmountByMonth']);
 
     // watch history
     Route::get('/watch-histories', [WatchHistoriesController::class, 'getWatchHistory']);
@@ -56,6 +67,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/films/deduct-points', [FilmController::class, 'deductPoints']);
     Route::post('/films/reward-points', [FilmController::class, 'rewardPointsForNormalFilm']);
 
+
+
+
+// <<<<<<< HEAD
 // Route::get('/admin/export-monthly-revenue', [AdEventController::class, 'monthlyRevenue']);
 });
 
@@ -66,16 +81,35 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     // revenue customer
     Route::get('/admin/monthly-customer-revenue', [TransactionController::class, 'monthlyCustomerRevenue']);
     Route::get('/admin/monthly-customer-revenue-range', [TransactionController::class, 'monthlyCustomerRevenueRange']);
-    Route::post('/track-ad', [AdEventController::class, 'track']);
+    
 
+    // edit, del user
+    Route::put('/update-user/{id}', [AuthController::class, 'updateUser']);
+    Route::delete('/delete-user/{id}', [AuthController::class, 'deleteUser']);
+    Route::post('/add-user', [AuthController::class, 'addUser']);
 
+    // favorite
+    Route::get('/admin/favorites', [FavoriteController::class, 'index']);
+    // rating
+    Route::get('/admin/ratings', [RatingController::class, 'index']);
 });
+Route::post('/track-ad', [AdEventController::class, 'track']);
+// Route cho người dùng bình thường gửi sự kiện quảng cáo
+// Route::middleware('auth:sanctum')->post('/track-ad', [AdEventController::class, 'track']);
 Route::get('/admin/export-revenue-summary', [RevenueExportController::class, 'exportSummary']);
 
 // track ad event
 
+// // get user 
+//     Route::get('/get-all-users', [AuthController::class, 'getAllUser']);
+// =======
+
+// });
+
+
 // get user 
-    Route::get('/get-all-users', [AuthController::class, 'getAllUser']);
+Route::get('/get-all-users', [AuthController::class, 'getAllUser']);
+// >>>>>>> 04382ac67ad755056403025a6fb8d2cfad63e487
 
 
 // episode
@@ -139,4 +173,4 @@ Route::post('/chatbot', [ChatbotController::class, 'handle']);
 
 //Route::get('/film/{id}', [FilmController::class, 'getFilmById']);
 
-//>>>>>>> 0bf23a4 (commit detail film and comment)
+Route::get('/view-stats-by-month', [FilmController::class, 'getViewStatsByMonth']);
