@@ -344,8 +344,6 @@ const AdvancedFilter = () => {
                                     >
                                         <option value="release_year_desc">Năm phát hành (Mới nhất)</option>
                                         <option value="release_year_asc">Năm phát hành (Cũ nhất)</option>
-                                        <option value="imdb_desc">Điểm IMDb (Cao nhất)</option>
-                                        <option value="imdb_asc">Điểm IMDb (Thấp nhất)</option>
                                         <option value="title_asc">Tên phim (A-Z)</option>
                                         <option value="title_desc">Tên phim (Z-A)</option>
                                     </select>

@@ -255,6 +255,7 @@ const Header = () => {
         return text
             .toLowerCase()
             .normalize('NFD')
+            .replace(/đ/g, 'd')
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-z0-9\s-]/g, '')
             .replace(/\s+/g, '-')
@@ -474,7 +475,7 @@ const Header = () => {
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
-                            onClick={() => handleFilmTypeSelect('true')}
+                            onClick={() => handleFilmTypeSelect('flase')}
                             onMouseEnter={handleHover}
                             onMouseLeave={handleMouseLeave}
                         >
@@ -484,7 +485,7 @@ const Header = () => {
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
-                            onClick={() => handleFilmTypeSelect('false')}
+                            onClick={() => handleFilmTypeSelect('true')}
                             onMouseEnter={handleHover}
                             onMouseLeave={handleMouseLeave}
                         >
@@ -554,8 +555,7 @@ const Header = () => {
                         ✕
                     </button>
                 </div>
-
-                {/* {
+                {
                     isLoggedIn && user ? (
                         showPaymentForm ? (
                             <form onSubmit={handleBuyPoints} className="space-y-4">
@@ -599,24 +599,31 @@ const Header = () => {
                                     <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.points}</p>
                                 </div>
                                 <button
-                                    onClick={() => {console.log('🔁 Đã bấm nút Lịch sử phim');;navigate('/histories'); setIsPanelOpen(false);}}
+                                    onClick={() => {
+                                        console.log('🔁 Đã bấm nút Lịch sử phim');
+                                        navigate('/histories');
+                                        setIsPanelOpen(false);
+                                    }}
                                     className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
                                 >
                                     Lịch Sử Phim
-                                    
                                 </button>
-
+                                <button onClick={() => navigate('/payment-history')}
+                                    className='w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2'>
+                                    Lịch sử thanh toán
+                                </button>
                                 <button
-                                
-                                    onClick={() => {console.log('🔁 Đã bấm nút Phim Yêu Thích');;navigate('/favorites'); setIsPanelOpen(false);}}
+                                    onClick={() => {
+                                        console.log('🔁 Đã bấm nút Phim Yêu Thích');
+                                        navigate('/favorites');
+                                        setIsPanelOpen(false);
+                                    }}
                                     className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
                                 >
                                     Phim Yêu Thích
-                                    
                                 </button>
-                                
                                 <button
-                                    onClick={() => setShowPaymentForm(true)}
+                                    onClick={() => navigate('/buy-points')}
                                     className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
                                 >
                                     Mua Điểm
@@ -628,230 +635,78 @@ const Header = () => {
                                     Đăng Xuất
                                 </button>
                             </div>
-                        ) : (
-                            <form onSubmit={isLoginForm ? handleLogin : handleRegister} className="space-y-4">
-                                {!isLoginForm && (
-                                    <div className="relative">
-                                        <label htmlFor="name" className="block text-sm text-gray-300 mb-2">
-                                            Họ và tên
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={formData.name}
-                                            onChange={handleInputChange}
-                                            className="w-full p-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                            placeholder="Nhập họ tên"
-                                            required
-                                        />
-                                    </div>
-                                )}
+                        )
+                    ) : (
+                        <form onSubmit={isLoginForm ? handleLogin : handleRegister} className="space-y-4">
+                            {!isLoginForm && (
                                 <div className="relative">
-                                    <label htmlFor="email" className="block text-sm text-gray-300 mb-2">
-                                        Email
+                                    <label htmlFor="name" className="block text-sm text-gray-300 mb-2">
+                                        Họ và tên
                                     </label>
                                     <input
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
                                         onChange={handleInputChange}
-                                        className="w-full p-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                        placeholder="Nhập email"
+                                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                        placeholder="Nhập họ tên"
                                         required
                                     />
                                 </div>
+                            )}
+                            <div className="relative">
+                                <label htmlFor="email" className="block text-sm text-gray-300 mb-2">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                    placeholder="Nhập email"
+                                    required
+                                />
+                            </div>
+                            <div className="relative">
+                                <label htmlFor="password" className="block text-sm text-gray-300 mb-2">
+                                    Mật khẩu
+                                </label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleInputChange}
+                                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                    placeholder="Nhập mật khẩu"
+                                    required
+                                />
+                            </div>
+                            {!isLoginForm && (
                                 <div className="relative">
-                                    <label htmlFor="password" className="block text-sm text-gray-300 mb-2">
-                                        Mật khẩu
+                                    <label htmlFor="confirmPassword" className="block text-sm text-gray-300 mb-2">
+                                        Nhập lại mật khẩu
                                     </label>
                                     <input
                                         type="password"
-                                        name="password"
-                                        value={formData.password}
+                                        name="confirmPassword"
+                                        value={formData.confirmPassword}
                                         onChange={handleInputChange}
-                                        className="w-full p-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                        placeholder="Nhập mật khẩu"
+                                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                        placeholder="Nhập lại mật khẩu"
                                         required
                                     />
                                 </div>
-                                {!isLoginForm && (
-                                    <div className="relative">
-                                        <label htmlFor="confirmPassword" className="block text-sm text-gray-300 mb-2">
-                                            Nhập lại mật khẩu
-                                        </label>
-                                        <input
-                                            type="password"
-                                            name="confirmPassword"
-                                            value={formData.confirmPassword}
-                                            onChange={handleInputChange}
-                                            className="w-full p-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                            placeholder="Nhập lại mật khẩu"
-                                            required
-                                        />
-                                    </div>
-                                )}
-                                <button
-                                    type="submit"
-                                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mt-6"
-                                >
-                                    {isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
-                                </button>
-                            </form>
-                        )
+                            )}
+                            <button
+                                type="submit"
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mt-6"
+                            >
+                                {isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
+                            </button>
+                        </form>
                     )
-                } */}
-                {
-    isLoggedIn && user ? (
-        showPaymentForm ? (
-            <form onSubmit={handleBuyPoints} className="space-y-4">
-                <div className="relative">
-                    <label htmlFor="points" className="block text-sm text-gray-300 mb-2">
-                        Số điểm muốn mua (1 điểm = 1000 VND)
-                    </label>
-                    <input
-                        type="number"
-                        name="points"
-                        value={pointsToBuy}
-                        onChange={(e) => setPointsToBuy(e.target.value)}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                        placeholder="Nhập số điểm"
-                        required
-                        min="1"
-                    />
-                </div>
-                <button
-                    type="submit"
-                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
-                >
-                    Thanh Toán Qua VNPay
-                </button>
-                <button
-                    type="button"
-                    className="w-full bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer font-semibold mt-2"
-                    onClick={() => setShowPaymentForm(false)}
-                >
-                    Quay Lại
-                </button>
-            </form>
-        ) : (
-            <div className="">
-                <div className="mb-4 relative">
-                    <label className="block text-sm text-gray-300 mb-2">Họ và tên</label>
-                    <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.name}</p>
-                </div>
-                <div className="mb-6 relative">
-                    <label className="block text-sm text-gray-300 mb-2">Điểm</label>
-                    <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.points}</p>
-                </div>
-                <button
-                    onClick={() => {
-                        console.log('🔁 Đã bấm nút Lịch sử phim');
-                        navigate('/histories');
-                        setIsPanelOpen(false);
-                    }}
-                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
-                >
-                    Lịch Sử Phim
-                </button>
-                <button onClick={() => navigate('/payment-history')}
-                    className='w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2'>
-                    Lịch sử thanh toán
-                </button>
-                <button
-                    onClick={() => {
-                        console.log('🔁 Đã bấm nút Phim Yêu Thích');
-                        navigate('/favorites');
-                        setIsPanelOpen(false);
-                    }}
-                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
-                >
-                    Phim Yêu Thích
-                </button>
-                <button
-                    onClick={() => setShowPaymentForm(true)}
-                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
-                >
-                    Mua Điểm
-                </button>
-                <button
-                    onClick={handleLogout}
-                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
-                >
-                    Đăng Xuất
-                </button>
-            </div>
-        )
-    ) : (
-        <form onSubmit={isLoginForm ? handleLogin : handleRegister} className="space-y-4">
-            {!isLoginForm && (
-                <div className="relative">
-                    <label htmlFor="name" className="block text-sm text-gray-300 mb-2">
-                        Họ và tên
-                    </label>
-                    <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                        placeholder="Nhập họ tên"
-                        required
-                    />
-                </div>
-            )}
-            <div className="relative">
-                <label htmlFor="email" className="block text-sm text-gray-300 mb-2">
-                    Email
-                </label>
-                <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                    placeholder="Nhập email"
-                    required
-                />
-            </div>
-            <div className="relative">
-                <label htmlFor="password" className="block text-sm text-gray-300 mb-2">
-                    Mật khẩu
-                </label>
-                <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                    placeholder="Nhập mật khẩu"
-                    required
-                />
-            </div>
-            {!isLoginForm && (
-                <div className="relative">
-                    <label htmlFor="confirmPassword" className="block text-sm text-gray-300 mb-2">
-                        Nhập lại mật khẩu
-                    </label>
-                    <input
-                        type="password"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                        placeholder="Nhập lại mật khẩu"
-                        required
-                    />
-                </div>
-            )}
-            <button
-                type="submit"
-                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mt-6"
-            >
-                {isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
-            </button>
-        </form>
-    )
-}
+                }
                 {!isLoggedIn && (
                     <div className="mt-6 text-center">
                         <div className="border-t border-gray-700 pt-4">

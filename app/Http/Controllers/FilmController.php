@@ -39,815 +39,160 @@ class FilmController extends Controller
             return response()->json(['error' => 'Không tìm thấy phim'], 404);
         }
     }
-
-
-
-// public function store(FilmStoreRequest $request)
-// {
-//     try {
-//         DB::beginTransaction();
-//         Log::info('Received Request Data:', $request->except(['video', 'film_episodes']));
-
-//         // Tạo slug từ tên phim
-//         $slug = Str::slug($request->title_film, '-');
-
-//         // Kiểm tra phim đã tồn tại chưa
-//         if (Film::where('slug', $slug)->exists()) {
-//             return response()->json(['error' => 'Slug đã tồn tại'], 422);
-//         }
-
-//         // Khởi tạo CloudinaryController
-//         $cloudinaryController = app(CloudinaryController::class);
-
-//         // Chuẩn bị request cho uploadVideo
-//         $uploadRequest = new Request([
-//             'title_film' => $request->title_film,
-//         ]);
-
-//         // Thêm file trailer nếu có
-//         if ($request->hasFile('video')) {
-//             $uploadRequest->files->set('video', $request->file('video'));
-//             $uploadRequest->request->set('video_type', 'trailer'); // Đánh dấu là trailer
-//         }
-
-//         // Thêm file episodes nếu có
-//         $episodes = $request->input('film_episodes', []);
-//         if (!empty($episodes)) {
-//             $episodeFiles = $request->file('videos', []);
-//             $filmEpisodes = [];
-//             foreach ($episodes as $index => $episode) {
-//                 if (isset($episodeFiles[$index])) {
-//                     $filmEpisodes[$index] = [
-//                         'video' => $episodeFiles[$index],
-//                         'episode_number' => $episode['episode_number'],
-//                         'episode_title' => $episode['episode_title'] ?? '',
-//                         'duration' => $episode['duration'] ?? '',
-//                     ];
-//                 }
-//             }
-//             $uploadRequest->request->set('film_episodes', $filmEpisodes);
-//             $uploadRequest->request->set('video_type', 'episode'); // Đánh dấu là episode
-//         }
-
-//         // Gọi uploadVideo để xử lý upload
-//         $uploadResponse = $cloudinaryController->uploadVideo($uploadRequest);
-//         if ($uploadResponse->getStatusCode() !== 200) {
-//             return $uploadResponse;
-//         }
-//         $uploadData = json_decode($uploadResponse->getContent(), true);
-
-//         // Tạo dữ liệu phim
-//         $film = Film::create([
-//             'slug' => $slug,
-//             'title_film' => $request->title_film,
-//             'thumb' => $request->thumb,
-//             'trailer' => $uploadData['trailer_url'] ?? $request->trailer, // Sử dụng URL từ upload hoặc giữ URL cũ
-//             'film_type' => $request->film_type,
-//             'year_id' => $request->year_id,
-//             'country_id' => $request->country_id,
-//             'actor' => $request->actor,
-//             'director' => $request->director,
-//             'content' => $request->content,
-//             'view' => $request->view,
-//             'is_premium' => $request->is_premium,
-//             'point_required' => $request->point_required ?? null,
-//         ]);
-//         Log::info('Film created', ['film_id' => $film->id]);
-
-//         // Lưu film_episodes từ uploadData
-//         $episodesFromUpload = $uploadData['episodes'] ?? [];
-//         foreach ($episodesFromUpload as $episode) {
-//             $film->film_episodes()->create([
-//                 'episode_number' => $episode['episode_number'],
-//                 'episode_title' => $episode['episode_title'] ?? '',
-//                 'episode_url' => $episode['episode_url'],
-//                 'duration' => $episode['duration'] ?? 'N/A',
-//                 'film_id' => $film->id,
-//             ]);
-//             Log::info('Lưu chi tiết phim thành công', ['episode' => $episode]);
-//         }
-
-//         // Kiểm tra số tập trùng lặp
-//         $episodeNumbers = array_column($episodesFromUpload, 'episode_number');
-//         if ($episodesFromUpload && count(array_unique($episodeNumbers)) !== count($episodeNumbers)) {
-//             return response()->json(['error' => 'Số tập phim không được trùng lặp'], 400);
-//         }
-
-//         // Gắn thể loại
-//         $newGenres = $request->input('genre_id', []);
-//         $currentGenreIds = $film->genres()->pluck('genre_id')->toArray();
-//         foreach ($newGenres as $genreId) {
-//             if (!in_array($genreId, $currentGenreIds)) {
-//                 $film->genres()->attach($genreId);
-//             }
-//         }
-//         Log::info('Gắn thể loại thành công', ['genre_id' => $newGenres]);
-
-//         $film->load(['genres', 'film_episodes', 'year', 'country']);
-//         DB::commit();
-
-//         return response()->json([
-//             'message' => 'Thêm phim và tập phim thành công',
-//             'data' => $film,
-//         ], 201);
-//     } catch (\Exception $e) {
-//         DB::rollBack();
-//         Log::error('❌ Lỗi khi thêm phim', ['message' => $e->getMessage()]);
-//         return response()->json(['error' => 'Lỗi khi thêm phim: ' . $e->getMessage()], 500);
-//     }
-// }
-// public function store(FilmStoreRequest $request)
-// {
-//     try {
-//         DB::beginTransaction();
-//         Log::info('Received Request Data:', $request->except(['video', 'film_episodes']));
-
-//         // Tạo slug từ tên phim
-//         $slug = Str::slug($request->title_film, '-');
-
-//         // Kiểm tra phim đã tồn tại chưa
-//         if (Film::where('slug', $slug)->exists()) {
-//             return response()->json(['error' => 'Slug đã tồn tại'], 422);
-//         }
-
-//         // Khởi tạo CloudinaryController
-//         $cloudinaryController = app(CloudinaryController::class);
-
-//         // Chuẩn bị request cho uploadVideo
-// $uploadRequest = new BaseRequest(
-//     $request->query(),
-//     $request->all(),
-//     [],
-//     [],
-//     [],
-//     $request->server(),
-//     $request->getContent()
-// );
-//         // Thêm file trailer nếu có
-//         if ($request->hasFile('trailer_video') ) {
-//             $uploadRequest->files->set('video', $request->file('trailer_video'));
-//                 // Kiểm tra trên $uploadRequest chứ không phải $request
-//             Log::info('DEBUG video file exists?', [
-//                 'has_video' => $uploadRequest->hasFile('video'),
-//                 'video_file' => $uploadRequest->file('video')?->getClientOriginalName()
-//             ]);
-//         }
-
-//         // Thêm file episodes nếu có
-//         $episodes = $request->input('film_episodes', []);
-//         if (!empty($episodes)) {
-//             $episodeFiles = $request->file('film_episodes',[]);
-//             $filmEpisodes = [];
-//             foreach ($request->input('film_episodes', []) as $index => $episode) {
-//                 if (isset($episodeFiles[$index]['video'])) {
-//                     $filmEpisodes[$index] = [
-//                         'video' => $episodeFiles[$index]['video'],  // file vẫn còn giữ
-//                         'episode_number' => $episode['episode_number'],
-//                         'episode_title' => $episode['episode_title'] ?? '',
-//                         'duration' => $episode['duration'] ?? '',
-//                     ];
-//                 }
-//             }
-//             Log::info('DEBUG uploadVideo: film_episodes', $request->film_episodes ?? []);
-//             $uploadRequest->request->set('film_episodes', $filmEpisodes);
-//     public function store(FilmStoreRequest $request)
-//     {
-//         try {
-//             DB::beginTransaction();
-//             Log::info('Received Request Data:', $request->except(['video', 'film_episodes']));
-
-//             // Tạo slug từ tên phim
-//             $slug = Str::slug($request->title_film, '-');
-
-//             // Kiểm tra phim đã tồn tại chưa
-//             if (Film::where('slug', $slug)->exists()) {
-//                 return response()->json(['error' => 'Slug đã tồn tại'], 422);
-//             }
-
-//             // Khởi tạo CloudinaryController
-//             $cloudinaryController = app(CloudinaryController::class);
-
-//             // Chuẩn bị request cho uploadVideo
-//             $uploadRequest = new BaseRequest(
-//                 $request->query(),
-//                 $request->all(),
-//                 [],
-//                 [],
-//                 [],
-//                 $request->server(),
-//                 $request->getContent()
-//             );
-
-//             // Thêm file trailer nếu có
-//             if ($request->hasFile('trailer_video')) {
-//                 $uploadRequest->files->set('video', $request->file('trailer_video'));
-//                 Log::info('DEBUG video file exists?', [
-//                     'has_video' => $uploadRequest->hasFile('video'),
-//                     'video_file' => $uploadRequest->file('video')?->getClientOriginalName()
-//                 ]);
-//             }
-
-//             // Thêm file episodes nếu có
-//             $episodes = $request->input('film_episodes', []);
-//             if (!empty($episodes)) {
-//                 $episodeFiles = $request->file('film_episodes', []);
-//                 $filmEpisodes = [];
-//                 foreach ($request->input('film_episodes', []) as $index => $episode) {
-//                     if (isset($episodeFiles[$index]['video'])) {
-//                         $filmEpisodes[$index] = [
-//                             'video' => $episodeFiles[$index]['video'],
-//                             'episode_number' => $episode['episode_number'],
-//                             'episode_title' => $episode['episode_title'] ?? '',
-//                             'duration' => $episode['duration'] ?? '',
-//                         ];
-//                     }
-//                 }
-//                 Log::info('DEBUG uploadVideo: film_episodes', $request->film_episodes ?? []);
-//                 $uploadRequest->request->set('film_episodes', $filmEpisodes);
-//             }
-
-//             // Gọi uploadVideo để xử lý upload
-//             $uploadResponse = $cloudinaryController->uploadVideo($uploadRequest);
-//             if ($uploadResponse->getStatusCode() !== 200) {
-//                 return $uploadResponse;
-//             }
-//             $uploadData = json_decode($uploadResponse->getContent(), true);
-//             Log::info('UploadData:', $uploadData);
-
-//             // Tạo dữ liệu phim
-//             $film = Film::create([
-//                 'slug' => $slug,
-//                 'title_film' => $request->title_film,
-//                 'thumb' => $request->thumb,
-//                 'trailer' => $uploadData['trailer_url'] ?? $request->trailer ?? null,
-//                 'film_type' => $request->film_type,
-//                 'year_id' => $request->year_id,
-//                 'country_id' => $request->country_id,
-//                 'actor' => $request->actor,
-//                 'director' => $request->director,
-//                 'content' => $request->content,
-//                 'view' => $request->view,
-//                 'is_premium' => $request->is_premium,
-//                 'point_required' => $request->point_required ?? null,
-//             ]);
-//             Log::info('Trailer đã lưu là:', ['trailer' => $film->trailer]);
-//             Log::info('Film created', ['film_id' => $film->id]);
-
-//             // Lưu film_episodes từ uploadData
-//             $episodesFromUpload = $uploadData['episodes'] ?? [];
-//             foreach ($episodesFromUpload as $episode) {
-//                 $film->film_episodes()->create([
-//                     'episode_number' => $episode['episode_number'],
-//                     'episode_title' => $episode['episode_title'] ?? '',
-//                     'episode_url' => $episode['episode_url'],
-//                     'duration' => $episode['duration'] ?? '',
-//                     'film_id' => $film->id,
-//                 ]);
-//                 Log::info('Lưu chi tiết phim thành công', ['episode' => $episode]);
-//             }
-
-//             // Gắn thể loại
-//             $newGenres = $request->input('genre_id', []);
-//             $currentGenreIds = $film->genres()->pluck('genre_id')->toArray();
-//             foreach ($newGenres as $genreId) {
-//                 if (!in_array($genreId, $currentGenreIds)) {
-//                     $film->genres()->attach($genreId);
-//                 }
-//             }
-//             Log::info('Gắn thể loại thành công', ['genre_id' => $newGenres]);
-
-//             $film->load(['genres', 'film_episodes', 'year', 'country']);
-//             DB::commit();
-
-//             return response()->json([
-//                 'message' => 'Thêm phim và tập phim thành công',
-//                 'data' => $film,
-//             ], 201);
-//         } catch (\Exception $e) {
-//             DB::rollBack();
-//             Log::error('❌ Lỗi khi thêm phim', ['message' => $e->getMessage()]);
-//             return response()->json(['error' => 'Lỗi khi thêm phim: ' . $e->getMessage()], 500);
-// >>>>>>> 04382ac67ad755056403025a6fb8d2cfad63e487
-//         }
-
-//         // Gọi uploadVideo để xử lý upload
-//         $uploadResponse = $cloudinaryController->uploadVideo($uploadRequest);
-//         if ($uploadResponse->getStatusCode() !== 200) {
-//             return $uploadResponse;
-//         }
-//         $uploadData = json_decode($uploadResponse->getContent(), true);
-//         Log::info('UploadData:', $uploadData);
-//         // Tạo dữ liệu phim
-//         $film = Film::create([
-//             'slug' => $slug,
-//             'title_film' => $request->title_film,
-//             'thumb' => $request->thumb,
-//             'trailer' => $uploadData['trailer_url'] ?? $request->trailer ?? null,
-//             'film_type' => $request->film_type,
-//             'year_id' => $request->year_id,
-//             'country_id' => $request->country_id,
-//             'actor' => $request->actor,
-//             'director' => $request->director,
-//             'content' => $request->content,
-//             'view' => $request->view,
-//             'is_premium' => $request->is_premium,
-//             'point_required' => $request->point_required ?? null,
-//         ]);
-//         Log::info('Trailer đã lưu là:', ['trailer' => $film->trailer]);
-//         Log::info('Film created', ['film_id' => $film->id]);
-
-//         // Lưu film_episodes từ uploadData
-//         $episodesFromUpload = $uploadData['episodes'] ?? [];
-//         foreach ($episodesFromUpload as $episode) {
-//             $film->film_episodes()->create([
-//                 'episode_number' => $episode['episode_number'],
-//                 'episode_title' => $episode['episode_title'] ?? '',
-//                 'episode_url' => $episode['episode_url'],
-//                 'duration' => $episode['duration'] ?? '',
-//                 'film_id' => $film->id,
-//             ]);
-//             Log::info('Lưu chi tiết phim thành công', ['episode' => $episode]);
-//         }
-
-//         // // Kiểm tra số tập trùng lặp
-//         // $episodeNumbers = array_column($episodesFromUpload, 'episode_number');
-//         // if ($episodesFromUpload && count(array_unique($episodeNumbers)) !== count($episodeNumbers)) {
-//         //     return response()->json(['error' => 'Số tập phim không được trùng lặp'], 400);
-//         // }
-
-//         // Gắn thể loại
-//         $newGenres = $request->input('genre_id', []);
-//         $currentGenreIds = $film->genres()->pluck('genre_id')->toArray();
-//         foreach ($newGenres as $genreId) {
-//             if (!in_array($genreId, $currentGenreIds)) {
-//                 $film->genres()->attach($genreId);
-//             }
-//         }
-//         Log::info('Gắn thể loại thành công', ['genre_id' => $newGenres]);
-
-//         $film->load(['genres', 'film_episodes', 'year', 'country']);
-//         DB::commit();
-
-//         return response()->json([
-//             'message' => 'Thêm phim và tập phim thành công',
-//             'data' => $film,
-//         ], 201);
-//     } catch (\Exception $e) {
-//         DB::rollBack();
-//         Log::error('❌ Lỗi khi thêm phim', ['message' => $e->getMessage()]);
-//         return response()->json(['error' => 'Lỗi khi thêm phim: ' . $e->getMessage()], 500);
-//     }
-// }
-//     // public function update(FilmStoreRequest $request, $id)
-//     // {
-//     //     try {
-//     //         DB::beginTransaction();
-//     //         $film = Film::findOrFail($id);
-
-
-
-//     //         $film->update($filmData);
-//     //         Log::info('Film updated', ['film_id' => $film->id]);
-
-//     //         // Xóa các tập phim cũ và thêm các tập mới
-//     //         $film->film_episodes()->delete();
-//     //         foreach ($request->input('film_episodes', []) as $episode) {
-//     //             $film->film_episodes()->create([
-//     //                 'episode_number' => $episode['episode_number'],
-//     //                 'episode_title' => $episode['episode_title'] ?? 'N/A',
-//     //                 'episode_url' => $episode['episode_url'] ?? '',
-//     //                 'duration' => $episode['duration'] ?? 'N/A',
-//     //             ]);
-//     //         }
-//     //         Log::info('Episodes updated', ['film_id' => $film->id]);
-
-//     //         // Cập nhật thể loại
-//     //         $newGenreIds = $request->genre_id;
-//     //         $film->genres()->sync($newGenreIds); // Sử dụng sync để cập nhật thể loại
-//     //         Log::info('Genres updated', ['genre_ids' => $newGenreIds]);
-
-//     //         $film->load(['genres', 'film_episodes']);
-//     //         Log::info('Data loaded', [
-//     //             'episodes' => $film->film_episodes->toArray(),
-//     //             'genres' => $film->genres->toArray(),
-//     //         ]);
-
-//     //         DB::commit();
-
-//     //         return response()->json([
-//     //             'message' => 'Cập nhật phim thành công',
-//     //             'data' => $film,
-//     //         ], 200);
-//     //     } catch (\Exception $e) {
-//     //         DB::rollBack();
-//     //         Log::error('❌ Error updating film', ['message' => $e->getMessage()]);
-//     //         return response()->json([
-//     //             'error' => 'Lỗi khi cập nhật phim: ' . $e->getMessage(),
-//     //         ], 500);
-//     //     }
-//     // }
-// public function update(Request $request, $id)
-// {
-//     try {
-//         DB::beginTransaction();
-
-//         $film = Film::findOrFail($id);
-//         $cloudinaryController = app(CloudinaryController::class);
-
-//         // 👉 Tạo slug để truyền folder (nhưng không lưu lại DB)
-//         $cloudFolderSlug = Str::slug($film->title_film, '-'); // dùng tên cũ để giữ folder đồng nhất
-
-//         // ⚙️ Tạo uploadRequest để clone lại request gốc
-//         $uploadRequest = new \Illuminate\Http\Request(
-//             $request->query(),  
-//             $request->all(),
-//             [],
-//             [],
-//             [],
-//             $request->server(),
-//             $request->getContent()
-//         );
-
-//         $uploadRequest->request->set('folder', $cloudFolderSlug); // truyền folder vào CloudinaryController
-
-//         // 📤 Trailer nếu có
-//         if ($request->hasFile('trailer_video')) {
-//             $uploadRequest->files->set('video', $request->file('trailer_video'));
-//         }
-
-//         // 📤 Episodes nếu có
-        
-//         // $episodeFiles = $request->file('film_episodes', []);
-//         $filmEpisodes = [];
-//         foreach ($request->input('film_episodes', []) as $index => $episode) {
-//             $videoFile = $request->file("film_episodes.$index.video");
-//             // if (isset($episodeFiles[$index]['video'])) {
-//                 $filmEpisodes[$index] = [
-//                     // 'video' => $episodeFiles[$index]['video'] ?? null,
-//                     'episode_number' => $episode['episode_number'],
-//                     'episode_title' => $episode['episode_title'] ?? '',
-//                     'duration' => $episode['duration'] ?? '',
-//                     'video' => $videoFile,
-//                     'episode_url' => $episode['episode_url'] ?? null,
-//                 ];
-//             // }
-//         }
-//         // $rawEpisodes = $request->all()['film_episodes'] ?? [];
-//         // $parsedEpisodes = [];
-
-//         // // Lặp qua các chỉ số
-//         // foreach ($rawEpisodes as $index => $episode) {
-//         //     $parsedEpisodes[] = [
-//         //         'episode_number' => $episode['episode_number'],
-//         //         'episode_title' => $episode['episode_title'] ?? '',
-//         //         'duration' => $episode['duration'] ?? '',
-//         //         'episode_url' => $episode['episode_url'] ?? '',
-//         //         'video' => $request->file("film_episodes.$index.video") ?? null,
-//         //     ];
-//         // }
-//         if (!empty($filmEpisodes)) {
-//             $uploadRequest->request->set('film_episodes', $filmEpisodes);
-//                 // Gán từng file video vào uploadRequest (rất quan trọng)
-//             foreach ($filmEpisodes as $index => $episode) {
-//                 if ($episode['video']) {
-//                     $uploadRequest->files->set("film_episodes.$index.video", $episode['video']);
-//                 }
-//             }
-//         }
-//         Log::info('📤 Uploading episodes', $filmEpisodes);
-//         Log::info('🎬 request files:', $request->allFiles());
-
-//         // 🚀 Gọi uploadVideo nếu có trailer/episodes
-//         $uploadData = [];
-//         if ($request->hasFile('trailer_video') || !empty($filmEpisodes)) {
-//             $uploadResponse = $cloudinaryController->uploadVideo($uploadRequest);
-//             if ($uploadResponse->getStatusCode() !== 200) {
-//                 return $uploadResponse;
-//             }
-//             $uploadData = json_decode($uploadResponse->getContent(), true);
-//         }
-
-//         // 🧩 Update phim
-//         $film->update([
-//             // KHÔNG cập nhật slug
-//             'thumb' => $request->thumb,
-//             'trailer' => $uploadData['trailer_url'] ?? $film->trailer,
-//             'film_type' => $request->film_type,
-//             'year_id' => $request->year_id,
-//             'country_id' => $request->country_id,
-//             'actor' => $request->actor,
-//             'director' => $request->director,
-//             'content' => $request->content,
-//             'view' => $request->view,
-//             'is_premium' => $request->is_premium,
-//             'point_required' => $request->point_required ?? $film->point_required,
-//         ]);
-
-//         // 🧩 Nếu có update episodes thì xóa cũ tạo mới
-//         if (!empty($uploadData['episodes'])) {
-//             $film->film_episodes()->delete();
-//             foreach ($uploadData['episodes'] as $episode) {
-//                 $film->film_episodes()->create([
-//                     'episode_number' => $episode['episode_number'],
-//                     'episode_title' => $episode['episode_title'] ?? '',
-//                     'episode_url' => $episode['episode_url'],
-//                     'duration' => $episode['duration'] ?? '',
-//                 ]);
-//             }
-
-//             Log::info('Episodes updated', ['film_id' => $film->id]);
-
-//     public function update(Request $request, $id)
-//     {
-//         try {
-//             DB::beginTransaction();
-
-//             $film = Film::findOrFail($id);
-//             $cloudinaryController = app(CloudinaryController::class);
-
-//             // Tạo slug để truyền folder (nhưng không lưu lại DB)
-//             $cloudFolderSlug = Str::slug($film->title_film, '-');
-
-//             // Tạo uploadRequest để clone lại request gốc
-//             $uploadRequest = new \Illuminate\Http\Request(
-//                 $request->query(),
-//                 $request->all(),
-//                 [],
-//                 [],
-//                 [],
-//                 $request->server(),
-//                 $request->getContent()
-//             );
-//             $uploadRequest->request->set('folder', $cloudFolderSlug);
-
-//             // Xử lý trailer nếu có
-//             if ($request->hasFile('trailer_video')) {
-//                 $uploadRequest->files->set('video', $request->file('trailer_video'));
-//             }
-
-//             // Xử lý episodes nếu có
-//             $filmEpisodes = [];
-//             foreach ($request->input('film_episodes', []) as $index => $episode) {
-//                 $videoFile = $request->file("film_episodes.$index.video");
-//                 if ($videoFile) {
-//                     $filmEpisodes[$index] = [
-//                         'video' => $videoFile,
-//                         'episode_number' => $episode['episode_number'],
-//                         'episode_title' => $episode['episode_title'] ?? '',
-//                         'duration' => $episode['duration'] ?? '',
-//                         'episode_url' => $episode['episode_url'] ?? null,
-//                     ];
-//                 }
-//             }
-
-//             if (!empty($filmEpisodes)) {
-//                 $uploadRequest->request->set('film_episodes', $filmEpisodes);
-//                 foreach ($filmEpisodes as $index => $episode) {
-//                     if ($episode['video']) {
-//                         $uploadRequest->files->set("film_episodes.$index.video", $episode['video']);
-//                     }
-//                 }
-//             }
-//             Log::info('📤 Uploading episodes', $filmEpisodes);
-//             Log::info('🎬 request files:', $request->allFiles());
-
-//             // Gọi uploadVideo nếu có trailer hoặc episodes
-//             $uploadData = [];
-//             if ($request->hasFile('trailer_video') || !empty($filmEpisodes)) {
-//                 $uploadResponse = $cloudinaryController->uploadVideo($uploadRequest);
-//                 if ($uploadResponse->getStatusCode() !== 200) {
-//                     DB::rollBack();
-//                     return $uploadResponse;
-//                 }
-//                 $uploadData = json_decode($uploadResponse->getContent(), true);
-//             }
-
-//             // Cập nhật phim
-//             $film->update([
-//                 'thumb' => $request->thumb ?? $film->thumb,
-//                 'trailer' => $uploadData['trailer_url'] ?? $film->trailer,
-//                 'film_type' => $request->film_type ?? $film->film_type,
-//                 'year_id' => $request->year_id ?? $film->year_id,
-//                 'country_id' => $request->country_id ?? $film->country_id,
-//                 'actor' => $request->actor ?? $film->actor,
-//                 'director' => $request->director ?? $film->director,
-//                 'content' => $request->content ?? $film->content,
-//                 'view' => $request->view ?? $film->view,
-//                 'is_premium' => $request->is_premium ?? $film->is_premium,
-//                 'point_required' => $request->point_required ?? $film->point_required,
-//             ]);
-//             Log::info('Film updated', ['film_id' => $film->id]);
-
-//             // Cập nhật episodes nếu có
-//             if (!empty($uploadData['episodes'])) {
-//                 $film->film_episodes()->delete();
-//                 foreach ($uploadData['episodes'] as $episode) {
-//                     $film->film_episodes()->create([
-//                         'episode_number' => $episode['episode_number'],
-//                         'episode_title' => $episode['episode_title'] ?? '',
-//                         'episode_url' => $episode['episode_url'],
-//                         'duration' => $episode['duration'] ?? '',
-//                     ]);
-//                 }
-//                 Log::info('Episodes updated', ['film_id' => $film->id]);
-//             }
-
-//             // Cập nhật thể loại
-//             $newGenreIds = $request->input('genre_id', []);
-//             if (!empty($newGenreIds)) {
-//                 $film->genres()->sync($newGenreIds);
-//                 Log::info('Genres updated', ['genre_ids' => $newGenreIds]);
-//             }
-
-//             $film->load(['genres', 'film_episodes', 'year', 'country']);
-//             Log::info('Data loaded', [
-//                 'episodes' => $film->film_episodes->toArray(),
-//                 'genres' => $film->genres->toArray(),
-//             ]);
-
-//             DB::commit();
-
-//             return response()->json([
-//                 'message' => 'Cập nhật phim thành công',
-//                 'data' => $film,
-//             ], 200);
-//         } 
-
-//         // 🔄 Gắn thể loại
-//         $film->genres()->sync($request->input('genre_id', []));
-
-//         DB::commit();
-
-//         return response()->json([
-//             'message' => 'Cập nhật phim thành công',
-//             'data' => $film->load(['genres', 'film_episodes']),
-//         ]);
-//     } catch (\Exception $e) {
-//         DB::rollBack();
-//         Log::error('❌ Lỗi khi cập nhật phim', ['message' => $e->getMessage()]);
-//         return response()->json(['error' => 'Lỗi khi cập nhật phim: ' . $e->getMessage()], 500);
-//     }
-// }
-public function store(FilmStoreRequest $request)
-{
-    try {
-        DB::beginTransaction();
-        Log::info('Received Request Data:', $request->except(['video', 'film_episodes']));
-
-        // Tạo slug từ tên phim
-        $slug = Str::slug($request->title_film, '-');
-
-        // Kiểm tra phim đã tồn tại chưa
-        if (Film::where('slug', $slug)->exists()) {
-            return response()->json(['error' => 'Slug đã tồn tại'], 422);
-        }
-
-        // Khởi tạo CloudinaryController
-        $cloudinaryController = app(CloudinaryController::class);
-
-        // Chuẩn bị request cho uploadVideo
-$uploadRequest = new BaseRequest(
-    $request->query(),
-    $request->all(),
-    [],
-    [],
-    [],
-    $request->server(),
-    $request->getContent()
-);
-        // Thêm file trailer nếu có
-        if ($request->hasFile('trailer_video') ) {
-            $uploadRequest->files->set('video', $request->file('trailer_video'));
+    public function store(FilmStoreRequest $request)
+    {
+        try {
+            DB::beginTransaction();
+            Log::info('Received Request Data:', $request->except(['video', 'film_episodes']));
+
+            // Tạo slug từ tên phim
+            $slug = Str::slug($request->title_film, '-');
+
+            // Kiểm tra phim đã tồn tại chưa
+            if (Film::where('slug', $slug)->exists()) {
+                return response()->json(['error' => 'Slug đã tồn tại'], 422);
+            }
+
+            // Khởi tạo CloudinaryController
+            $cloudinaryController = app(CloudinaryController::class);
+
+            // Chuẩn bị request cho uploadVideo
+            $uploadRequest = new BaseRequest(
+                $request->query(),
+                $request->all(),
+                [],
+                [],
+                [],
+                $request->server(),
+                $request->getContent()
+            );
+            // Thêm file trailer nếu có
+            if ($request->hasFile('trailer_video')) {
+                $uploadRequest->files->set('video', $request->file('trailer_video'));
                 // Kiểm tra trên $uploadRequest chứ không phải $request
-            Log::info('DEBUG video file exists?', [
-                'has_video' => $uploadRequest->hasFile('video'),
-                'video_file' => $uploadRequest->file('video')?->getClientOriginalName()
-            ]);
-        }
+                Log::info('DEBUG video file exists?', [
+                    'has_video' => $uploadRequest->hasFile('video'),
+                    'video_file' => $uploadRequest->file('video')?->getClientOriginalName()
+                ]);
+            }
 
-        // Thêm file episodes nếu có
-        $episodes = $request->input('film_episodes', []);
-        if (!empty($episodes)) {
-            $episodeFiles = $request->file('film_episodes',[]);
-            $filmEpisodes = [];
-            foreach ($request->input('film_episodes', []) as $index => $episode) {
-                if (isset($episodeFiles[$index]['video'])) {
-                    $filmEpisodes[$index] = [
-                        'video' => $episodeFiles[$index]['video'],  // file vẫn còn giữ
-                        'episode_number' => $episode['episode_number'],
-                        'episode_title' => $episode['episode_title'] ?? '',
-                        'duration' => $episode['duration'] ?? '',
-                    ];
+            // Thêm file episodes nếu có
+            $episodes = $request->input('film_episodes', []);
+            if (!empty($episodes)) {
+                $episodeFiles = $request->file('film_episodes', []);
+                $filmEpisodes = [];
+                foreach ($request->input('film_episodes', []) as $index => $episode) {
+                    if (isset($episodeFiles[$index]['video'])) {
+                        $filmEpisodes[$index] = [
+                            'video' => $episodeFiles[$index]['video'],  // file vẫn còn giữ
+                            'episode_number' => $episode['episode_number'],
+                            'episode_title' => $episode['episode_title'] ?? '',
+                            'duration' => $episode['duration'] ?? '',
+                        ];
+                    }
+                }
+                Log::info('DEBUG uploadVideo: film_episodes', $request->film_episodes ?? []);
+                $uploadRequest->request->set('film_episodes', $filmEpisodes);
+            }
+
+            // Gọi uploadVideo để xử lý upload
+            $uploadResponse = $cloudinaryController->uploadVideo($uploadRequest);
+            if ($uploadResponse->getStatusCode() !== 200) {
+                return $uploadResponse;
+            }
+            $uploadData = json_decode($uploadResponse->getContent(), true);
+            Log::info('UploadData:', $uploadData);
+            // Tạo dữ liệu phim
+            $film = Film::create([
+                'slug' => $slug,
+                'title_film' => $request->title_film,
+                'thumb' => $request->thumb,
+                'trailer' => $uploadData['trailer_url'] ?? $request->trailer ?? null,
+                'film_type' => $request->film_type,
+                'year_id' => $request->year_id,
+                'country_id' => $request->country_id,
+                'actor' => $request->actor,
+                'director' => $request->director,
+                'content' => $request->content,
+                'view' => $request->view,
+                'is_premium' => $request->is_premium,
+                'point_required' => $request->point_required ?? null,
+            ]);
+            Log::info('Trailer đã lưu là:', ['trailer' => $film->trailer]);
+            Log::info('Film created', ['film_id' => $film->id]);
+
+            // Lưu film_episodes từ uploadData
+            $episodesFromUpload = $uploadData['episodes'] ?? [];
+            foreach ($episodesFromUpload as $episode) {
+                $film->film_episodes()->create([
+                    'episode_number' => $episode['episode_number'],
+                    'episode_title' => $episode['episode_title'] ?? '',
+                    'episode_url' => $episode['episode_url'],
+                    'duration' => $episode['duration'] ?? '',
+                    'film_id' => $film->id,
+                ]);
+                Log::info('Lưu chi tiết phim thành công', ['episode' => $episode]);
+            }
+
+            // Gắn thể loại
+            $newGenres = $request->input('genre_id', []);
+            $currentGenreIds = $film->genres()->pluck('genre_id')->toArray();
+            foreach ($newGenres as $genreId) {
+                if (!in_array($genreId, $currentGenreIds)) {
+                    $film->genres()->attach($genreId);
                 }
             }
-            Log::info('DEBUG uploadVideo: film_episodes', $request->film_episodes ?? []);
-            $uploadRequest->request->set('film_episodes', $filmEpisodes);
+            Log::info('Gắn thể loại thành công', ['genre_id' => $newGenres]);
+
+            $film->load(['genres', 'film_episodes', 'year', 'country']);
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Thêm phim và tập phim thành công',
+                'data' => $film,
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('❌ Lỗi khi thêm phim', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Lỗi khi thêm phim: ' . $e->getMessage()], 500);
         }
-
-        // Gọi uploadVideo để xử lý upload
-        $uploadResponse = $cloudinaryController->uploadVideo($uploadRequest);
-        if ($uploadResponse->getStatusCode() !== 200) {
-            return $uploadResponse;
-        }
-        $uploadData = json_decode($uploadResponse->getContent(), true);
-        Log::info('UploadData:', $uploadData);
-        // Tạo dữ liệu phim
-        $film = Film::create([
-            'slug' => $slug,
-            'title_film' => $request->title_film,
-            'thumb' => $request->thumb,
-            'trailer' => $uploadData['trailer_url'] ?? $request->trailer ?? null,
-            'film_type' => $request->film_type,
-            'year_id' => $request->year_id,
-            'country_id' => $request->country_id,
-            'actor' => $request->actor,
-            'director' => $request->director,
-            'content' => $request->content,
-            'view' => $request->view,
-            'is_premium' => $request->is_premium,
-            'point_required' => $request->point_required ?? null,
-        ]);
-        Log::info('Trailer đã lưu là:', ['trailer' => $film->trailer]);
-        Log::info('Film created', ['film_id' => $film->id]);
-
-        // Lưu film_episodes từ uploadData
-        $episodesFromUpload = $uploadData['episodes'] ?? [];
-        foreach ($episodesFromUpload as $episode) {
-            $film->film_episodes()->create([
-                'episode_number' => $episode['episode_number'],
-                'episode_title' => $episode['episode_title'] ?? '',
-                'episode_url' => $episode['episode_url'],
-                'duration' => $episode['duration'] ?? '',
-                'film_id' => $film->id,
-            ]);
-            Log::info('Lưu chi tiết phim thành công', ['episode' => $episode]);
-        }
-
-        // // Kiểm tra số tập trùng lặp
-        // $episodeNumbers = array_column($episodesFromUpload, 'episode_number');
-        // if ($episodesFromUpload && count(array_unique($episodeNumbers)) !== count($episodeNumbers)) {
-        //     return response()->json(['error' => 'Số tập phim không được trùng lặp'], 400);
-        // }
-
-        // Gắn thể loại
-        $newGenres = $request->input('genre_id', []);
-        $currentGenreIds = $film->genres()->pluck('genre_id')->toArray();
-        foreach ($newGenres as $genreId) {
-            if (!in_array($genreId, $currentGenreIds)) {
-                $film->genres()->attach($genreId);
-            }
-        }
-        Log::info('Gắn thể loại thành công', ['genre_id' => $newGenres]);
-
-        $film->load(['genres', 'film_episodes', 'year', 'country']);
-        DB::commit();
-
-        return response()->json([
-            'message' => 'Thêm phim và tập phim thành công',
-            'data' => $film,
-        ], 201);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('❌ Lỗi khi thêm phim', ['message' => $e->getMessage()]);
-        return response()->json(['error' => 'Lỗi khi thêm phim: ' . $e->getMessage()], 500);
     }
-}
-public function update(Request $request, $id)
-{
-    try {
-        DB::beginTransaction();
+    public function update(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
 
-        $film = Film::findOrFail($id);
-        $cloudinaryController = app(CloudinaryController::class);
+            $film = Film::findOrFail($id);
+            $cloudinaryController = app(CloudinaryController::class);
 
-        // 👉 Tạo slug để truyền folder (nhưng không lưu lại DB)
-        $cloudFolderSlug = Str::slug($film->title_film, '-'); // dùng tên cũ để giữ folder đồng nhất
+            // 👉 Tạo slug để truyền folder (nhưng không lưu lại DB)
+            $cloudFolderSlug = Str::slug($film->title_film, '-'); // dùng tên cũ để giữ folder đồng nhất
 
-        // ⚙️ Tạo uploadRequest để clone lại request gốc
-        $uploadRequest = new \Illuminate\Http\Request(
-            $request->query(),  
-            $request->all(),
-            [],
-            [],
-            [],
-            $request->server(),
-            $request->getContent()
-        );
+            // ⚙️ Tạo uploadRequest để clone lại request gốc
+            $uploadRequest = new \Illuminate\Http\Request(
+                $request->query(),
+                $request->all(),
+                [],
+                [],
+                [],
+                $request->server(),
+                $request->getContent()
+            );
 
-        $uploadRequest->request->set('folder', $cloudFolderSlug); // truyền folder vào CloudinaryController
+            $uploadRequest->request->set('folder', $cloudFolderSlug); // truyền folder vào CloudinaryController
 
-        // 📤 Trailer nếu có
-        if ($request->hasFile('trailer_video')) {
-            $uploadRequest->files->set('video', $request->file('trailer_video'));
-        }
+            // 📤 Trailer nếu có
+            if ($request->hasFile('trailer_video')) {
+                $uploadRequest->files->set('video', $request->file('trailer_video'));
+            }
 
-        // 📤 Episodes nếu có
-        
-        // $episodeFiles = $request->file('film_episodes', []);
-        $filmEpisodes = [];
-        foreach ($request->input('film_episodes', []) as $index => $episode) {
-            $videoFile = $request->file("film_episodes.$index.video");
-            // if (isset($episodeFiles[$index]['video'])) {
+            // 📤 Episodes nếu có
+
+            // $episodeFiles = $request->file('film_episodes', []);
+            $filmEpisodes = [];
+            foreach ($request->input('film_episodes', []) as $index => $episode) {
+                $videoFile = $request->file("film_episodes.$index.video");
+                // if (isset($episodeFiles[$index]['video'])) {
                 $filmEpisodes[$index] = [
                     // 'video' => $episodeFiles[$index]['video'] ?? null,
                     'episode_number' => $episode['episode_number'],
@@ -856,87 +201,87 @@ public function update(Request $request, $id)
                     'video' => $videoFile,
                     'episode_url' => $episode['episode_url'] ?? null,
                 ];
-            // }
-        }
-        // $rawEpisodes = $request->all()['film_episodes'] ?? [];
-        // $parsedEpisodes = [];
+                // }
+            }
+            // $rawEpisodes = $request->all()['film_episodes'] ?? [];
+            // $parsedEpisodes = [];
 
-        // // Lặp qua các chỉ số
-        // foreach ($rawEpisodes as $index => $episode) {
-        //     $parsedEpisodes[] = [
-        //         'episode_number' => $episode['episode_number'],
-        //         'episode_title' => $episode['episode_title'] ?? '',
-        //         'duration' => $episode['duration'] ?? '',
-        //         'episode_url' => $episode['episode_url'] ?? '',
-        //         'video' => $request->file("film_episodes.$index.video") ?? null,
-        //     ];
-        // }
-        if (!empty($filmEpisodes)) {
-            $uploadRequest->request->set('film_episodes', $filmEpisodes);
+            // // Lặp qua các chỉ số
+            // foreach ($rawEpisodes as $index => $episode) {
+            //     $parsedEpisodes[] = [
+            //         'episode_number' => $episode['episode_number'],
+            //         'episode_title' => $episode['episode_title'] ?? '',
+            //         'duration' => $episode['duration'] ?? '',
+            //         'episode_url' => $episode['episode_url'] ?? '',
+            //         'video' => $request->file("film_episodes.$index.video") ?? null,
+            //     ];
+            // }
+            if (!empty($filmEpisodes)) {
+                $uploadRequest->request->set('film_episodes', $filmEpisodes);
                 // Gán từng file video vào uploadRequest (rất quan trọng)
-            foreach ($filmEpisodes as $index => $episode) {
-                if ($episode['video']) {
-                    $uploadRequest->files->set("film_episodes.$index.video", $episode['video']);
+                foreach ($filmEpisodes as $index => $episode) {
+                    if ($episode['video']) {
+                        $uploadRequest->files->set("film_episodes.$index.video", $episode['video']);
+                    }
                 }
             }
-        }
-        Log::info('📤 Uploading episodes', $filmEpisodes);
-        Log::info('🎬 request files:', $request->allFiles());
+            Log::info('📤 Uploading episodes', $filmEpisodes);
+            Log::info('🎬 request files:', $request->allFiles());
 
-        // 🚀 Gọi uploadVideo nếu có trailer/episodes
-        $uploadData = [];
-        if ($request->hasFile('trailer_video') || !empty($filmEpisodes)) {
-            $uploadResponse = $cloudinaryController->uploadVideo($uploadRequest);
-            if ($uploadResponse->getStatusCode() !== 200) {
-                return $uploadResponse;
+            // 🚀 Gọi uploadVideo nếu có trailer/episodes
+            $uploadData = [];
+            if ($request->hasFile('trailer_video') || !empty($filmEpisodes)) {
+                $uploadResponse = $cloudinaryController->uploadVideo($uploadRequest);
+                if ($uploadResponse->getStatusCode() !== 200) {
+                    return $uploadResponse;
+                }
+                $uploadData = json_decode($uploadResponse->getContent(), true);
             }
-            $uploadData = json_decode($uploadResponse->getContent(), true);
-        }
 
-        // 🧩 Update phim
-        $film->update([
-            // KHÔNG cập nhật slug
-            'thumb' => $request->thumb,
-            'trailer' => $uploadData['trailer_url'] ?? $film->trailer,
-            'film_type' => $request->film_type,
-            'year_id' => $request->year_id,
-            'country_id' => $request->country_id,
-            'actor' => $request->actor,
-            'director' => $request->director,
-            'content' => $request->content,
-            'view' => $request->view,
-            'is_premium' => $request->is_premium,
-            'point_required' => $request->point_required ?? $film->point_required,
-        ]);
+            // 🧩 Update phim
+            $film->update([
+                // KHÔNG cập nhật slug
+                'thumb' => $request->thumb,
+                'trailer' => $uploadData['trailer_url'] ?? $film->trailer,
+                'film_type' => $request->film_type,
+                'year_id' => $request->year_id,
+                'country_id' => $request->country_id,
+                'actor' => $request->actor,
+                'director' => $request->director,
+                'content' => $request->content,
+                'view' => $request->view,
+                'is_premium' => $request->is_premium,
+                'point_required' => $request->point_required ?? $film->point_required,
+            ]);
 
-        // 🧩 Nếu có update episodes thì xóa cũ tạo mới
-        if (!empty($uploadData['episodes'])) {
-            $film->film_episodes()->delete();
-            foreach ($uploadData['episodes'] as $episode) {
-                $film->film_episodes()->create([
-                    'episode_number' => $episode['episode_number'],
-                    'episode_title' => $episode['episode_title'] ?? '',
-                    'episode_url' => $episode['episode_url'],
-                    'duration' => $episode['duration'] ?? '',
-                ]);
+            // 🧩 Nếu có update episodes thì xóa cũ tạo mới
+            if (!empty($uploadData['episodes'])) {
+                $film->film_episodes()->delete();
+                foreach ($uploadData['episodes'] as $episode) {
+                    $film->film_episodes()->create([
+                        'episode_number' => $episode['episode_number'],
+                        'episode_title' => $episode['episode_title'] ?? '',
+                        'episode_url' => $episode['episode_url'],
+                        'duration' => $episode['duration'] ?? '',
+                    ]);
+                }
             }
+
+            // 🔄 Gắn thể loại
+            $film->genres()->sync($request->input('genre_id', []));
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Cập nhật phim thành công',
+                'data' => $film->load(['genres', 'film_episodes']),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('❌ Lỗi khi cập nhật phim', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Lỗi khi cập nhật phim: ' . $e->getMessage()], 500);
         }
-
-        // 🔄 Gắn thể loại
-        $film->genres()->sync($request->input('genre_id', []));
-
-        DB::commit();
-
-        return response()->json([
-            'message' => 'Cập nhật phim thành công',
-            'data' => $film->load(['genres', 'film_episodes']),
-        ]);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('❌ Lỗi khi cập nhật phim', ['message' => $e->getMessage()]);
-        return response()->json(['error' => 'Lỗi khi cập nhật phim: ' . $e->getMessage()], 500);
     }
-}
 
 
     public function destroy($id)
@@ -950,6 +295,7 @@ public function update(Request $request, $id)
             return response()->json(['error' => 'Lỗi khi xóa phim'], 500);
         }
     }
+
 
     public function filter(Request $request)
     {
@@ -981,18 +327,13 @@ public function update(Request $request, $id)
             }
 
             if ($request->has('type')) {
-                $filmType = $request->type === 'phim-le' ? 1 : 0;
+                $filmType = $request->type === 'phim-bo' ? 1 : 0;
                 $query->where('film_type', $filmType);
             }
 
             if ($request->has('search')) {
                 $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('title_film', 'like', '%' . $search . '%')
-                        ->orWhere('content', 'like', '%' . $search . '%')
-                        ->orWhere('actor', 'like', '%' . $search . '%')
-                        ->orWhere('director', 'like', '%' . $search . '%');
-                });
+                $query->where('title_film', 'like', '%' . $search . '%');
             }
 
             $films = $query->get();

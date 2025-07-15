@@ -56,7 +56,7 @@ const FilmDetail = () => {
 
     const [tab, setTab] = useState<'comment' | 'rating' | 'info'>('comment');
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-    const [showPremiumPromtf,setShowPremiumPromtf] = useState(false);
+    const [showPremiumPromtf, setShowPremiumPromtf] = useState(false);
     const [showPointsPrompt, setShowPointsPrompt] = useState(false);
     const [canWatch, setCanWatch] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
@@ -168,7 +168,7 @@ const FilmDetail = () => {
         return match ? parseInt(match[0]) : 0;
     };
     const isRestoringProgressRef = useRef(false);
-    const { handleTimeUpdate } = useWatchHistories(selectedEpisode, videoRef, setCurrentTime,isRestoringProgressRef);
+    const { handleTimeUpdate } = useWatchHistories(selectedEpisode, videoRef, setCurrentTime, isRestoringProgressRef);
     const { handleViewIncrement } = useIncreaseView({ filmId: film?.id, videoRef, selectedEpisode });
 
     const initializeHLS = (videoUrl: string) => {
@@ -398,7 +398,7 @@ const FilmDetail = () => {
 
         // Phim premium & chưa login → show login prompt
         setShowPremiumPromtf(true);
-    }, [film?.is_premium, isLoggedIn,checkRewardStatus,checkPaymentStatus]);
+    }, [film?.is_premium, isLoggedIn, checkRewardStatus, checkPaymentStatus]);
 
     useEffect(() => {
         if (!canWatch || !selectedEpisode?.episode_url || !videoRef.current) return;
@@ -428,23 +428,32 @@ const FilmDetail = () => {
 
     // useEffect để trừ điểm cho phim premium
     useEffect(() => {
-        if (isRestoringProgressRef.current) return;
-        const video = videoRef.current;
-        if (!video || !film?.is_premium || !isLoggedIn || !canWatch || paymentStatus?.already_paid) return;
+        if (!videoRef.current || !film?.is_premium || !isLoggedIn || !canWatch || paymentStatus?.already_paid) return;
 
         setDeducted(false);
         lastCurrentTimeRef.current = 0;
 
         const handleTimeUpdate = () => {
-            const duration = video.duration;
-            const currentTime = video.currentTime;
+            const duration = videoRef.current!.duration;
+            const currentTime = videoRef.current!.currentTime;
 
             if (!duration || isNaN(duration)) return;
 
             const fortyPercentDuration = duration * 0.4;
+            // Nếu đang auto-seek do lịch sử thì bỏ qua thông báo, nhưng vẫn cho phép trừ điểm nếu xem đến 90%
+            if (isRestoringProgressRef.current) {
+                lastCurrentTimeRef.current = currentTime;
+                if (!deducted && currentTime / duration >= 0.9) {
+                    deductPoints();
+                    setDeducted(true);
+                    videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
+                }
+                return;
+            }
+
             if (Math.abs(currentTime - lastCurrentTimeRef.current) > fortyPercentDuration) {
                 setDeducted(true);
-                video.removeEventListener('timeupdate', handleTimeUpdate);
+                videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
                 return;
             }
 
@@ -453,35 +462,44 @@ const FilmDetail = () => {
             if (!deducted && currentTime / duration >= 0.9) {
                 deductPoints();
                 setDeducted(true);
-                video.removeEventListener('timeupdate', handleTimeUpdate);
+                videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
             }
         };
 
-        video.addEventListener('timeupdate', handleTimeUpdate);
+        videoRef.current.addEventListener('timeupdate', handleTimeUpdate);
 
         return () => {
-            video.removeEventListener('timeupdate', handleTimeUpdate);
+            videoRef.current && videoRef.current.removeEventListener('timeupdate', handleTimeUpdate);
         };
     }, [film?.is_premium, canWatch, paymentStatus?.already_paid, deductPoints]);
 
     // useEffect để tích điểm cho phim không premium
     useEffect(() => {
-        if (isRestoringProgressRef.current) return;
-        const video = videoRef.current;
-        if (!video || film?.is_premium || !isLoggedIn || !canWatch) return;
+        if (!videoRef.current || film?.is_premium || !isLoggedIn || !canWatch) return;
 
         setDeducted(false);
         lastCurrentTimeRef.current = 0;
 
         const handleTimeUpdate = () => {
-            const duration = video.duration;
-            const currentTime = video.currentTime;
+            const duration = videoRef.current!.duration;
+            const currentTime = videoRef.current!.currentTime;
 
             if (!duration || isNaN(duration)) return;
 
+            // Nếu đang auto-seek do lịch sử thì bỏ qua thông báo, nhưng vẫn cho phép cộng điểm nếu xem đến 90%
+            if (isRestoringProgressRef.current) {
+                lastCurrentTimeRef.current = currentTime;
+                if (!deducted && currentTime / duration >= 0.9) {
+                    rewardPoints();
+                    setDeducted(true);
+                    videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
+                }
+                return;
+            }
+
             if (!hasRewarded && Math.abs(currentTime - lastCurrentTimeRef.current) > duration * 0.1) {
                 setDeducted(true);
-                video.removeEventListener('timeupdate', handleTimeUpdate);
+                videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
                 toast.info('Bạn đã tua quá 10% thời lượng video, không thể tích điểm.', {
                     duration: 3000,
                     position: 'top-center',
@@ -494,15 +512,15 @@ const FilmDetail = () => {
             if (!deducted && currentTime / duration >= 0.9) {
                 rewardPoints();
                 setDeducted(true);
-                video.removeEventListener('timeupdate', handleTimeUpdate);
+                videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
             }
         };
 
-        video.addEventListener('timeupdate', handleTimeUpdate);
+        videoRef.current.addEventListener('timeupdate', handleTimeUpdate);
         return () => {
-            video.removeEventListener('timeupdate', handleTimeUpdate);
+            videoRef.current && videoRef.current.removeEventListener('timeupdate', handleTimeUpdate);
         };
-    }, [film?.is_premium,isLoggedIn, canWatch, rewardPoints, hasRewarded]);
+    }, [film?.is_premium, isLoggedIn, canWatch, rewardPoints, hasRewarded]);
 
     if (error) {
         return (
@@ -568,97 +586,97 @@ const FilmDetail = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
-                        
-                            <div ref={videoWrapperRef} className="relative aspect-video  rounded-lg overflow-hidden shadow-lg">
-                                {canWatch && (
-                                    <>
-                                        <video
-                                            ref={videoRef}
-                                            className="w-full h-full object-cover"
-                                            onLoadedMetadata={handleLoadedMetadata}
-                                            onTimeUpdate={() => {
-                                                handleTimeUpdate();
-                                                handleViewIncrement();
-                                            }}
-                                            poster={film.thumb}
-                                            crossOrigin="anonymous"
-                                            playsInline
-                                            preload="metadata"
-                                            onMouseMove={handleMouseMove}
-                                        >
-                                            Trình duyệt của bạn không hỗ trợ phát video.
-                                        </video>
-                                        {showControls && (
-                                            <>
-                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 flex gap-6">
-                                                    <button
-                                                        onClick={skipBackward}
-                                                        className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition"
-                                                    >
-                                                        <RotateCcw className="w-6 h-6 text-white" />
-                                                    </button>
-                                                    {isPlaying ? (
-                                                        <button
-                                                            onClick={pauseVideo}
-                                                            className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition"
-                                                        >
-                                                            <Pause className="w-6 h-6 text-white" />
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={playVideo}
-                                                            className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition"
-                                                        >
-                                                            <Play className="w-6 h-6 text-white" />
-                                                        </button>
-                                                    )}
-                                                    <button
-                                                        onClick={skipForward}
-                                                        className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition"
-                                                    >
-                                                        <RotateCw className="w-6 h-6 text-white" />
-                                                    </button>
-                                                </div>
 
-                                                <div className="absolute bottom-4 left-0 w-full px-4 z-50 pointer-events-auto">
-                                                    <input
-                                                        type="range"
-                                                        min={0}
-                                                        max={duration} // Thêm fallback
-                                                        step="0.1"
-                                                        value={currentTime}
-                                                        onChange={handleSeek}
-                                                        className="w-full accent-red-500"
-                                                    />
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="text-white text-sm mt-1">
-                                                            <span>{formatTime(currentTime)}</span>/<span>{formatTime(duration)}</span>
-                                                        </div>
-                                                        <button
-                                                            onClick={toggleFullScreen}
-                                                            className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition"
-                                                        >
-                                                            <Maximize className="w-6 h-6 text-white" />
-                                                        </button>
+                        <div ref={videoWrapperRef} className="relative aspect-video  rounded-lg overflow-hidden shadow-lg">
+                            {canWatch && (
+                                <>
+                                    <video
+                                        ref={videoRef}
+                                        className="w-full h-full object-cover"
+                                        onLoadedMetadata={handleLoadedMetadata}
+                                        onTimeUpdate={() => {
+                                            handleTimeUpdate();
+                                            handleViewIncrement();
+                                        }}
+                                        poster={film.thumb}
+                                        crossOrigin="anonymous"
+                                        playsInline
+                                        preload="metadata"
+                                        onMouseMove={handleMouseMove}
+                                    >
+                                        Trình duyệt của bạn không hỗ trợ phát video.
+                                    </video>
+                                    {showControls && (
+                                        <>
+                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 flex gap-6">
+                                                <button
+                                                    onClick={skipBackward}
+                                                    className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition"
+                                                >
+                                                    <RotateCcw className="w-6 h-6 text-white" />
+                                                </button>
+                                                {isPlaying ? (
+                                                    <button
+                                                        onClick={pauseVideo}
+                                                        className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition"
+                                                    >
+                                                        <Pause className="w-6 h-6 text-white" />
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={playVideo}
+                                                        className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition"
+                                                    >
+                                                        <Play className="w-6 h-6 text-white" />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={skipForward}
+                                                    className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition"
+                                                >
+                                                    <RotateCw className="w-6 h-6 text-white" />
+                                                </button>
+                                            </div>
+
+                                            <div className="absolute bottom-4 left-0 w-full px-4 z-50 pointer-events-auto">
+                                                <input
+                                                    type="range"
+                                                    min={0}
+                                                    max={duration} // Thêm fallback
+                                                    step="0.1"
+                                                    value={currentTime}
+                                                    onChange={handleSeek}
+                                                    className="w-full accent-red-500"
+                                                />
+                                                <div className="flex items-center justify-between">
+                                                    <div className="text-white text-sm mt-1">
+                                                        <span>{formatTime(currentTime)}</span>/<span>{formatTime(duration)}</span>
                                                     </div>
+                                                    <button
+                                                        onClick={toggleFullScreen}
+                                                        className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/40 transition"
+                                                    >
+                                                        <Maximize className="w-6 h-6 text-white" />
+                                                    </button>
                                                 </div>
-                                            </>
-                                        )}
-                                    </>
-                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            )}
 
-                                {!canWatch && (
-                                    <div className="relative flex flex-col items-center justify-center aspect-video rounded-lg bg-gray-800  text-center p-6 shadow-lg">
-                                        <Lock className="w-12 h-12 text-red-500 mb-4" />
-                                        <h2 className="text-xl font-semibold mb-2">Bạn cần đăng nhập để xem phim này</h2>
-                                        <p className="text-sm text-gray-300 mb-4">
-                                            Phim thuộc danh mục <span className="text-yellow-400 font-semibold">Premium</span> 
-                                        </p>
- 
-                                    </div>
-                                )}
-                            </div>
-                        
+                            {!canWatch && (
+                                <div className="relative flex flex-col items-center justify-center aspect-video rounded-lg bg-gray-800  text-center p-6 shadow-lg">
+                                    <Lock className="w-12 h-12 text-red-500 mb-4" />
+                                    <h2 className="text-xl font-semibold mb-2">Bạn cần đăng nhập để xem phim này</h2>
+                                    <p className="text-sm text-gray-300 mb-4">
+                                        Phim thuộc danh mục <span className="text-yellow-400 font-semibold">Premium</span>
+                                    </p>
+
+                                </div>
+                            )}
+                        </div>
+
                         <div className="mt-4">
                             <h2 className="text-xl font-semibold mb-3">Danh sách tập</h2>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
@@ -753,25 +771,25 @@ const FilmDetail = () => {
                                         {!commentsLoading &&
                                             Array.isArray(comments) &&
                                             [...comments]
-                                            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                                            .map((comment) => (
-                                                <div key={comment.id} className="border rounded-sm flex items-center gap-3">
-                                                    <div className="h-full flex p-2 items-center">
-                                                        <UserCircleIcon className="inline-block h-10 w-10 text-gray-300" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center justify-between">
-                                                            <p className="pr-4 whitespace-nowrap font-semibold text-orange-500">
-                                                                {comment.user?.name || 'Ẩn danh'}
-                                                            </p>
-                                                            <p className="text-gray-200 break-words my-2 text-left w-96 mr-4">{comment.comment}</p>
-                                                            <p className="whitespace-nowrap text-left text-sm text-gray-400 mr-2">
-                                                                {dayjs(comment.created_at).fromNow()}
-                                                            </p>
+                                                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                                                .map((comment) => (
+                                                    <div key={comment.id} className="border rounded-sm flex items-center gap-3">
+                                                        <div className="h-full flex p-2 items-center">
+                                                            <UserCircleIcon className="inline-block h-10 w-10 text-gray-300" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between">
+                                                                <p className="pr-4 whitespace-nowrap font-semibold text-orange-500">
+                                                                    {comment.user?.name || 'Ẩn danh'}
+                                                                </p>
+                                                                <p className="text-gray-200 break-words my-2 text-left w-96 mr-4">{comment.comment}</p>
+                                                                <p className="whitespace-nowrap text-left text-sm text-gray-400 mr-2">
+                                                                    {dayjs(comment.created_at).fromNow()}
+                                                                </p>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))}
                                     </div>
                                 </div>
                             )}
