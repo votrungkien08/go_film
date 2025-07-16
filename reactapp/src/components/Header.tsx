@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import { ModeToggle } from './mode-toggle';
 import { useTheme } from './theme-provider'; // Updated to use local theme-provider
 import { motion } from 'framer-motion';
-
 interface Genre {
     id: number;
     genre_name: string;
@@ -324,14 +323,30 @@ const Header = () => {
 
     const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (formData.password !== formData.confirmPassword) {
-            toast.warning('Mật khẩu xác nhận không khớp');
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(formData.email)) {
+            toast.warning('Email không hợp lệ');
             return;
         }
         if (formData.password.length < 8) {
             toast.warning('Mật khẩu phải có ít nhất 8 ký tự');
             return;
         }
+        // ✅ Kiểm tra mật khẩu mạnh
+        const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+        if (!strongPasswordRegex.test(formData.password)) {
+            toast.warning('Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt');
+            return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+            toast.warning('Mật khẩu xác nhận không khớp');
+            return;
+        }
+
+
+
         try {
             const response = await axios.post(`${API_URL}/api/register`, {
                 name: formData.name,
@@ -555,92 +570,92 @@ const Header = () => {
                         ✕
                     </button>
                 </div>
-                {
-                    isLoggedIn && user ? (
-                        showPaymentForm ? (
-                            <form onSubmit={handleBuyPoints} className="space-y-4">
-                                <div className="relative">
-                                    <label htmlFor="points" className="block text-sm text-gray-300 mb-2">
-                                        Số điểm muốn mua (1 điểm = 1000 VND)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="points"
-                                        value={pointsToBuy}
-                                        onChange={(e) => setPointsToBuy(e.target.value)}
-                                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                        placeholder="Nhập số điểm"
-                                        required
-                                        min="1"
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
-                                >
-                                    Thanh Toán Qua VNPay
-                                </button>
-                                <button
-                                    type="button"
-                                    className="w-full bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer font-semibold mt-2"
-                                    onClick={() => setShowPaymentForm(false)}
-                                >
-                                    Quay Lại
-                                </button>
-                            </form>
-                        ) : (
-                            <div className="">
-                                <div className="mb-4 relative">
-                                    <label className="block text-sm text-gray-300 mb-2">Họ và tên</label>
-                                    <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.name}</p>
-                                </div>
-                                <div className="mb-6 relative">
-                                    <label className="block text-sm text-gray-300 mb-2">Điểm</label>
-                                    <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.points}</p>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        console.log('🔁 Đã bấm nút Lịch sử phim');
-                                        navigate('/histories');
-                                        setIsPanelOpen(false);
-                                    }}
-                                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
-                                >
-                                    Lịch Sử Phim
-                                </button>
-                                <button onClick={() => navigate('/payment-history')}
-                                    className='w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2'>
-                                    Lịch sử thanh toán
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        console.log('🔁 Đã bấm nút Phim Yêu Thích');
-                                        navigate('/favorites');
-                                        setIsPanelOpen(false);
-                                    }}
-                                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
-                                >
-                                    Phim Yêu Thích
-                                </button>
-                                <button
-                                    onClick={() => navigate('/buy-points')}
-                                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
-                                >
-                                    Mua Điểm
-                                </button>
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
-                                >
-                                    Đăng Xuất
-                                </button>
+                
+                {isLoggedIn && user ? (
+                    showPaymentForm ? (
+                        <form onSubmit={handleBuyPoints} className="space-y-4">
+                            <div className="relative">
+                                <label htmlFor="points" className="block text-sm text-gray-300 mb-2">
+                                    Số điểm muốn mua (1 điểm = 1000 VND)
+                                </label>
+                                <input
+                                    type="number"
+                                    name="points"
+                                    value={pointsToBuy}
+                                    onChange={(e) => setPointsToBuy(e.target.value)}
+                                    className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                    placeholder="Nhập số điểm"
+                                    required
+                                    min="1"
+                                />
                             </div>
-                        )
+                            <button
+                                type="submit"
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
+                            >
+                                Thanh Toán Qua VNPay
+                            </button>
+                            <button
+                                type="button"
+                                className="w-full bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer font-semibold mt-2"
+                                onClick={() => setShowPaymentForm(false)}
+                            >
+                                Quay Lại
+                            </button>
+                        </form>
+                    ) : (
+                        <div className="">
+                            <div className="mb-4 relative">
+                                <label className="block text-sm text-gray-300 mb-2">Họ và tên</label>
+                                <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.name}</p>
+                            </div>
+                            <div className="mb-6 relative">
+                                <label className="block text-sm text-gray-300 mb-2">Điểm</label>
+                                <p className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">{user.points}</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    console.log('🔁 Đã bấm nút Lịch sử phim');
+                                    navigate('/histories');
+                                    setIsPanelOpen(false);
+                                }}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            >
+                                Lịch Sử Phim
+                            </button>
+                            <button onClick={() => navigate('/payment-history')}
+                                className='w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2'>
+                                Lịch sử thanh toán
+                            </button>
+                            <button
+                                onClick={() => {
+                                    console.log('🔁 Đã bấm nút Phim Yêu Thích');
+                                    navigate('/favorites');
+                                    setIsPanelOpen(false);
+                                }}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            >
+                                Phim Yêu Thích
+                            </button>
+                            <button
+                                onClick={() => navigate('/buy-points')}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            >
+                                Mua Điểm
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold"
+                            >
+                                Đăng Xuất
+                            </button>
+                        </div>
+                    )
                     ) : (
                         <form onSubmit={isLoginForm ? handleLogin : handleRegister} className="space-y-4">
                             {!isLoginForm && (
                                 <div className="relative">
-                                    <label htmlFor="name" className="block text-sm text-gray-300 mb-2">
+                                    <label htmlFor="name" className="block text-left text-sm text-gray-300 mb-2">
                                         Họ và tên
                                     </label>
                                     <input
@@ -655,7 +670,7 @@ const Header = () => {
                                 </div>
                             )}
                             <div className="relative">
-                                <label htmlFor="email" className="block text-sm text-gray-300 mb-2">
+                                <label htmlFor="email" className="block text-left text-sm text-gray-300 mb-2">
                                     Email
                                 </label>
                                 <input
@@ -669,7 +684,7 @@ const Header = () => {
                                 />
                             </div>
                             <div className="relative">
-                                <label htmlFor="password" className="block text-sm text-gray-300 mb-2">
+                                <label htmlFor="password" className="block text-left text-sm text-gray-300 mb-2">
                                     Mật khẩu
                                 </label>
                                 <input
@@ -684,7 +699,7 @@ const Header = () => {
                             </div>
                             {!isLoginForm && (
                                 <div className="relative">
-                                    <label htmlFor="confirmPassword" className="block text-sm text-gray-300 mb-2">
+                                    <label htmlFor="confirmPassword" className="block text-left text-sm text-gray-300 mb-2">
                                         Nhập lại mật khẩu
                                     </label>
                                     <input
@@ -704,9 +719,10 @@ const Header = () => {
                             >
                                 {isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
                             </button>
+
+                            <Link to="/forget-password" className='text-center cursor-pointer hover:underline text-red-600 '>Quên mật khẩu?</Link>
                         </form>
-                    )
-                }
+                )}
                 {!isLoggedIn && (
                     <div className="mt-6 text-center">
                         <div className="border-t border-gray-700 pt-4">
@@ -730,6 +746,7 @@ const Header = () => {
                         </div>
                     </div>
                 )}
+
             </div>
         </div>
     );

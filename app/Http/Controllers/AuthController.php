@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use  Illuminate\Support\Facades\Log;
 class AuthController extends Controller
 {
     public function register(Request $request)
@@ -49,30 +50,30 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
-            \Log::info('Login request:', $request->all());
+            Log::info('Login request:', $request->all());
             $credentials = $request->validate([
                 'email' => 'required|email',
                 'password' => 'required|string',
                 'remember' => 'nullable|boolean',
             ]);
-            \Log::info('Credentials:', $credentials);
+            Log::info('Credentials:', $credentials);
             if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']])) {
                 $user = Auth::user();
-                \Log::info('User authenticated:', $user->toArray());
+                Log::info('User authenticated:', $user->toArray());
                 $token = $user->createToken('auth_token')->plainTextToken;
-                \Log::info('Token created:', ['token' => $token]);
+                Log::info('Token created:', ['token' => $token]);
                 return response()->json([
                     'message' => 'Đăng nhập thành công',
                     'user' => $user->only(['id', 'name', 'email', 'points', 'role']),
                     'token' => $token,
                 ]);
             }
-            \Log::info('Auth attempt failed');
+            Log::info('Auth attempt failed');
             return response()->json([
                 'message' => 'Email hoặc mật khẩu không đúng',
             ], 401);
         } catch (\Exception $e) {
-            \Log::error('Login error:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            Log::error('Login error:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'message' => 'Đăng nhập thất bại',
                 'error' => $e->getMessage(),
@@ -222,7 +223,6 @@ class AuthController extends Controller
                 'token' => 'required',
                 'email' => 'required|email',
                 'password' => 'required|min:8|confirmed',
-
             ]);
 
             $status = Password::reset(
@@ -275,6 +275,7 @@ class AuthController extends Controller
                 ], 400);
             }
         } catch (\Exception $e) {
+            Log::error('Reset password error: ' . $e->getMessage());
             return response()->json([
             'message' => 'Đã xảy ra lỗi khi gửi email khôi phục mật khẩu.',
             'error' => $e->getMessage(),

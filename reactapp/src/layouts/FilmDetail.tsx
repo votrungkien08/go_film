@@ -66,6 +66,20 @@ const FilmDetail = () => {
     const [showControls, setShowControls] = useState(true);
     const [isPlaying, setIsPlaying] = useState(false);
     const [deducted, setDeducted] = useState(false);
+    //     async (action: 'comment' | 'favorite' | 'rating') => {
+    //         if (!isLoggedIn) {
+    //             setShowAuthPrompt(true);
+    //             return false;
+    //         }
+    //         if (!film?.is_premium) return true; // Non-premium films don't require points
+    //         if (paymentStatus?.has_enough_points === false) {
+    //             setShowPointsPrompt(true); // Show modal if insufficient points
+    //             return false;
+    //         }
+    //         return await deductPoints(action); // Deduct points if sufficient
+    //     },
+    //     [isLoggedIn, film?.is_premium, paymentStatus, deductPoints]
+    // );
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
@@ -734,11 +748,16 @@ const FilmDetail = () => {
                                             type="text"
                                             value={comment}
                                             onChange={(e) => setComment(e.target.value)}
-                                            onFocus={() => !isLoggedIn && setShowAuthPrompt(true)}
                                             className="flex-1 p-2 bg-[#3A3A3A] text-white border border-gray-600 rounded-md focus:outline-none focus:border-orange-500"
                                             placeholder="Nhập bình luận của bạn..."
                                         />
                                         <button
+                                            // onFocus={() => { if(!isLoggedIn) {
+                                            //     setShowAuthPrompt(true);
+                                            // } else if(isLoggedIn && film.is_premium && paymentStatus?.user_points >= paymentStatus?.points_required ) {
+                                            //     setShowPointsPrompt(true)
+                                            // }
+                                            // }}
                                             onClick={handlePostComment}
                                             className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300 cursor-pointer"
                                         >
@@ -919,8 +938,8 @@ const FilmDetail = () => {
                                             ))}
                                         </div>
                                         <div className="text-sm text-gray-300">
-                                            ({showRating.length} lượt, đánh giá:{' '}
-                                            <span className="text-white font-bold">{ratingValue.toFixed(1)}</span> trên 5)
+                                            ( <span className='text-white text-xl font-bold'>{showRating.length}</span> lượt, đánh giá:{' '}
+                                            <span className="text-white font-bold">{ratingValue.toFixed(1)}</span>/5 )
                                         </div>
                                     </div>
                                 </div>

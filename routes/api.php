@@ -17,6 +17,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\AdEventController;
 use App\Http\Controllers\RevenueExportController;
+use Illuminate\Support\Facades\Mail;
 use App\Models\Film;
 use App\Models\Film_episodes;
 use App\Models\Watch_histories;

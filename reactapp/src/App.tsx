@@ -29,6 +29,8 @@ import  RevenuePage  from './pages/revenue';
 import PaymentHistory from './components/PaymentHistory';
 import { ParallaxProvider } from '../src/utils/ParallaxContext';
 import { MUIThemeProvider } from 'src/theme/theme-provider';
+import  ForgetPasswordResetForm  from './pages/forget-password';
+import  ResetPasswordResetForm  from './pages/reset-password';
 
 // import { ModeToggle } from './components/mode-toggle';
 // import { useEffect } from 'react';
@@ -39,6 +41,8 @@ function App() {
         <Router>
           <Routes>
             {/* Các route sử dụng MainLayout */}
+            <Route path="forget-password" element={<ForgetPasswordResetForm />} />
+            <Route path="reset-password" element={<ResetPasswordResetForm />} />
             <Route path="/" element={<MainLayout />}>
               <Route path="nominate" element={<Nominate />} />
               <Route path="chatbot" element={<Chatbot />} />
