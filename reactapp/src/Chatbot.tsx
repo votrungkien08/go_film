@@ -22,10 +22,9 @@ const Chatbot = () => {
     const [error, setError] = useState<string | null>(null);
     // Danh sách gợi ý tìm kiếm cố định
     const [suggestions] = useState([
-        'Phim hành động',
-        'Phim bộ Hàn Quốc',
-        'Phim hoạt hình',
-        'Phim Hài hước Việt Nam',
+        'Phim Trung Quốc',
+        'Phim Nhật Bản',
+        'Phim Việt Nam',
     ]);
 
     // useEffect để tự động cuộn xuống tin nhắn mới nhất
@@ -157,7 +156,7 @@ const Chatbot = () => {
                 onClick={() => setOpen((o) => !o)}
                 style={{
                     position: 'fixed',
-                    bottom: 32,
+                    bottom: 4,
                     right: 32,
                     zIndex: 1000,
                     background: isRecording ? '#ff4444' : '#4f8cff', // Màu đỏ khi ghi âm, xanh khi không

@@ -845,7 +845,7 @@ if (filmData.film_type === 1 && episodes.length > 0) {
                                     <td className="p-3">{film.content}</td>
                                     <td className="p-3">{film.view}</td>
                                     <td className="p-3">{film.is_premium ? 'Có' : 'Không'}</td>
-                                    <td className="p-3">{film.is_premium ? film.point_required || '0' : 'N/A'}</td>
+                                    <td className="p-3">{film.is_premium ? film.point_required || '0' : '0'}</td>
                                     <td className="p-3">
                                         <button
                                             onClick={() => handleEditFilm(film)}

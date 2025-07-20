@@ -27,7 +27,7 @@ export function FilmTableRow({ film, onEdit, onDelete }: FilmTableRowProps) {
       
       <TableCell>{film.view}</TableCell>
       <TableCell>{film.is_premium ? 'Có' : 'Không'}</TableCell>
-      <TableCell>{film.is_premium ? film.point_required || '0' : 'N/A'}</TableCell>
+      <TableCell>{film.is_premium ? film.point_required || '0' : '0'}</TableCell>
       <TableCell >
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
             <Button variant="contained" color="primary" onClick={onEdit}>

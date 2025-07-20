@@ -60,7 +60,7 @@ interface Film {
   content: string;
   view: number;
   is_premium: boolean;
-  point_required: number | null;
+  point_required: number | "0";
   film_episodes: Episode[];
 }
 

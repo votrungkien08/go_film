@@ -13,7 +13,7 @@ interface CommentsData {
   handlePostComment: () => Promise<void>;
 }
 
-export const useComments = (filmId: number | undefined, isLoggedIn: boolean, fetchAll: boolean =false): CommentsData => {
+export const useComments = (filmId: number | undefined, isLoggedIn: boolean, film?: { is_premium: boolean },paymentStatus?: { user_points: number; points_required: number }, fetchAll: boolean =false): CommentsData => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentsError, setCommentsError] = useState('');
@@ -53,6 +53,11 @@ export const useComments = (filmId: number | undefined, isLoggedIn: boolean, fet
       toast.error('Vui lòng đăng nhập để bình luận.');
       return;
     }
+    if(isLoggedIn && film?.is_premium && (paymentStatus?.user_points ?? 0) < (paymentStatus?.points_required ?? 0)) {
+      toast.error('Bạn không đủ điểm để bình luận');
+      return;
+
+    }
     if (!comment.trim()) {
       toast.error('Vui lòng nhập bình luận!');
       return;
@@ -81,7 +86,7 @@ export const useComments = (filmId: number | undefined, isLoggedIn: boolean, fet
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi gửi bình luận.');
     }
-  }, [comment, filmId, isLoggedIn]);
+  }, [comment, filmId, isLoggedIn,film,paymentStatus]);
 
   return { comments, commentsLoading, commentsError, comment, setComment, handlePostComment };
 };

@@ -44,7 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // rating
     Route::post('/film/postRating', [RatingController::class, 'postRating']);
     // Route::post('/film/watch-history', [WatchHistoriesController::class, 'store']);
-    Route::get('/film/rating/{filmId}', [RatingController::class, 'getUserRating'])->middleware('auth:sanctum');
+    Route::get('/film/rating/{filmId}', [RatingController::class, 'getUserRating']);
     Route::post('/addyears', [YearController::class, 'store']);
     Route::post('/addcountries', [CountryController::class, 'store']);
     Route::post('/addgenres', [GenreController::class, 'store']);

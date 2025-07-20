@@ -26,7 +26,7 @@ export default function ForgetPasswordResetForm() {
         )
         if(response.status === 200 ) {
             setIsSuccess(true);
-            setIsSubmitting(true)
+            setIsSubmitting(false)
         } else {
             setError(response.data?.message || "Không thể gửi email.");
         }

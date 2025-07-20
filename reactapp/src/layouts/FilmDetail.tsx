@@ -48,38 +48,26 @@ const FilmDetail = () => {
     const params = new URLSearchParams(search);
     const episodeParam = params.get('episode');
     const { isLoggedIn, user } = useAuth();
+    const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
+
     const { film, error, selectedEpisode, setSelectedEpisode } = useFilmData(slug!, episodeParam!);
-    const { comments, commentsLoading, commentsError, comment, setComment, handlePostComment } = useComments(film?.id, isLoggedIn);
+    const { comments, commentsLoading, commentsError, comment, setComment, handlePostComment } = useComments(film?.id, isLoggedIn,film,paymentStatus);
     const { rating, setRating, showRating, averageRating, handlePostRating } = useRating(film?.id, isLoggedIn);
     const { isFavorite, likeCount, handleToggleFavorite } = useFavorite(film?.id, isLoggedIn);
 
 
     const [tab, setTab] = useState<'comment' | 'rating' | 'info'>('comment');
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-    const [showPremiumPromtf, setShowPremiumPromtf] = useState(false);
+    const [showPremiumFunction, setShowPremiumFunction] = useState(false);
     const [showPointsPrompt, setShowPointsPrompt] = useState(false);
     const [canWatch, setCanWatch] = useState(false);
-    const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
     const [isCheckingPayment, setIsCheckingPayment] = useState(false);
     const [hasRewarded, setHasRewarded] = useState(false);
 
     const [showControls, setShowControls] = useState(true);
     const [isPlaying, setIsPlaying] = useState(false);
     const [deducted, setDeducted] = useState(false);
-    //     async (action: 'comment' | 'favorite' | 'rating') => {
-    //         if (!isLoggedIn) {
-    //             setShowAuthPrompt(true);
-    //             return false;
-    //         }
-    //         if (!film?.is_premium) return true; // Non-premium films don't require points
-    //         if (paymentStatus?.has_enough_points === false) {
-    //             setShowPointsPrompt(true); // Show modal if insufficient points
-    //             return false;
-    //         }
-    //         return await deductPoints(action); // Deduct points if sufficient
-    //     },
-    //     [isLoggedIn, film?.is_premium, paymentStatus, deductPoints]
-    // );
+
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
@@ -398,6 +386,7 @@ const FilmDetail = () => {
         if (!film?.is_premium) {
             console.log('🔑 Đã đăng ký sự kiện Phim thường episode', canWatch);
             checkRewardStatus();
+            rewardPoints();
             setCanWatch(true);
             return;
         }
@@ -406,6 +395,7 @@ const FilmDetail = () => {
         if (isLoggedIn) {
             console.log('🔑 Đã đăng ký sự kiện Phim premium episode', canWatch);
             checkPaymentStatus();
+            deductPoints();
             setCanWatch(true);
             return;
         }
@@ -682,7 +672,7 @@ const FilmDetail = () => {
                             {!canWatch && (
                                 <div className="relative flex flex-col items-center justify-center aspect-video rounded-lg bg-gray-800  text-center p-6 shadow-lg">
                                     <Lock className="w-12 h-12 text-red-500 mb-4" />
-                                    <h2 className="text-xl font-semibold mb-2">Bạn cần đăng nhập để xem phim này</h2>
+                                    <h2 className="text-xl font-semibold mb-2">Bạn cần mua điểm để xem phim này</h2>
                                     <p className="text-sm text-gray-300 mb-4">
                                         Phim thuộc danh mục <span className="text-yellow-400 font-semibold">Premium</span>
                                     </p>
@@ -758,7 +748,27 @@ const FilmDetail = () => {
                                             //     setShowPointsPrompt(true)
                                             // }
                                             // }}
-                                            onClick={handlePostComment}
+                                            onClick={() => {
+                                                if(!isLoggedIn) {
+                                                    console.log('da vo comment login')
+
+                                                    setShowAuthPrompt(true);
+                                                    return
+                                                } 
+                                                if (film.is_premium) {
+                                                    console.log('da vo comment phim')
+
+                                                    if(!paymentStatus?.already_paid) {
+                                                        console.log('da vo comment pay')
+
+                                                        setShowPremiumFunction(true);
+                                                        return
+
+                                                    }
+
+                                                }
+                                                handlePostComment()
+                                            }}
                                             className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300 cursor-pointer"
                                         >
                                             Đăng
@@ -821,16 +831,39 @@ const FilmDetail = () => {
                                                 <button
                                                     key={star}
                                                     onClick={() => setRating(star)}
-                                                    className={`text-2xl ${rating && rating >= star ? 'text-yellow-400' : 'text-gray-400'}`}
+                                                    className={`text-2xl cursor-pointer ${rating && rating >= star ? 'text-yellow-400' : 'text-gray-400'}`}
                                                 >
                                                     ★
                                                 </button>
                                             ))}
                                         </div>
                                         <button
-                                            onFocus={() => !isLoggedIn && setShowAuthPrompt(true)}
-                                            onClick={handlePostRating}
-                                            className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
+                                            // onFocus={() => !isLoggedIn && setShowAuthPrompt(true)}
+                                            // onFocus={() => { 
+                                            // }}
+                                            onClick={() => {
+                                                if(!isLoggedIn) {
+                                                    console.log('da vo rating login')
+
+                                                    setShowAuthPrompt(true);
+                                                    return
+                                                } 
+                                                if (film.is_premium) {
+                                                    console.log('da vo rating phim')
+
+                                                    if(!paymentStatus?.already_paid) {
+                                                        console.log('da vo rating pay')
+
+                                                        setShowPremiumFunction(true);
+                                                        return
+
+                                                    }
+
+                                                }
+                                                console.log('da click',handlePostRating())
+                                                handlePostRating()
+                                            }}
+                                            className="px-4 py-2 cursor-pointer bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
                                         >
                                             Gửi đánh giá
                                         </button>
@@ -880,9 +913,19 @@ const FilmDetail = () => {
                             <div className="py-4 flex items-center justify-start">
                                 <button
                                     onClick={() => {
-                                        if (!isLoggedIn) {
+                                        if(!isLoggedIn) {
+                                            console.log('da vo favorite login')
                                             setShowAuthPrompt(true);
-                                            return;
+                                            return
+                                        } 
+                                        if (film.is_premium) {
+                                            console.log('da vo favorite phim')
+                                            if(!paymentStatus?.already_paid) {
+                                                console.log('da vo favorite pay')
+                                                setShowPremiumFunction(true);
+                                                return
+
+                                            }
                                         }
                                         handleToggleFavorite();
                                     }}
@@ -893,9 +936,19 @@ const FilmDetail = () => {
                                 {isFavorite ? (
                                     <HeartSolidIcon
                                         onClick={() => {
-                                            if (!isLoggedIn) {
+                                            if(!isLoggedIn) {
+                                                console.log('da vo favorite login')
                                                 setShowAuthPrompt(true);
-                                                return;
+                                                return
+                                            } 
+                                            if (film.is_premium) {
+                                                console.log('da vo favorite phim')
+                                                if(!paymentStatus?.already_paid) {
+                                                    console.log('da vo favorite pay')
+                                                    setShowPremiumFunction(true);
+                                                    return
+
+                                                }
                                             }
                                             handleToggleFavorite();
                                         }}
@@ -904,9 +957,19 @@ const FilmDetail = () => {
                                 ) : (
                                     <HeartOutlineIcon
                                         onClick={() => {
-                                            if (!isLoggedIn) {
-                                                setShowAuthPrompt(true);
-                                                return;
+                                            if(!isLoggedIn) {
+                                            console.log('da vo favorite login')
+                                            setShowAuthPrompt(true);
+                                            return
+                                            } 
+                                            if (film.is_premium) {
+                                                console.log('da vo favorite phim')
+                                                if(!paymentStatus?.already_paid) {
+                                                    console.log('da vo favorite pay')
+                                                    setShowPremiumFunction(true);
+                                                    return
+
+                                                }
                                             }
                                             handleToggleFavorite();
                                         }}
@@ -988,35 +1051,35 @@ const FilmDetail = () => {
                 )}
 
 
-                {showPremiumPromtf && (
+                {showPremiumFunction && (
                     <div
                         className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-opacity-50 z-50"
-                        onClick={() => setShowPremiumPromtf(false)}
+                        onClick={() => setShowPremiumFunction(false)}
                     >
                         <div className="bg-[#000000] w-96 rounded-lg p-6" onClick={(e) => e.stopPropagation()}>
-                            <h2 className="text-xl font-semibold mb-4 text-white">Vui lòng đăng nhập để xem phim Premium</h2>
+                            <h2 className="text-xl font-semibold mb-4 text-white">Vui lòng mua phim để sử dụng chức năng này</h2>
                             <div className="flex justify-around">
                                 <button
-                                    onClick={() => setShowPremiumPromtf(false)}
+                                    onClick={() => setShowPremiumFunction(false)}
                                     className="px-4 py-2 bg-[#3A3A3A] text-white rounded-md hover:bg-[#4A4A4A] transition-colors duration-300"
                                 >
                                     Hủy
                                 </button>
                                 <button
                                     onClick={() => {
-                                        setShowPremiumPromtf(false);
-                                        openAuthPanel();
+                                        setShowPointsPrompt(false);
+                                        navigate('/buy-points');
                                     }}
                                     className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
                                 >
-                                    Đăng nhập
+                                    Mua điểm
                                 </button>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {showPointsPrompt && (
+                {showPointsPrompt  && (
                     <div
                         className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-opacity-50 z-50"
                         onClick={() => setShowPointsPrompt(false)}

@@ -90,113 +90,238 @@ class ChatbotController extends Controller
         }
     }
 
+    // private function handleSearchFilm($params)
+    // {
+    //     $query = Film::with(['year', 'country', 'genres']);
+    //     $filtersApplied = false;
+
+    //     $filmType = $params['film_type'] ?? null;
+    //     if (is_array($filmType)) {
+    //         $filmType = $filmType[0] ?? null;
+    //     }
+    //     if (!empty($filmType)) {
+    //         $filmTypeNorm = strtolower(trim($filmType));
+    //         if (in_array($filmTypeNorm, ['phim bộ', 'series', 'bộ'])) {
+    //             $query->where('film_type', 1);
+    //             $filtersApplied = true;
+    //         } elseif (in_array($filmTypeNorm, ['phim lẻ', 'movie', 'lẻ'])) {
+    //             $query->where('film_type', 0);
+    //             $filtersApplied = true;
+    //         }
+    //     }
+
+    //     Log::info('Chatbot search params', [
+    //         'film_type' => $filmType ?? null,
+    //         'genre' => $params['genre'] ?? null,
+    //         'country' => $params['country'] ?? null,
+    //         'query_sql' => $query->toSql(),
+    //     ]);
+
+    //     if (!empty($params['genre'])) {
+    //         $genre = $this->normalizeText($params['genre']);
+    //         $query->whereHas('genres', function ($q) use ($genre) {
+    //             $q->whereRaw('LOWER(REPLACE(REPLACE(TRIM(genre_name), " ", ""), "-", "")) LIKE ?', ["%{$genre}%"]);
+    //         });
+    //         $filtersApplied = true;
+    //     }
+
+    //     if (!empty($params['country'])) {
+    //         $country = $this->normalizeText($params['country']);
+    //         $query->whereHas('country', function ($q) use ($country) {
+    //             $q->whereRaw('LOWER(REPLACE(REPLACE(TRIM(country_name), " ", ""), "-", "")) LIKE ?', ["%{$country}%"]);
+    //         });
+    //         $filtersApplied = true;
+    //         Log::info('Country filter applied', [
+    //             'original_country' => $params['country'],
+    //             'normalized_country' => $country,
+    //             'query_sql' => $query->toSql(),
+    //             'bindings' => $query->getBindings(),
+    //         ]);
+    //     }
+
+    //     if (!empty($params['date.year'])) {
+    //         $query->whereHas('year', function ($q) use ($params) {
+    //             $q->where('release_year', $params['date.year']);
+    //         });
+    //         $filtersApplied = true;
+    //     }
+
+    //     if (!empty($params['person.actor'])) {
+    //         $actor = $this->normalizeText($params['person.actor']);
+    //         $query->whereRaw('LOWER(REPLACE(REPLACE(TRIM(actor), " ", ""), "-", "")) LIKE ?', ["%{$actor}%"]);
+    //         $filtersApplied = true;
+    //     }
+
+    //     if (!empty($params['person.director'])) {
+    //         $director = $this->normalizeText($params['person.director']);
+    //         $query->whereRaw('LOWER(REPLACE(REPLACE(TRIM(director), " ", ""), "-", "")) LIKE ?', ["%{$director}%"]);
+    //         $filtersApplied = true;
+    //     }
+
+    //     if (!empty($params['title_film'])) {
+    //         $title = $this->normalizeText($params['title_film']);
+    //         $query->whereRaw('LOWER(REPLACE(REPLACE(TRIM(title_film), " ", ""), "-", "")) LIKE ?', ["%{$title}%"]);
+    //         $filtersApplied = true;
+    //     }
+
+    //     if (Auth::check() && !$filtersApplied) {
+    //         $userGenres = Watch_histories::where('user_id', Auth::id())
+    //             ->join('film_genre', 'watch_histories.film_id', '=', 'film_genre.film_id')
+    //             ->join('genre', 'film_genre.genre_id', '=', 'genre.id')
+    //             ->groupBy('genre_id')
+    //             ->orderByRaw('COUNT(*) DESC')
+    //             ->take(3)
+    //             ->pluck('genre_id')
+    //             ->toArray();
+    //         if (!empty($userGenres)) {
+    //             $query->whereHas('genres', function ($q) use ($userGenres) {
+    //                 $q->whereIn('genre.id', $userGenres);
+    //             });
+    //         }
+    //     }
+
+    //     $films = $query->take(5)->get(['id', 'title_film', 'slug', 'content', 'thumb']);
+
+    //     if ($films->isEmpty()) {
+    //         return json_encode([
+    //             'type' => 'text',
+    //             'message' => 'Không tìm thấy phim phù hợp. Bạn muốn thử lại không?'
+    //         ]);
+    //     }
+
+    //     $filmList = $films->map(function ($film) {
+    //         return [
+    //             'title' => $film->title_film,
+    //             'description' => $film->content,
+    //             'link' => "/film/{$film->slug}",
+    //             'thumb' => $film->thumb ? asset($film->thumb) : null
+    //         ];
+    //     })->toArray();
+
+    //     return json_encode([
+    //         'type' => 'film_list',
+    //         'films' => $filmList
+    //     ]);
+    // }
     private function handleSearchFilm($params)
-    {
-        $query = Film::with(['year', 'country', 'genres']);
-        $filtersApplied = false;
+{
+    $query = Film::with(['year', 'country', 'genres']);
+    $filtersApplied = false;
 
-        $filmType = $params['film_type'] ?? null;
-        if (is_array($filmType)) {
-            $filmType = $filmType[0] ?? null;
+    $filmType = $params['film_type'] ?? null;
+    if (is_array($filmType)) {
+        $filmType = $filmType[0] ?? null;
+    }
+    if (!empty($filmType)) {
+        $filmTypeNorm = strtolower(trim($filmType));
+        if (in_array($filmTypeNorm, ['phim bộ', 'series', 'bộ'])) {
+            $query->where('film_type', 1);
+            $filtersApplied = true;
+        } elseif (in_array($filmTypeNorm, ['phim lẻ', 'movie', 'lẻ'])) {
+            $query->where('film_type', 0);
+            $filtersApplied = true;
         }
-        if (!empty($filmType)) {
-            $filmTypeNorm = strtolower(trim($filmType));
-            if (in_array($filmTypeNorm, ['phim bộ', 'series', 'bộ'])) {
-                $query->where('film_type', 0);
-                $filtersApplied = true;
-            } elseif (in_array($filmTypeNorm, ['phim lẻ', 'movie', 'lẻ'])) {
-                $query->where('film_type', 1);
-                $filtersApplied = true;
-            }
-        }
+    }
 
-        Log::info('Chatbot search params', [
-            'film_type' => $filmType ?? null,
-            'genre' => $params['genre'] ?? null,
-            'country' => $params['country'] ?? null,
+    Log::info('Chatbot search params', [
+        'film_type' => $filmType ?? null,
+        'genre' => $params['genre'] ?? null,
+        'country' => $params['country'] ?? null,
+        'query_sql' => $query->toSql(),
+    ]);
+
+    if (!empty($params['country'])) {
+        $country = $this->normalizeText($params['country']);
+        $query->whereHas('country', function ($q) use ($country) {
+            $q->whereRaw('LOWER(REPLACE(REPLACE(TRIM(country_name), " ", ""), "-", "")) LIKE ?', ["%{$country}%"]);
+        });
+        $filtersApplied = true;
+        Log::info('Country filter applied', [
+            'original_country' => $params['country'],
+            'normalized_country' => $country,
             'query_sql' => $query->toSql(),
-        ]);
-
-        if (!empty($params['genre'])) {
-            $genre = $this->normalizeText($params['genre']);
-            $query->whereHas('genres', function ($q) use ($genre) {
-                $q->whereRaw('LOWER(REPLACE(REPLACE(TRIM(genre_name), " ", ""), "-", "")) LIKE ?', ["%{$genre}%"]);
-            });
-            $filtersApplied = true;
-        }
-
-        if (!empty($params['country'])) {
-            $country = $this->normalizeText($params['country']);
-            $query->whereHas('country', function ($q) use ($country) {
-                $q->whereRaw('LOWER(REPLACE(REPLACE(TRIM(country_name), " ", ""), "-", "")) LIKE ?', ["%{$country}%"]);
-            });
-            $filtersApplied = true;
-        }
-
-        if (!empty($params['date.year'])) {
-            $query->whereHas('year', function ($q) use ($params) {
-                $q->where('release_year', $params['date.year']);
-            });
-            $filtersApplied = true;
-        }
-
-        if (!empty($params['person.actor'])) {
-            $actor = $this->normalizeText($params['person.actor']);
-            $query->whereRaw('LOWER(REPLACE(REPLACE(TRIM(actor), " ", ""), "-", "")) LIKE ?', ["%{$actor}%"]);
-            $filtersApplied = true;
-        }
-
-        if (!empty($params['person.director'])) {
-            $director = $this->normalizeText($params['person.director']);
-            $query->whereRaw('LOWER(REPLACE(REPLACE(TRIM(director), " ", ""), "-", "")) LIKE ?', ["%{$director}%"]);
-            $filtersApplied = true;
-        }
-
-        if (!empty($params['title_film'])) {
-            $title = $this->normalizeText($params['title_film']);
-            $query->whereRaw('LOWER(REPLACE(REPLACE(TRIM(title_film), " ", ""), "-", "")) LIKE ?', ["%{$title}%"]);
-            $filtersApplied = true;
-        }
-
-        if (Auth::check() && !$filtersApplied) {
-            $userGenres = Watch_histories::where('user_id', Auth::id())
-                ->join('film_genre', 'watch_histories.film_id', '=', 'film_genre.film_id')
-                ->join('genre', 'film_genre.genre_id', '=', 'genre.id')
-                ->groupBy('genre_id')
-                ->orderByRaw('COUNT(*) DESC')
-                ->take(3)
-                ->pluck('genre_id')
-                ->toArray();
-            if (!empty($userGenres)) {
-                $query->whereHas('genres', function ($q) use ($userGenres) {
-                    $q->whereIn('genre.id', $userGenres);
-                });
-            }
-        }
-
-        $films = $query->take(5)->get(['id', 'title_film', 'slug', 'content', 'thumb']);
-
-        if ($films->isEmpty()) {
-            return json_encode([
-                'type' => 'text',
-                'message' => 'Không tìm thấy phim phù hợp. Bạn muốn thử lại không?'
-            ]);
-        }
-
-        $filmList = $films->map(function ($film) {
-            return [
-                'title' => $film->title_film,
-                'description' => $film->content,
-                'link' => "/film/{$film->slug}",
-                'thumb' => $film->thumb ? asset($film->thumb) : null
-            ];
-        })->toArray();
-
-        return json_encode([
-            'type' => 'film_list',
-            'films' => $filmList
+            'bindings' => $query->getBindings(),
         ]);
     }
+
+    // Rest of the method...
+    if (!empty($params['genre'])) {
+        $genre = $this->normalizeText($params['genre']);
+        $query->whereHas('genres', function ($q) use ($genre) {
+            $q->whereRaw('LOWER(REPLACE(REPLACE(TRIM(genre_name), " ", ""), "-", "")) LIKE ?', ["%{$genre}%"]);
+        });
+        $filtersApplied = true;
+    }
+
+    if (!empty($params['date.year'])) {
+        $query->whereHas('year', function ($q) use ($params) {
+            $q->where('release_year', $params['date.year']);
+        });
+        $filtersApplied = true;
+    }
+
+    if (!empty($params['person.actor'])) {
+        $actor = $this->normalizeText($params['person.actor']);
+        $query->whereRaw('LOWER(REPLACE(REPLACE(TRIM(actor), " ", ""), "-", "")) LIKE ?', ["%{$actor}%"]);
+        $filtersApplied = true;
+    }
+
+    if (!empty($params['person.director'])) {
+        $director = $this->normalizeText($params['person.director']);
+        $query->whereRaw('LOWER(REPLACE(REPLACE(TRIM(director), " ", ""), "-", "")) LIKE ?', ["%{$director}%"]);
+        $filtersApplied = true;
+    }
+
+    if (!empty($params['title_film'])) {
+        $title = $this->normalizeText($params['title_film']);
+        $query->whereRaw('LOWER(REPLACE(REPLACE(TRIM(title_film), " ", ""), "-", "")) LIKE ?', ["%{$title}%"]);
+        $filtersApplied = true;
+    }
+
+    if (Auth::check() && !$filtersApplied) {
+        $userGenres = Watch_histories::where('user_id', Auth::id())
+            ->join('film_genre', 'watch_histories.film_id', '=', 'film_genre.film_id')
+            ->join('genre', 'film_genre.genre_id', '=', 'genre.id')
+            ->groupBy('genre_id')
+            ->orderByRaw('COUNT(*) DESC')
+            ->take(3)
+            ->pluck('genre_id')
+            ->toArray();
+        if (!empty($userGenres)) {
+            $query->whereHas('genres', function ($q) use ($userGenres) {
+                $q->whereIn('genre.id', $userGenres);
+            });
+        }
+    }
+
+    $films = $query->take(5)->get(['id', 'title_film', 'slug', 'content', 'thumb']);
+    Log::info('Query results', ['count' => $films->count(), 'films' => $films->pluck('title_film')->toArray()]);
+
+    if ($films->isEmpty()) {
+        Log::info('No films found', [
+            'query_sql' => $query->toSql(),
+            'bindings' => $query->getBindings(),
+        ]);
+        return json_encode([
+            'type' => 'text',
+            'message' => 'Không tìm thấy phim phù hợp. Bạn muốn thử lại không?'
+        ]);
+    }
+
+    $filmList = $films->map(function ($film) {
+        return [
+            'title' => $film->title_film,
+            'description' => $film->content,
+            'link' => "/film/{$film->slug}",
+            'thumb' => $film->thumb ? asset($film->thumb) : null
+        ];
+    })->toArray();
+
+    return json_encode([
+        'type' => 'film_list',
+        'films' => $filmList
+    ]);
+}
 
     private function handleSeriesDetails($params)
     {

@@ -65,6 +65,10 @@ export const useRating = (filmId: number | undefined, isLoggedIn: boolean): Rati
       toast.error('Vui lòng đăng nhập để đánh giá.');
       return;
     }
+    // if(isLoggedIn && film?.is_premium && (paymentStatus?.user_points ?? 0) < (paymentStatus?.points_required ?? 0)) {
+    //   toast.error('Bạn không đủ điểm để đánh giá');
+    //   return;
+    // }
     if (!rating || rating < 1 || rating > 5) {
       toast.error('Vui lòng chọn số sao từ 1 đến 5!');
       return;

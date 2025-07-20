@@ -125,35 +125,85 @@ public function uploadVideo(Request $request)
             ]);
 
             $response['trailer_url'] = $upload['secure_url'];
+        } elseif (!empty($request->trailer_url)) {
+            // Nếu không upload mới, dùng lại trailer_url cũ từ form
+            $response['trailer_url'] = $request->trailer_url;
         }
 
+        // // Upload episodes nếu có
+        // if ($request->has('film_episodes')) {
+        //     $episodes = $request->film_episodes;
+        //     $episodeDetails = [];
+
+        //     foreach ($episodes as $index => $episode) {
+        //         $path = $episode['video']->getRealPath();
+        //         $episodeSlug = Str::slug($episode['episode_title'] ?? "tap-{$episode['episode_number']}");
+        //         $folder = "videos/{$titleSlug}";
+        //         $public_id = $episodeSlug . '-' . ($index + 1);
+
+        //         $upload = $cloudinary->uploadApi()->upload($path, [
+        //             'resource_type' => 'video',
+        //             'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
+        //             'public_id' => $public_id,
+        //             'folder' => $folder,
+        //             'context' => [
+        //                 'episode_number' => $episode['episode_number'],
+        //                 'episode_title' => $episode['episode_title'],
+        //                 'duration' => $episode['duration'],
+        //             ],
+        //         ]);
+
+        //         $episodeDetails[] = [
+        //             'episode_number' => $episode['episode_number'],
+        //             'episode_title' => $episode['episode_title'],
+        //             'episode_url' => $upload['secure_url'],
+        //             'duration' => $episode['duration'],
+        //         ];
+        //     }
+
+        //     $response['episodes'] = $episodeDetails;
+        // }
         // Upload episodes nếu có
         if ($request->has('film_episodes')) {
             $episodes = $request->film_episodes;
             $episodeDetails = [];
 
             foreach ($episodes as $index => $episode) {
-                $path = $episode['video']->getRealPath();
-                $episodeSlug = Str::slug($episode['episode_title'] ?? "tap-{$episode['episode_number']}");
-                $folder = "videos/{$titleSlug}";
-                $public_id = $episodeSlug . '-' . ($index + 1);
+                $videoFile = $episode['video'] ?? null;
+                $hasVideo = $videoFile && $videoFile instanceof \Illuminate\Http\UploadedFile;
 
-                $upload = $cloudinary->uploadApi()->upload($path, [
-                    'resource_type' => 'video',
-                    'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
-                    'public_id' => $public_id,
-                    'folder' => $folder,
-                    'context' => [
-                        'episode_number' => $episode['episode_number'],
-                        'episode_title' => $episode['episode_title'],
-                        'duration' => $episode['duration'],
-                    ],
-                ]);
+                if ($hasVideo) {
+                    $path = $videoFile->getRealPath();
+                    $episodeSlug = Str::slug($episode['episode_title'] ?? "tap-{$episode['episode_number']}");
+                    $folder = "videos/{$titleSlug}";
+                    $public_id = $episodeSlug . '-' . ($index + 1);
+
+                    $upload = $cloudinary->uploadApi()->upload($path, [
+                        'resource_type' => 'video',
+                        'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
+                        'public_id' => $public_id,
+                        'folder' => $folder,
+                        'context' => [
+                            'episode_number' => $episode['episode_number'],
+                            'episode_title' => $episode['episode_title'],
+                            'duration' => $episode['duration'],
+                        ],
+                    ]);
+
+                    $episodeUrl = $upload['secure_url'];
+                } elseif (!empty($episode['episode_url'])) {
+                    // Dùng lại video cũ nếu không upload mới
+                    $episodeUrl = $episode['episode_url'];
+                } else {
+                    // Nếu không có gì hết, bỏ qua hoặc log cảnh báo
+                    Log::warning("⚠️ Episode $index thiếu cả video và episode_url", $episode);
+                    continue;
+                }
 
                 $episodeDetails[] = [
                     'episode_number' => $episode['episode_number'],
                     'episode_title' => $episode['episode_title'],
-                    'episode_url' => $upload['secure_url'],
+                    'episode_url' => $episodeUrl,
                     'duration' => $episode['duration'],
                 ];
             }

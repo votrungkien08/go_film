@@ -25,6 +25,7 @@ class RatingController extends Controller
     }
     public function postRating(Request $request)
     {
+        Log::info('Gửi đánh giá:', $request->all());
         try {
             $user = $request->user();
             if (!$user) {
@@ -36,19 +37,35 @@ class RatingController extends Controller
                 'film_id' => 'required|integer',
                 'rating' => 'required|integer|min:1|max:5',
             ]);
+            // Kiểm tra xem user đã đánh giá phim này chưa
+            $existingRating = Rating::where('user_id', $user->id)
+                ->where('film_id', $request->film_id)
+                ->first();
 
-            $rating = new Rating();
-            $rating->film_id = $request->film_id;
-            $rating->user_id = $user->id;
-            $rating->rating = $request->rating;
-            $rating->created_at = now();
-            $rating->save();
-            return response()->json([
-                'message' => 'Rating submitted successfully',
-                'rating' => $rating,
-                'user' => $user->name,
-                'film_id' => $request->film_id,
-            ], 201);
+            if ($existingRating) {
+                // Nếu đã có => cập nhật
+                $existingRating->rating = $request->rating;
+                $existingRating->updated_at = now();
+                $existingRating->save();
+
+                return response()->json([
+                    'message' => 'Rating updated successfully',
+                    'rating' => $existingRating,
+                ], 200);
+            } else {
+                // Nếu chưa có => tạo mới
+                $rating = new Rating();
+                $rating->film_id = $request->film_id;
+                $rating->user_id = $user->id;
+                $rating->rating = $request->rating;
+                $rating->created_at = now();
+                $rating->save();
+
+                return response()->json([
+                    'message' => 'Rating submitted successfully',
+                    'rating' => $rating,
+                ], 201);
+            }
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Error: ' . $e->getMessage(),
