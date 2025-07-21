@@ -39,6 +39,7 @@ class FilmController extends Controller
             return response()->json(['error' => 'Không tìm thấy phim'], 404);
         }
     }
+
     public function store(FilmStoreRequest $request)
     {
         try {
@@ -69,7 +70,6 @@ class FilmController extends Controller
             // Thêm file trailer nếu có
             if ($request->hasFile('trailer_video')) {
                 $uploadRequest->files->set('video', $request->file('trailer_video'));
-                // Kiểm tra trên $uploadRequest chứ không phải $request
                 Log::info('DEBUG video file exists?', [
                     'has_video' => $uploadRequest->hasFile('video'),
                     'video_file' => $uploadRequest->file('video')?->getClientOriginalName()
@@ -84,7 +84,7 @@ class FilmController extends Controller
                 foreach ($request->input('film_episodes', []) as $index => $episode) {
                     if (isset($episodeFiles[$index]['video'])) {
                         $filmEpisodes[$index] = [
-                            'video' => $episodeFiles[$index]['video'],  // file vẫn còn giữ
+                            'video' => $episodeFiles[$index]['video'],
                             'episode_number' => $episode['episode_number'],
                             'episode_title' => $episode['episode_title'] ?? '',
                             'duration' => $episode['duration'] ?? '',
@@ -157,6 +157,7 @@ class FilmController extends Controller
             return response()->json(['error' => 'Lỗi khi thêm phim: ' . $e->getMessage()], 500);
         }
     }
+
     public function update(Request $request, $id)
     {
         try {
@@ -165,10 +166,10 @@ class FilmController extends Controller
             $film = Film::findOrFail($id);
             $cloudinaryController = app(CloudinaryController::class);
 
-            // 👉 Tạo slug để truyền folder (nhưng không lưu lại DB)
-            $cloudFolderSlug = Str::slug($film->title_film, '-'); // dùng tên cũ để giữ folder đồng nhất
+            // Tạo slug để truyền folder (nhưng không lưu lại DB)
+            $cloudFolderSlug = Str::slug($film->title_film, '-');
 
-            // ⚙️ Tạo uploadRequest để clone lại request gốc
+            // Tạo uploadRequest để clone lại request gốc
             $uploadRequest = new \Illuminate\Http\Request(
                 $request->query(),
                 $request->all(),
@@ -179,46 +180,26 @@ class FilmController extends Controller
                 $request->getContent()
             );
 
-            $uploadRequest->request->set('folder', $cloudFolderSlug); // truyền folder vào CloudinaryController
+            $uploadRequest->request->set('folder', $cloudFolderSlug);
 
-            // 📤 Trailer nếu có
             if ($request->hasFile('trailer_video')) {
                 $uploadRequest->files->set('video', $request->file('trailer_video'));
             }
 
-            // 📤 Episodes nếu có
-
-            // $episodeFiles = $request->file('film_episodes', []);
             $filmEpisodes = [];
             foreach ($request->input('film_episodes', []) as $index => $episode) {
                 $videoFile = $request->file("film_episodes.$index.video");
-                // if (isset($episodeFiles[$index]['video'])) {
                 $filmEpisodes[$index] = [
-                    // 'video' => $episodeFiles[$index]['video'] ?? null,
                     'episode_number' => $episode['episode_number'],
                     'episode_title' => $episode['episode_title'] ?? '',
                     'duration' => $episode['duration'] ?? '',
                     'video' => $videoFile,
                     'episode_url' => $episode['episode_url'] ?? null,
                 ];
-                // }
             }
-            // $rawEpisodes = $request->all()['film_episodes'] ?? [];
-            // $parsedEpisodes = [];
 
-            // // Lặp qua các chỉ số
-            // foreach ($rawEpisodes as $index => $episode) {
-            //     $parsedEpisodes[] = [
-            //         'episode_number' => $episode['episode_number'],
-            //         'episode_title' => $episode['episode_title'] ?? '',
-            //         'duration' => $episode['duration'] ?? '',
-            //         'episode_url' => $episode['episode_url'] ?? '',
-            //         'video' => $request->file("film_episodes.$index.video") ?? null,
-            //     ];
-            // }
             if (!empty($filmEpisodes)) {
                 $uploadRequest->request->set('film_episodes', $filmEpisodes);
-                // Gán từng file video vào uploadRequest (rất quan trọng)
                 foreach ($filmEpisodes as $index => $episode) {
                     if ($episode['video']) {
                         $uploadRequest->files->set("film_episodes.$index.video", $episode['video']);
@@ -228,7 +209,6 @@ class FilmController extends Controller
             Log::info('📤 Uploading episodes', $filmEpisodes);
             Log::info('🎬 request files:', $request->allFiles());
 
-            // 🚀 Gọi uploadVideo nếu có trailer/episodes
             $uploadData = [];
             if ($request->hasFile('trailer_video') || !empty($filmEpisodes)) {
                 $uploadResponse = $cloudinaryController->uploadVideo($uploadRequest);
@@ -238,9 +218,7 @@ class FilmController extends Controller
                 $uploadData = json_decode($uploadResponse->getContent(), true);
             }
 
-            // 🧩 Update phim
             $film->update([
-                // KHÔNG cập nhật slug
                 'thumb' => $request->thumb,
                 'trailer' => $uploadData['trailer_url'] ?? $film->trailer,
                 'film_type' => $request->film_type,
@@ -254,7 +232,6 @@ class FilmController extends Controller
                 'point_required' => $request->point_required ?? $film->point_required,
             ]);
 
-            // 🧩 Nếu có update episodes thì xóa cũ tạo mới
             if (!empty($uploadData['episodes'])) {
                 $film->film_episodes()->delete();
                 foreach ($uploadData['episodes'] as $episode) {
@@ -267,7 +244,6 @@ class FilmController extends Controller
                 }
             }
 
-            // 🔄 Gắn thể loại
             $film->genres()->sync($request->input('genre_id', []));
 
             DB::commit();
@@ -283,7 +259,6 @@ class FilmController extends Controller
         }
     }
 
-
     public function destroy($id)
     {
         try {
@@ -295,7 +270,6 @@ class FilmController extends Controller
             return response()->json(['error' => 'Lỗi khi xóa phim'], 500);
         }
     }
-
 
     public function filter(Request $request)
     {
@@ -373,7 +347,8 @@ class FilmController extends Controller
                 'film_id' => $film->id,
             ];
 
-            if ($request->has('episode_id')) {
+            // Chỉ thêm episode_id cho phim lẻ (film_type === false)
+            if ($request->has('episode_id') && !$film->film_type) {
                 $query['episode_id'] = $request->episode_id;
             }
 
@@ -393,13 +368,13 @@ class FilmController extends Controller
             $hasEnoughPoints = $user->points >= $pointsRequired;
 
             return response()->json([
-                'can_watch' => false,
+                'can_watch' => true, // Cho phép xem 10% đầu tiên
                 'already_paid' => false,
                 'is_premium' => true,
                 'has_enough_points' => $hasEnoughPoints,
                 'points_required' => $pointsRequired,
                 'user_points' => $user->points,
-                'message' => $hasEnoughPoints ? 'Cần thanh toán để xem' : 'Không đủ điểm để xem'
+                'message' => $hasEnoughPoints ? 'Cần thanh toán để xem tiếp sau 10%' : 'Không đủ điểm để xem tiếp'
             ], 200);
         } catch (\Exception $e) {
             Log::error('❌ Error checking payment status', [
@@ -467,7 +442,7 @@ class FilmController extends Controller
 
             if ($request->has('only_check') && $request->only_check) {
                 return response()->json([
-                    'message' => 'Bạn đủ điểm, có thể phát phim. Sẽ trừ điểm khi xem đến 90%.',
+                    'message' => 'Bạn đủ điểm, có thể phát phim.',
                     'can_watch' => true,
                     'already_paid' => false,
                     'points_required' => $pointsRequired,
@@ -480,14 +455,28 @@ class FilmController extends Controller
             $user->points -= $pointsRequired;
             $user->save();
 
-            UserFilmView::updateOrCreate(
-                $query,
-                [
-                    'points_deducted' => true,
-                    'points_deducted_amount' => $pointsRequired,
-                    'viewed_at' => now(),
-                ]
-            );
+            if ($film->film_type) { // Phim bộ: film_type === true
+                UserFilmView::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'film_id' => $film->id,
+                    ],
+                    [
+                        'points_deducted' => true,
+                        'points_deducted_amount' => $pointsRequired,
+                        'viewed_at' => now(),
+                    ]
+                );
+            } else { // Phim lẻ: film_type === false
+                UserFilmView::updateOrCreate(
+                    $query,
+                    [
+                        'points_deducted' => true,
+                        'points_deducted_amount' => $pointsRequired,
+                        'viewed_at' => now(),
+                    ]
+                );
+            }
 
             DB::commit();
 
@@ -503,7 +492,7 @@ class FilmController extends Controller
                 'message' => 'Đã trừ ' . $pointsRequired . ' điểm thành công',
                 'remaining_points' => $user->points,
                 'can_watch' => true,
-                'already_paid' => false,
+                'already_paid' => true,
                 'points_deducted' => $pointsRequired
             ], 200);
         } catch (\Exception $e) {
@@ -633,8 +622,7 @@ class FilmController extends Controller
 
     public function getViewStatsByMonth(Request $request)
     {
-        // Lấy số lượt xem theo ngày từ bảng watch_histories
-        $months = $request->input('months', 12); // Mặc định lấy 12 tháng gần nhất
+        $months = $request->input('months', 12);
         $data = \DB::table('watch_histories')
             ->selectRaw('DATE_FORMAT(watch_at, "%m-%Y") as month, COUNT(*) as views')
             ->where('watch_at', '>=', now()->subMonths($months))
@@ -642,5 +630,55 @@ class FilmController extends Controller
             ->orderBy('month', 'asc')
             ->get();
         return response()->json($data);
+    }
+    public function getPointsHistory(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['error' => 'Bạn cần đăng nhập để xem lịch sử điểm'], 401);
+            }
+
+            $history = UserFilmView::where('user_id', $user->id)
+                ->join('film', 'user_film_views.film_id', '=', 'film.id')
+                ->leftJoin('film_episodes', 'user_film_views.episode_id', '=', 'film_episodes.id')
+                ->select(
+                    'film.title_film',
+                    'film_episodes.episode_title',
+                    'user_film_views.points_deducted',
+                    'user_film_views.points_deducted_amount',
+                    'user_film_views.points_rewarded',
+                    'user_film_views.points_rewarded_amount',
+                    'user_film_views.viewed_at'
+                )
+                ->where(function ($query) {
+                    $query->where('user_film_views.points_deducted', true)
+                        ->orWhere('user_film_views.points_rewarded', true);
+                })
+                ->orderBy('user_film_views.viewed_at', 'desc')
+                ->get();
+
+            $formattedHistory = $history->map(function ($item) {
+                $points = $item->points_deducted ? -$item->points_deducted_amount : $item->points_rewarded_amount;
+                $title = $item->episode_title ? "{$item->title_film} - {$item->episode_title}" : $item->title_film;
+                return [
+                    'title' => $title,
+                    'date' => $item->viewed_at,
+                    'points' => $points,
+                    'type' => $item->points_deducted ? 'deducted' : 'rewarded',
+                ];
+            });
+
+            return response()->json([
+                'message' => 'Lấy lịch sử tích/trừ điểm thành công',
+                'data' => $formattedHistory,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('❌ Error fetching points history', [
+                'message' => $e->getMessage(),
+                'user_id' => $user ? $user->id : null,
+            ]);
+            return response()->json(['error' => 'Lỗi khi lấy lịch sử điểm'], 500);
+        }
     }
 }

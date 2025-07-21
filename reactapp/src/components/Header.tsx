@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
-import { useAuthPanel } from '@/utils/auth'; // Updated to use alias @
+import { useAuthPanel } from '@/utils/auth';
 import { toast } from 'sonner';
 import { ModeToggle } from './mode-toggle';
-import { useTheme } from './theme-provider'; // Updated to use local theme-provider
+import { useTheme } from './theme-provider';
 import { motion } from 'framer-motion';
+
 interface Genre {
     id: number;
     genre_name: string;
@@ -280,7 +281,7 @@ const Header = () => {
     };
 
     const handleFilmTypeSelect = (filmType: string) => {
-        const typeSlug = filmType === 'true' ? 'phim-le' : 'phim-bo';
+        const typeSlug = filmType === 'true' ? 'phim-bo' : 'phim-le';
         navigate(`/films?type=${typeSlug}`);
     };
 
@@ -333,7 +334,6 @@ const Header = () => {
             toast.warning('Mật khẩu phải có ít nhất 8 ký tự');
             return;
         }
-        // ✅ Kiểm tra mật khẩu mạnh
         const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
         if (!strongPasswordRegex.test(formData.password)) {
             toast.warning('Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt');
@@ -344,8 +344,6 @@ const Header = () => {
             toast.warning('Mật khẩu xác nhận không khớp');
             return;
         }
-
-
 
         try {
             const response = await axios.post(`${API_URL}/api/register`, {
@@ -384,7 +382,7 @@ const Header = () => {
 
     return (
         <div
-            className={`h-[60px] w-full fixed top-0 left-0 z-50 px-4 backdrop-blur-lg bg-white/30   ${theme === 'light' ? 'shadow shadow-white/80' : ''
+            className={`h-[60px] w-full fixed top-0 left-0 z-50 px-4 backdrop-blur-lg bg-white/30 ${theme === 'light' ? 'shadow shadow-white/80' : ''
                 } ${theme === 'dark' ? 'shadow shadow-white/80' : ''} ${theme === 'system' ? 'shadow shadow-orange-500/20' : ''
                 }`}
         >
@@ -490,7 +488,7 @@ const Header = () => {
                     <div tabIndex={0} className="group h-full flex items-center justify-center cursor-pointer">
                         <h2
                             className="mr-8 py-4 text-left font-bold group-hover:text-[#ff4c00]"
-                            onClick={() => handleFilmTypeSelect('flase')}
+                            onClick={() => handleFilmTypeSelect('false')}
                             onMouseEnter={handleHover}
                             onMouseLeave={handleMouseLeave}
                         >
@@ -570,7 +568,7 @@ const Header = () => {
                         ✕
                     </button>
                 </div>
-                
+
                 {isLoggedIn && user ? (
                     showPaymentForm ? (
                         <form onSubmit={handleBuyPoints} className="space-y-4">
@@ -623,8 +621,24 @@ const Header = () => {
                             >
                                 Lịch Sử Phim
                             </button>
-                            <button onClick={() => navigate('/payment-history')}
-                                className='w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2'>
+                            <button
+                                onClick={() => {
+                                    console.log('🔁 Đã bấm nút Lịch sử Tích/Trừ điểm');
+                                    navigate('/points-history');
+                                    setIsPanelOpen(false);
+                                }}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            >
+                                Lịch sử Tích/Trừ điểm
+                            </button>
+                            <button
+                                onClick={() => {
+                                    console.log('🔁 Đã bấm nút Lịch sử thanh toán');
+                                    navigate('/payment-history');
+                                    setIsPanelOpen(false);
+                                }}
+                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mb-2"
+                            >
                                 Lịch sử thanh toán
                             </button>
                             <button
@@ -651,77 +665,78 @@ const Header = () => {
                             </button>
                         </div>
                     )
-                    ) : (
-                        <form onSubmit={isLoginForm ? handleLogin : handleRegister} className="space-y-4">
-                            {!isLoginForm && (
-                                <div className="relative">
-                                    <label htmlFor="name" className="block text-left text-sm text-gray-300 mb-2">
-                                        Họ và tên
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                        placeholder="Nhập họ tên"
-                                        required
-                                    />
-                                </div>
-                            )}
+                ) : (
+                    <form onSubmit={isLoginForm ? handleLogin : handleRegister} className="space-y-4">
+                        {!isLoginForm && (
                             <div className="relative">
-                                <label htmlFor="email" className="block text-left text-sm text-gray-300 mb-2">
-                                    Email
+                                <label htmlFor="name" className="block text-left text-sm text-gray-300 mb-2">
+                                    Họ và tên
                                 </label>
                                 <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
                                     onChange={handleInputChange}
                                     className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                    placeholder="Nhập email"
+                                    placeholder="Nhập họ tên"
                                     required
                                 />
                             </div>
+                        )}
+                        <div className="relative">
+                            <label htmlFor="email" className="block text-left text-sm text-gray-300 mb-2">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                placeholder="Nhập email"
+                                required
+                            />
+                        </div>
+                        <div className="relative">
+                            <label htmlFor="password" className="block text-left text-sm text-gray-300 mb-2">
+                                Mật khẩu
+                            </label>
+                            <input
+                                type="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleInputChange}
+                                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
+                                placeholder="Nhập mật khẩu"
+                                required
+                            />
+                        </div>
+                        {!isLoginForm && (
                             <div className="relative">
-                                <label htmlFor="password" className="block text-left text-sm text-gray-300 mb-2">
-                                    Mật khẩu
+                                <label htmlFor="confirmPassword" className="block text-left text-sm text-gray-300 mb-2">
+                                    Nhập lại mật khẩu
                                 </label>
                                 <input
                                     type="password"
-                                    name="password"
-                                    value={formData.password}
+                                    name="confirmPassword"
+                                    value={formData.confirmPassword}
                                     onChange={handleInputChange}
                                     className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                    placeholder="Nhập mật khẩu"
+                                    placeholder="Nhập lại mật khẩu"
                                     required
                                 />
                             </div>
-                            {!isLoginForm && (
-                                <div className="relative">
-                                    <label htmlFor="confirmPassword" className="block text-left text-sm text-gray-300 mb-2">
-                                        Nhập lại mật khẩu
-                                    </label>
-                                    <input
-                                        type="password"
-                                        name="confirmPassword"
-                                        value={formData.confirmPassword}
-                                        onChange={handleInputChange}
-                                        className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ff4c00] focus:border-transparent transition-all"
-                                        placeholder="Nhập lại mật khẩu"
-                                        required
-                                    />
-                                </div>
-                            )}
-                            <button
-                                type="submit"
-                                className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mt-6"
-                            >
-                                {isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
-                            </button>
-
-                            <Link to="/forget-password" className='text-center cursor-pointer hover:underline text-red-600 '>Quên mật khẩu?</Link>
-                        </form>
+                        )}
+                        <button
+                            type="submit"
+                            className="w-full bg-[#ff4c00] text-white p-3 rounded-lg hover:bg-[#e04300] transition-colors cursor-pointer font-semibold mt-6"
+                        >
+                            {isLoginForm ? 'Đăng Nhập' : 'Đăng Ký'}
+                        </button>
+                        <Link to="/forget-password" className="text-center cursor-pointer hover:underline text-red-600">
+                            Quên mật khẩu?
+                        </Link>
+                    </form>
                 )}
                 {!isLoggedIn && (
                     <div className="mt-6 text-center">
@@ -746,7 +761,6 @@ const Header = () => {
                         </div>
                     </div>
                 )}
-
             </div>
         </div>
     );

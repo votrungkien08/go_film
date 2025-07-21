@@ -80,7 +80,7 @@ export const useWatchHistories = (
         };
 
         fetchWatchHistories();
-    }, [token,selectedEpisode?.id]);
+    }, [token, selectedEpisode?.id]);
 
 
 
@@ -88,9 +88,9 @@ export const useWatchHistories = (
         const video = videoRef.current;
         if (video && selectedEpisode?.id) {
             video.pause();
-            
+
             const currentHistory = watchHistory.find((item) => item.episodes_id === selectedEpisode.id);
-            
+
             const setProgress = () => {
                 if (currentHistory && currentHistory.progress_time > 0) {
                     if (isRestoringProgressRef) isRestoringProgressRef.current = true;
@@ -130,9 +130,9 @@ export const useWatchHistories = (
     }, [watchHistory, selectedEpisode, videoRef]);
 
 
-    
 
 
 
-    return { watchHistory, videoRef, handleTimeUpdate  };
+
+    return { watchHistory, videoRef, handleTimeUpdate };
 };
