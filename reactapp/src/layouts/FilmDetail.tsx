@@ -33,9 +33,10 @@ interface PaymentStatus {
 
 const FilmDetail = () => {
     const videoWrapperRef = useRef<HTMLDivElement>(null);
-
     const lastCurrentTimeRef = useRef(0);
     const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
+    const hasPromptedRef = useRef(false); // Theo dõi xem đã hiển thị hộp thoại chưa
+    const isPastTenPercentRef = useRef(false); // Theo dõi xem video đã vượt 10% chưa
 
     const variants = {
         hidden: { opacity: 0, scale: 0.8, transition: { duration: 0.5, ease: easeIn } },
@@ -51,29 +52,28 @@ const FilmDetail = () => {
     const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
 
     const { film, error, selectedEpisode, setSelectedEpisode } = useFilmData(slug!, episodeParam!);
-    const { comments, commentsLoading, commentsError, comment, setComment, handlePostComment } = useComments(film?.id, isLoggedIn,film,paymentStatus);
+    const { comments, commentsLoading, commentsError, comment, setComment, handlePostComment } = useComments(film?.id, isLoggedIn, film, paymentStatus);
     const { rating, setRating, showRating, averageRating, handlePostRating } = useRating(film?.id, isLoggedIn);
     const { isFavorite, likeCount, handleToggleFavorite } = useFavorite(film?.id, isLoggedIn);
-
 
     const [tab, setTab] = useState<'comment' | 'rating' | 'info'>('comment');
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
     const [showPremiumFunction, setShowPremiumFunction] = useState(false);
     const [showPointsPrompt, setShowPointsPrompt] = useState(false);
+    const [showDeductPrompt, setShowDeductPrompt] = useState(false); // Hộp thoại xác nhận trừ điểm
     const [canWatch, setCanWatch] = useState(false);
     const [isCheckingPayment, setIsCheckingPayment] = useState(false);
     const [hasRewarded, setHasRewarded] = useState(false);
 
     const [showControls, setShowControls] = useState(true);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [deducted, setDeducted] = useState(false);
-
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
 
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+
     const handleLoadedMetadata = () => {
         const video = videoRef.current;
         if (video) {
@@ -119,11 +119,11 @@ const FilmDetail = () => {
             setShowControls(false);
         }, 3000);
     };
-    // mouse move
+
     const handleMouseMove = () => {
         resetControlsTimer();
     };
-    // button pause
+
     const pauseVideo = () => {
         if (videoRef.current) {
             videoRef.current.pause();
@@ -131,8 +131,19 @@ const FilmDetail = () => {
             resetControlsTimer();
         }
     };
-    // button play
+
     const playVideo = () => {
+        if (videoRef.current && film?.is_premium && !paymentStatus?.already_paid && isPastTenPercentRef.current && !film.film_type) {
+            const tenPercentDuration = videoRef.current.duration * 0.1;
+            videoRef.current.currentTime = tenPercentDuration; // Kéo về 10%
+            setCurrentTime(tenPercentDuration);
+            toast.warning('Bạn chưa thanh toán, không thể xem tiếp sau 10% thời lượng video.', {
+                duration: 3000,
+                position: 'top-center',
+            });
+            setShowDeductPrompt(true);
+            return;
+        }
         if (videoRef.current) {
             videoRef.current.play();
             setIsPlaying(true);
@@ -169,6 +180,7 @@ const FilmDetail = () => {
         const match = number.match(/\d+/);
         return match ? parseInt(match[0]) : 0;
     };
+
     const isRestoringProgressRef = useRef(false);
     const { handleTimeUpdate } = useWatchHistories(selectedEpisode, videoRef, setCurrentTime, isRestoringProgressRef);
     const { handleViewIncrement } = useIncreaseView({ filmId: film?.id, videoRef, selectedEpisode });
@@ -230,7 +242,7 @@ const FilmDetail = () => {
     };
 
     const checkPaymentStatus = useCallback(async () => {
-        console.log('🔑 Kiểm tra trạng thái thanh toán... đây nè ');
+        console.log('🔑 Kiểm tra trạng thái thanh toán...');
         if (!film?.id || !selectedEpisode?.id || !isLoggedIn) return;
 
         setIsCheckingPayment(true);
@@ -239,7 +251,7 @@ const FilmDetail = () => {
                 'http://localhost:8000/api/films/deduct-points',
                 {
                     film_id: film.id,
-                    episode_id: selectedEpisode.id,
+                    episode_id: film.film_type ? undefined : selectedEpisode.id, // Không gửi episode_id cho phim bộ
                     only_check: true,
                 },
                 {
@@ -250,20 +262,15 @@ const FilmDetail = () => {
             );
 
             console.log('Payment status response:', response.data);
-            console.log('Payment status response setCanWatch:', response.data.can_watch);
             setPaymentStatus(response.data);
-            // setCanWatch(response.data.can_watch);
-
-            // if (response.data.can_watch && selectedEpisode.episode_url) {
-            //     initializeHLS(selectedEpisode.episode_url);
-            // }
+            setCanWatch(true); // Luôn cho phép xem ít nhất 10% đầu tiên hoặc toàn bộ nếu đã thanh toán
         } catch (error: unknown) {
             console.error('Lỗi khi kiểm tra trạng thái thanh toán:', error);
             if (typeof error === 'object' && error !== null && 'response' in error) {
                 const err = error as { response?: { status?: number; data?: { message?: string } } };
                 if (err.response?.status === 403) {
                     setPaymentStatus({
-                        can_watch: false,
+                        can_watch: true, // Cho phép xem 10% đầu tiên
                         already_paid: false,
                         is_premium: true,
                         has_enough_points: false,
@@ -271,7 +278,7 @@ const FilmDetail = () => {
                         user_points: user?.points,
                         message: err.response.data?.message || 'Bạn không đủ điểm để xem phim này',
                     });
-                    setCanWatch(false);
+                    setCanWatch(true); // Vẫn cho phép xem 10% đầu tiên
                     return;
                 }
                 if (err.response?.status !== 401 && err.response?.status !== 403) {
@@ -294,7 +301,7 @@ const FilmDetail = () => {
                 'http://localhost:8000/api/films/deduct-points',
                 {
                     film_id: film.id,
-                    episode_id: selectedEpisode.id,
+                    episode_id: film.film_type ? undefined : selectedEpisode.id, // Không gửi episode_id cho phim bộ
                 },
                 {
                     headers: {
@@ -303,7 +310,6 @@ const FilmDetail = () => {
                 }
             );
             console.log('API deduct-points response:', response.data);
-            console.log('API deduct-points response can watch:', response.data.can_watch);
             if (response.data.can_watch) {
                 setCanWatch(true);
                 setPaymentStatus((prev) => (prev ? { ...prev, can_watch: true, already_paid: true } : null));
@@ -311,18 +317,26 @@ const FilmDetail = () => {
                     duration: 3000,
                     position: 'top-center',
                 });
+                isPastTenPercentRef.current = false; // Reset để cho phép phát toàn bộ video
             }
         } catch (error: unknown) {
             console.error('Lỗi khi trừ điểm:', error);
             let message = 'Lỗi khi trừ điểm. Vui lòng thử lại.';
             if (typeof error === 'object' && error !== null && 'response' in error) {
-                const err = error as { response?: { data?: { error?: string } } };
-                if (err.response?.data?.error) message = err.response.data.error;
+                const err = error as { response?: { status?: number; data?: { message?: string } } };
+                if (err.response?.status === 403) {
+                    message = 'Bạn không đủ điểm để xem phim này. Vui lòng mua thêm điểm.';
+                    setShowPointsPrompt(true); // Hiển thị hộp thoại mua điểm
+                } else {
+                    message = err.response?.data?.message || 'Có lỗi xảy ra khi trừ điểm.';
+                }
             }
             toast.error(message, {
                 duration: 3000,
                 position: 'top-center',
             });
+            setCanWatch(false); // Khóa video nếu không đủ điểm
+            pauseVideo();
         }
     }, [film, selectedEpisode, isLoggedIn]);
 
@@ -379,10 +393,9 @@ const FilmDetail = () => {
 
     useEffect(() => {
         console.log('🔑 Đã đăng ký sự kiện change episode', canWatch);
-        // Mỗi khi đổi tập, reset lại trạng thái xem
         setCanWatch(false);
+        isPastTenPercentRef.current = false; // Reset trạng thái vượt 10%
 
-        // Phim thường → cho xem ngay
         if (!film?.is_premium) {
             console.log('🔑 Đã đăng ký sự kiện Phim thường episode', canWatch);
             checkRewardStatus();
@@ -391,18 +404,18 @@ const FilmDetail = () => {
             return;
         }
 
-        // Phim premium & đã login → check payment
         if (isLoggedIn) {
             console.log('🔑 Đã đăng ký sự kiện Phim premium episode', canWatch);
             checkPaymentStatus();
-            deductPoints();
-            setCanWatch(true);
+            // Chỉ reset hasPromptedRef nếu chưa thanh toán
+            if (!paymentStatus?.already_paid) {
+                hasPromptedRef.current = false; // Reset trạng thái hộp thoại khi đổi tập
+            }
             return;
         }
 
-        // Phim premium & chưa login → show login prompt
-        setShowPremiumPromtf(true);
-    }, [film?.is_premium, isLoggedIn, checkRewardStatus, checkPaymentStatus]);
+        setShowPremiumFunction(true);
+    }, [film?.is_premium, isLoggedIn, checkRewardStatus, checkPaymentStatus, film?.id, selectedEpisode?.id, paymentStatus?.already_paid]);
 
     useEffect(() => {
         if (!canWatch || !selectedEpisode?.episode_url || !videoRef.current) return;
@@ -410,8 +423,6 @@ const FilmDetail = () => {
         if (canWatch && selectedEpisode?.episode_url) {
             console.log('🔑 canWatch = true và có URL, init HLS & seek:', selectedEpisode.episode_url);
             initializeHLS(selectedEpisode.episode_url);
-
-
         }
         return () => {
             hlsRef.current?.destroy();
@@ -419,23 +430,8 @@ const FilmDetail = () => {
         };
     }, [canWatch, selectedEpisode?.episode_url]);
 
-    // useEffect để kiểm tra trạng thái điểm và hiển thị thông báo
     useEffect(() => {
-        if (!paymentStatus || !film?.is_premium || !isLoggedIn) return;
-
-        if (!paymentStatus.can_watch && !paymentStatus.already_paid) {
-            if (paymentStatus.has_enough_points === false) {
-                setShowPointsPrompt(true);
-            }
-        }
-    }, [paymentStatus, film?.is_premium, isLoggedIn]);
-
-    // useEffect để trừ điểm cho phim premium
-    useEffect(() => {
-        if (!videoRef.current || !film?.is_premium || !isLoggedIn || !canWatch || paymentStatus?.already_paid) return;
-
-        setDeducted(false);
-        lastCurrentTimeRef.current = 0;
+        if (!videoRef.current || !film?.is_premium || !isLoggedIn || !canWatch || (film.film_type && paymentStatus?.already_paid)) return;
 
         const handleTimeUpdate = () => {
             const duration = videoRef.current!.duration;
@@ -443,29 +439,33 @@ const FilmDetail = () => {
 
             if (!duration || isNaN(duration)) return;
 
-            const fortyPercentDuration = duration * 0.4;
-            // Nếu đang auto-seek do lịch sử thì bỏ qua thông báo, nhưng vẫn cho phép trừ điểm nếu xem đến 90%
+            const tenPercentDuration = duration * 0.1;
+
             if (isRestoringProgressRef.current) {
                 lastCurrentTimeRef.current = currentTime;
-                if (!deducted && currentTime / duration >= 0.9) {
-                    deductPoints();
-                    setDeducted(true);
-                    videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
-                }
                 return;
             }
 
-            if (Math.abs(currentTime - lastCurrentTimeRef.current) > fortyPercentDuration) {
-                setDeducted(true);
-                videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
+            // Kiểm tra nếu người dùng tua quá 10% mà chưa trả điểm
+            if (!paymentStatus?.already_paid && currentTime > tenPercentDuration) {
+                videoRef.current!.currentTime = tenPercentDuration; // Kéo về 10%
+                setCurrentTime(tenPercentDuration);
+                pauseVideo();
+                toast.warning('Bạn chưa thanh toán, không thể tua quá 10% thời lượng video.', {
+                    duration: 3000,
+                    position: 'top-center',
+                });
+                isPastTenPercentRef.current = true;
+                setShowDeductPrompt(true);
                 return;
             }
 
-            lastCurrentTimeRef.current = currentTime;
-
-            if (!deducted && currentTime / duration >= 0.9) {
-                deductPoints();
-                setDeducted(true);
+            // Chỉ hiển thị prompt nếu chưa thanh toán và chưa hiển thị trước đó
+            if (!paymentStatus?.already_paid && !hasPromptedRef.current && currentTime >= tenPercentDuration) {
+                pauseVideo();
+                setShowDeductPrompt(true);
+                hasPromptedRef.current = true;
+                isPastTenPercentRef.current = true;
                 videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
             }
         };
@@ -475,13 +475,11 @@ const FilmDetail = () => {
         return () => {
             videoRef.current && videoRef.current.removeEventListener('timeupdate', handleTimeUpdate);
         };
-    }, [film?.is_premium, canWatch, paymentStatus?.already_paid, deductPoints]);
+    }, [film?.is_premium, isLoggedIn, canWatch, paymentStatus?.already_paid, film?.film_type]);
 
-    // useEffect để tích điểm cho phim không premium
     useEffect(() => {
         if (!videoRef.current || film?.is_premium || !isLoggedIn || !canWatch) return;
 
-        setDeducted(false);
         lastCurrentTimeRef.current = 0;
 
         const handleTimeUpdate = () => {
@@ -490,19 +488,16 @@ const FilmDetail = () => {
 
             if (!duration || isNaN(duration)) return;
 
-            // Nếu đang auto-seek do lịch sử thì bỏ qua thông báo, nhưng vẫn cho phép cộng điểm nếu xem đến 90%
             if (isRestoringProgressRef.current) {
                 lastCurrentTimeRef.current = currentTime;
-                if (!deducted && currentTime / duration >= 0.9) {
+                if (!hasRewarded && currentTime / duration >= 0.9) {
                     rewardPoints();
-                    setDeducted(true);
                     videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
                 }
                 return;
             }
 
             if (!hasRewarded && Math.abs(currentTime - lastCurrentTimeRef.current) > duration * 0.1) {
-                setDeducted(true);
                 videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
                 toast.info('Bạn đã tua quá 10% thời lượng video, không thể tích điểm.', {
                     duration: 3000,
@@ -513,9 +508,8 @@ const FilmDetail = () => {
 
             lastCurrentTimeRef.current = currentTime;
 
-            if (!deducted && currentTime / duration >= 0.9) {
+            if (!hasRewarded && currentTime / duration >= 0.9) {
                 rewardPoints();
-                setDeducted(true);
                 videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
             }
         };
@@ -566,8 +560,6 @@ const FilmDetail = () => {
     const ratingValue = Number.isFinite(averageRating) ? averageRating : 0;
     const percentage = ratingValue / 5 * 100;
 
-
-
     return (
         <motion.div
             variants={variants}
@@ -590,8 +582,7 @@ const FilmDetail = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
-
-                        <div ref={videoWrapperRef} className="relative aspect-video  rounded-lg overflow-hidden shadow-lg">
+                        <div ref={videoWrapperRef} className="relative aspect-video rounded-lg overflow-hidden shadow-lg">
                             {canWatch && (
                                 <>
                                     <video
@@ -646,7 +637,7 @@ const FilmDetail = () => {
                                                 <input
                                                     type="range"
                                                     min={0}
-                                                    max={duration} // Thêm fallback
+                                                    max={duration}
                                                     step="0.1"
                                                     value={currentTime}
                                                     onChange={handleSeek}
@@ -670,13 +661,26 @@ const FilmDetail = () => {
                             )}
 
                             {!canWatch && (
-                                <div className="relative flex flex-col items-center justify-center aspect-video rounded-lg bg-gray-800  text-center p-6 shadow-lg">
+                                <div className="relative flex flex-col items-center justify-center aspect-video rounded-lg bg-gray-800 text-center p-6 shadow-lg">
                                     <Lock className="w-12 h-12 text-red-500 mb-4" />
-                                    <h2 className="text-xl font-semibold mb-2">Bạn cần mua điểm để xem phim này</h2>
+                                    <h2 className="text-xl font-semibold mb-2">
+                                        {isLoggedIn ? `Bạn cần dùng ${film.point_required || 0} điểm để xem phim này` : 'Bạn cần đăng nhập để xem phim này'}
+                                    </h2>
                                     <p className="text-sm text-gray-300 mb-4">
                                         Phim thuộc danh mục <span className="text-yellow-400 font-semibold">Premium</span>
                                     </p>
-
+                                    <button
+                                        onClick={() => {
+                                            if (isLoggedIn) {
+                                                deductPoints();
+                                            } else {
+                                                setShowAuthPrompt(true);
+                                            }
+                                        }}
+                                        className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
+                                    >
+                                        {isLoggedIn ? 'Xác nhận' : 'Đăng nhập'}
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -742,32 +746,21 @@ const FilmDetail = () => {
                                             placeholder="Nhập bình luận của bạn..."
                                         />
                                         <button
-                                            // onFocus={() => { if(!isLoggedIn) {
-                                            //     setShowAuthPrompt(true);
-                                            // } else if(isLoggedIn && film.is_premium && paymentStatus?.user_points >= paymentStatus?.points_required ) {
-                                            //     setShowPointsPrompt(true)
-                                            // }
-                                            // }}
                                             onClick={() => {
-                                                if(!isLoggedIn) {
-                                                    console.log('da vo comment login')
-
+                                                if (!isLoggedIn) {
+                                                    console.log('da vo comment login');
                                                     setShowAuthPrompt(true);
-                                                    return
-                                                } 
-                                                if (film.is_premium) {
-                                                    console.log('da vo comment phim')
-
-                                                    if(!paymentStatus?.already_paid) {
-                                                        console.log('da vo comment pay')
-
-                                                        setShowPremiumFunction(true);
-                                                        return
-
-                                                    }
-
+                                                    return;
                                                 }
-                                                handlePostComment()
+                                                if (film.is_premium) {
+                                                    console.log('da vo comment phim');
+                                                    if (!paymentStatus?.already_paid) {
+                                                        console.log('da vo comment pay');
+                                                        setShowPremiumFunction(true);
+                                                        return;
+                                                    }
+                                                }
+                                                handlePostComment();
                                             }}
                                             className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300 cursor-pointer"
                                         >
@@ -838,30 +831,22 @@ const FilmDetail = () => {
                                             ))}
                                         </div>
                                         <button
-                                            // onFocus={() => !isLoggedIn && setShowAuthPrompt(true)}
-                                            // onFocus={() => { 
-                                            // }}
                                             onClick={() => {
-                                                if(!isLoggedIn) {
-                                                    console.log('da vo rating login')
-
+                                                if (!isLoggedIn) {
+                                                    console.log('da vo rating login');
                                                     setShowAuthPrompt(true);
-                                                    return
-                                                } 
-                                                if (film.is_premium) {
-                                                    console.log('da vo rating phim')
-
-                                                    if(!paymentStatus?.already_paid) {
-                                                        console.log('da vo rating pay')
-
-                                                        setShowPremiumFunction(true);
-                                                        return
-
-                                                    }
-
+                                                    return;
                                                 }
-                                                console.log('da click',handlePostRating())
-                                                handlePostRating()
+                                                if (film.is_premium) {
+                                                    console.log('da vo rating phim');
+                                                    if (!paymentStatus?.already_paid) {
+                                                        console.log('da vo rating pay');
+                                                        setShowPremiumFunction(true);
+                                                        return;
+                                                    }
+                                                }
+                                                console.log('da click', handlePostRating());
+                                                handlePostRating();
                                             }}
                                             className="px-4 py-2 cursor-pointer bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
                                         >
@@ -899,7 +884,7 @@ const FilmDetail = () => {
                                         </p>
                                         <p className="py-2">
                                             <span className="font-semibold text-orange-500">Loại phim:</span>{' '}
-                                            {film.film_type ? 'Phim lẻ' : 'Phim bộ'}
+                                            {film.film_type ? 'Phim bộ' : 'Phim lẻ'}
                                         </p>
                                     </div>
                                 </div>
@@ -913,18 +898,17 @@ const FilmDetail = () => {
                             <div className="py-4 flex items-center justify-start">
                                 <button
                                     onClick={() => {
-                                        if(!isLoggedIn) {
-                                            console.log('da vo favorite login')
+                                        if (!isLoggedIn) {
+                                            console.log('da vo favorite login');
                                             setShowAuthPrompt(true);
-                                            return
-                                        } 
+                                            return;
+                                        }
                                         if (film.is_premium) {
-                                            console.log('da vo favorite phim')
-                                            if(!paymentStatus?.already_paid) {
-                                                console.log('da vo favorite pay')
+                                            console.log('da vo favorite phim');
+                                            if (!paymentStatus?.already_paid) {
+                                                console.log('da vo favorite pay');
                                                 setShowPremiumFunction(true);
-                                                return
-
+                                                return;
                                             }
                                         }
                                         handleToggleFavorite();
@@ -936,18 +920,17 @@ const FilmDetail = () => {
                                 {isFavorite ? (
                                     <HeartSolidIcon
                                         onClick={() => {
-                                            if(!isLoggedIn) {
-                                                console.log('da vo favorite login')
+                                            if (!isLoggedIn) {
+                                                console.log('da vo favorite login');
                                                 setShowAuthPrompt(true);
-                                                return
-                                            } 
+                                                return;
+                                            }
                                             if (film.is_premium) {
-                                                console.log('da vo favorite phim')
-                                                if(!paymentStatus?.already_paid) {
-                                                    console.log('da vo favorite pay')
+                                                console.log('da vo favorite phim');
+                                                if (!paymentStatus?.already_paid) {
+                                                    console.log('da vo favorite pay');
                                                     setShowPremiumFunction(true);
-                                                    return
-
+                                                    return;
                                                 }
                                             }
                                             handleToggleFavorite();
@@ -957,18 +940,17 @@ const FilmDetail = () => {
                                 ) : (
                                     <HeartOutlineIcon
                                         onClick={() => {
-                                            if(!isLoggedIn) {
-                                            console.log('da vo favorite login')
-                                            setShowAuthPrompt(true);
-                                            return
-                                            } 
+                                            if (!isLoggedIn) {
+                                                console.log('da vo favorite login');
+                                                setShowAuthPrompt(true);
+                                                return;
+                                            }
                                             if (film.is_premium) {
-                                                console.log('da vo favorite phim')
-                                                if(!paymentStatus?.already_paid) {
-                                                    console.log('da vo favorite pay')
+                                                console.log('da vo favorite phim');
+                                                if (!paymentStatus?.already_paid) {
+                                                    console.log('da vo favorite pay');
                                                     setShowPremiumFunction(true);
-                                                    return
-
+                                                    return;
                                                 }
                                             }
                                             handleToggleFavorite();
@@ -1050,7 +1032,6 @@ const FilmDetail = () => {
                     </div>
                 )}
 
-
                 {showPremiumFunction && (
                     <div
                         className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-opacity-50 z-50"
@@ -1067,7 +1048,7 @@ const FilmDetail = () => {
                                 </button>
                                 <button
                                     onClick={() => {
-                                        setShowPointsPrompt(false);
+                                        setShowPremiumFunction(false);
                                         navigate('/buy-points');
                                     }}
                                     className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
@@ -1079,7 +1060,7 @@ const FilmDetail = () => {
                     </div>
                 )}
 
-                {showPointsPrompt  && (
+                {showPointsPrompt && (
                     <div
                         className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-opacity-50 z-50"
                         onClick={() => setShowPointsPrompt(false)}
@@ -1103,6 +1084,45 @@ const FilmDetail = () => {
                                     className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
                                 >
                                     Đồng ý
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showDeductPrompt && (
+                    <div
+                        className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-opacity-50 z-50"
+                        onClick={() => {
+                            setShowDeductPrompt(false);
+                            setCanWatch(false); // Khóa video
+                            pauseVideo();
+                        }}
+                    >
+                        <div className="bg-[#000000] w-96 rounded-lg p-6" onClick={(e) => e.stopPropagation()}>
+                            <h2 className="text-xl font-semibold mb-4 text-white">
+                                Bạn có muốn dùng {film.point_required} điểm để xem tiếp phim này?
+                            </h2>
+                            <div className="flex justify-around">
+                                <button
+                                    onClick={() => {
+                                        setShowDeductPrompt(false);
+                                        setCanWatch(false); // Khóa video
+                                        pauseVideo();
+                                    }}
+                                    className="px-4 py-2 bg-[#3A3A3A] text-white rounded-md hover:bg-[#4A4A4A] transition-colors duration-300"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowDeductPrompt(false);
+                                        deductPoints();
+                                        playVideo();
+                                    }}
+                                    className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
+                                >
+                                    Xác nhận
                                 </button>
                             </div>
                         </div>

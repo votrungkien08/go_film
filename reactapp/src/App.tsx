@@ -16,28 +16,28 @@ import Chatbot from './Chatbot';
 import { ThemeProvider } from "./components/theme-provider";
 import Histories from './pages/Histories';
 import Favorites from './pages/Favorites';
-import {DashboardLayout} from './layouts/dashboard/layout';
+import { DashboardLayout } from './layouts/dashboard/layout';
 import DashboardPage from './pages/dashboard';
-import  SignInPage  from './pages/sign-in';
-import  UserPage  from './pages/user';
-import  ProductsPage  from './pages/products';
-import  BlogPage  from './pages/blog';
-import  InteractionPage  from './pages/interact';
-import  FilmPage  from './pages/film-control';
-import  AddPage  from './pages/add';
-import  RevenuePage  from './pages/revenue';
+import SignInPage from './pages/sign-in';
+import UserPage from './pages/user';
+import ProductsPage from './pages/products';
+import BlogPage from './pages/blog';
+import InteractionPage from './pages/interact';
+import FilmPage from './pages/film-control';
+import AddPage from './pages/add';
+import RevenuePage from './pages/revenue';
 import PaymentHistory from './components/PaymentHistory';
 import { ParallaxProvider } from '../src/utils/ParallaxContext';
 import { MUIThemeProvider } from 'src/theme/theme-provider';
-import  ForgetPasswordResetForm  from './pages/forget-password';
-import  ResetPasswordResetForm  from './pages/reset-password';
-
+import ForgetPasswordResetForm from './pages/forget-password';
+import ResetPasswordResetForm from './pages/reset-password';
+import PointsHistory from './pages/PointsHistory';
 // import { ModeToggle } from './components/mode-toggle';
 // import { useEffect } from 'react';
 function App() {
   return (
     <>
-        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <Router>
           <Routes>
             {/* Các route sử dụng MainLayout */}
@@ -100,6 +100,7 @@ function App() {
             {/* Route cho trang BuyPoints, độc lập, không dùng MainLayout */}
             <Route path="/buy-points" element={<BuyPoints />} />
             <Route path="/payment-history" element={<PaymentHistory />} />
+            <Route path="/points-history" element={<PointsHistory />} />
           </Routes>
         </Router>
         <Toaster
@@ -131,7 +132,7 @@ function App() {
           }}
         />
       </ThemeProvider>
-      
+
 
 
     </>

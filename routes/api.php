@@ -68,10 +68,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/films/deduct-points', [FilmController::class, 'deductPoints']);
     Route::post('/films/reward-points', [FilmController::class, 'rewardPointsForNormalFilm']);
 
+    Route::get('/points-history', [FilmController::class, 'getPointsHistory'])->middleware('auth:sanctum');
 
-
-
-// <<<<<<< HEAD
+    // <<<<<<< HEAD
 // Route::get('/admin/export-monthly-revenue', [AdEventController::class, 'monthlyRevenue']);
 });
 
@@ -82,7 +81,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     // revenue customer
     Route::get('/admin/monthly-customer-revenue', [TransactionController::class, 'monthlyCustomerRevenue']);
     Route::get('/admin/monthly-customer-revenue-range', [TransactionController::class, 'monthlyCustomerRevenueRange']);
-    
+
 
     // edit, del user
     Route::put('/update-user/{id}', [AuthController::class, 'updateUser']);
