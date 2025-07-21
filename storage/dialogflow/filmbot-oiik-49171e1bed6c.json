@@ -1,0 +1,13 @@
+// {
+//   "type": "service_account",
+//   "project_id": "filmbot-oiik",
+//   "private_key_id": "49171e1bed6cd58d3a078f66e67d5a7784160d74",
+//   "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDIs0X3bf6txcCM\n3OwSmWkCKkFTe28KI8ZFiH/d2dNPDFafNLJgZH6viiTM0dLoUGtnXPshHVigBy4t\nP4HSgjWMwsFUniHoj/Lc9kbR+Tsh/G6drRc8ZaBiKc+LeR6jEmIArrgzr9jdS6fn\nyGczvGT0HmV/Y0lJVlmIZIm2sb++5StSQZ0nMPyDLRJw5omeIG8ID+mwVMgsUCNc\ng4ycwDs/kLJ6adLyOQAaohwR2UFehu4oJCrR2rYkhAZXNRJ5cGe+Vgg8T7OQfl4T\nn78YKsCSL20si6DFyTyy7bEEAp2UyjEx47Qy+NCKGuAwv8TxnFfXEtRvGyO0AHMu\nI8OxzmB/AgMBAAECggEAHgcfLhM5n4DkJi8yQuDLt+nf4ZWo2g4wLrHAL85/XGcE\nLshmR8sWs+d/SgW6qyIdGldBsNqrKoY91RdDXTOOFNlZWPJahb5udRDZLQvqWlNi\nWW+kTQJc1Khcx7P/bsvj+HuA+SVo1PM/fouapUBH+nOcdqAW6ZoPGzuvlF3+dO5L\nHB/4AvJhjIaDy3uP5TDxWXTO4oUXGgVVqGDeMmbIhUH4AhRvGNKKYb4wWjM+Xgzg\nAISOMjHwgEn+crWJ74NikM3GrsHEz62XITpBNqIwYq3hCF3OyMIg7+rKREpQfdKi\nWOvst2LHd1nzFvX7lDAr+6cNnD3FlD34qIxto0/xAQKBgQD+jpIVZzR3X1xw0BqV\nan2CHunHqyuH3NLHMtrOTiMkpbLzEdrC0vw1Jk759ipHmFiRyDhxDNv11mxD0CYb\nsXdz3Z60E3GF0l28+45XFHsjgz2jf5PdCXCe7LmxWsBbRmG8KlIDs+bPg1pbH3we\nd3NXHOmiglv07sTduWzg9o1dDwKBgQDJ1ore6QA7XoEvL+L673Ri7U4EcsgWEruu\nGQ7YrZZUCpa8K3Q6UKBWkuigZGoI/NG+rersfKeDmys3pe+m7pztgKD+Vi4Ux74B\njSLRVEn9tLCp+U3FGJJJ5V22//Uzrp0WQDeFYjC8vcBRGw2Ore48x93mk9IkWByu\n1kLfiR6lkQKBgAcHxP0WVpqdZZ4wASvzPvgjBm3fSlp8PM4Hl4dvHQVcFi8kZRhQ\nX2rQXgoFRHGpwXh1QSnOIx0NCPxueT72jcgDbOioSNBbWP9pKys4g5Ydf8xOL7VB\nF30sKIy/ZuSecwCRYqZ7h3pftFUj73ef8O2M/N7iHswK9CDziBBGfuz9AoGBAIT7\nGHXzV9bF1iFr0IV6PNls9kkSAuggIY18Lv7tp6zpaRTDIInHU0yW8DO01PPk9qBF\n4BE9s/SOyHOanYIDllsYs3m++A9y5qoI/hajDTjd0sO6YNXp8YBEYXFPxJLvicn+\nN1ZnMis4bbxCMbV+vQdIu9fOLtcJQqSiwF6c7hcxAoGBALUZfGsZWXSDl8UIboVm\nzF5UkYIK18Wl5igyTFH70JYWGF5QLwc8zDoJv9rPxFOTnfHROJrHzAwwhm4Pvu1b\nIrw89srcy1IlFGvRNaIZiFrIx8YkhsBzgpUebdVPaPvJ6kBWyW/UoJgUdWT+Hf28\nglE80jFCZBTXuca67B0BQPPP\n-----END PRIVATE KEY-----\n",
+//   "client_email": "dialogflow-service-account@filmbot-oiik.iam.gserviceaccount.com",
+//   "client_id": "115854176949322120968",
+//   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+//   "token_uri": "https://oauth2.googleapis.com/token",
+//   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+//   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dialogflow-service-account%40filmbot-oiik.iam.gserviceaccount.com",
+//   "universe_domain": "googleapis.com"
+// }
