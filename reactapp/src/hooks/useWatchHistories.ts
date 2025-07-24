@@ -8,7 +8,9 @@ export const useWatchHistories = (
     selectedEpisode: any,
     videoRef: React.RefObject<HTMLVideoElement>,
     setCurrentTime?: (time: number) => void,
-    isRestoringProgressRef?: React.MutableRefObject<boolean>
+    isRestoringProgressRef?: React.MutableRefObject<boolean>,
+    shouldRestoreTimeRef?: React.MutableRefObject<boolean> // Thêm tham số này
+
 ) => {
     const [watchHistory, setWatchHistory] = useState<WatchHistories[]>([]);
     const token = localStorage.getItem('token');
@@ -19,20 +21,17 @@ export const useWatchHistories = (
     // const isRestoringProgressRef = useRef(false);
     const handleTimeUpdate = async () => {
         try {
-            // if (isRestoringProgressRef.current) return;
             if (!videoRef.current || !selectedEpisode?.id || !token) return;
             const currentTime = Math.floor(videoRef.current.currentTime);
             if (currentTime <= 0) return;
-            // Ngăn không gọi api nhiều lần
+
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
 
             if (setCurrentTime) setCurrentTime(currentTime);
-            // gọi API sau khi 3 giây không có sự kiện timeupdate mới
             saveTimeoutRef.current = setTimeout(async () => {
                 try {
-                    // **SỬA**: Đổi 'episodes_id' thành 'episode_id'
                     const response = await axios.post(
                         'http://localhost:8000/api/store-histories',
                         {
@@ -60,11 +59,8 @@ export const useWatchHistories = (
 
     useEffect(() => {
         const fetchWatchHistories = async () => {
-            if (!token) {
-                return;
-            }
+            if (!token) return;
             try {
-                // get-histories API sẽ lưu lịch sử xem phim
                 const response = await axios.get('http://localhost:8000/api/watch-histories', {
                     headers: {
                         'Content-Type': 'application/json',
@@ -92,6 +88,12 @@ export const useWatchHistories = (
             const currentHistory = watchHistory.find((item) => item.episodes_id === selectedEpisode.id);
 
             const setProgress = () => {
+                // Kiểm tra shouldRestoreTimeRef trước khi khôi phục từ history
+                if (shouldRestoreTimeRef && shouldRestoreTimeRef.current) {
+                    console.log('🚫 Bỏ qua khôi phục history vì đang khôi phục từ savedTime');
+                    return;
+                }
+
                 if (currentHistory && currentHistory.progress_time > 0) {
                     if (isRestoringProgressRef) isRestoringProgressRef.current = true;
 
@@ -105,7 +107,6 @@ export const useWatchHistories = (
 
                     console.log('⏪ Đã tìm thấy lịch sử:', currentHistory);
                 } else {
-                    // Không có lịch sử thì reset về 0
                     video.currentTime = 0;
                     if (setCurrentTime) setCurrentTime(0);
                     console.log('⏪ Không tìm thấy lịch sử, đặt lại currentTime = 0');
@@ -127,12 +128,7 @@ export const useWatchHistories = (
             video.addEventListener('timeupdate', handleTimeUpdate);
             return () => video.removeEventListener('timeupdate', handleTimeUpdate);
         }
-    }, [watchHistory, selectedEpisode, videoRef]);
+    }, [watchHistory, selectedEpisode, videoRef, setCurrentTime, isRestoringProgressRef, shouldRestoreTimeRef]);
 
-
-
-
-
-
-    return { watchHistory, videoRef, handleTimeUpdate };
+    return { watchHistory, handleTimeUpdate };
 };

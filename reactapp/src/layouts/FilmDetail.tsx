@@ -19,6 +19,8 @@ import { toast } from 'sonner';
 import { useWatchHistories } from '../hooks/useWatchHistories';
 import { useIncreaseView } from '../hooks/useIncreaseView';
 import { RotateCcw, RotateCw, Pause, Play, Maximize, Lock } from 'lucide-react';
+import FilmSuggestions from '../components/ui/FilmSuggestions';
+
 dayjs.extend(relativeTime);
 
 interface PaymentStatus {
@@ -34,10 +36,14 @@ interface PaymentStatus {
 const FilmDetail = () => {
     const videoWrapperRef = useRef<HTMLDivElement>(null);
     const lastCurrentTimeRef = useRef(0);
+    const totalSeekedTimeRef = useRef(0);
     const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
-    const hasPromptedRef = useRef(false); // Theo dõi xem đã hiển thị hộp thoại chưa
-    const isPastTenPercentRef = useRef(false); // Theo dõi xem video đã vượt 10% chưa
-
+    const hasPromptedRef = useRef(false);
+    const isPastTenPercentRef = useRef(false);
+    const savedCurrentTimeRef = useRef(0);
+    const hasInitializedHLSRef = useRef(false);
+    const shouldRestoreTimeRef = useRef(false);
+    const isRestoringProgressRef = useRef(false);
     const variants = {
         hidden: { opacity: 0, scale: 0.8, transition: { duration: 0.5, ease: easeIn } },
         visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: easeIn } },
@@ -60,7 +66,7 @@ const FilmDetail = () => {
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
     const [showPremiumFunction, setShowPremiumFunction] = useState(false);
     const [showPointsPrompt, setShowPointsPrompt] = useState(false);
-    const [showDeductPrompt, setShowDeductPrompt] = useState(false); // Hộp thoại xác nhận trừ điểm
+    const [showDeductPrompt, setShowDeductPrompt] = useState(false);
     const [canWatch, setCanWatch] = useState(false);
     const [isCheckingPayment, setIsCheckingPayment] = useState(false);
     const [hasRewarded, setHasRewarded] = useState(false);
@@ -74,12 +80,22 @@ const FilmDetail = () => {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
 
-    const handleLoadedMetadata = () => {
+    const handleLoadedMetadata = useCallback(() => {
         const video = videoRef.current;
         if (video) {
             setDuration(video.duration);
+            if (savedCurrentTimeRef.current > 0 && shouldRestoreTimeRef.current) {
+                console.log('🔄 Khôi phục currentTime sau trừ điểm:', savedCurrentTimeRef.current);
+                video.currentTime = savedCurrentTimeRef.current;
+                setCurrentTime(savedCurrentTimeRef.current);
+                if (isPlaying) {
+                    video.play().catch((err) => console.error('Lỗi khi phát video:', err));
+                }
+                shouldRestoreTimeRef.current = false;
+                savedCurrentTimeRef.current = 0;
+            }
         }
-    };
+    }, [isPlaying]);
 
     const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
         const video = videoRef.current;
@@ -128,14 +144,13 @@ const FilmDetail = () => {
         if (videoRef.current) {
             videoRef.current.pause();
             setIsPlaying(false);
-            resetControlsTimer();
         }
     };
 
     const playVideo = () => {
         if (videoRef.current && film?.is_premium && !paymentStatus?.already_paid && isPastTenPercentRef.current && !film.film_type) {
             const tenPercentDuration = videoRef.current.duration * 0.1;
-            videoRef.current.currentTime = tenPercentDuration; // Kéo về 10%
+            videoRef.current.currentTime = tenPercentDuration;
             setCurrentTime(tenPercentDuration);
             toast.warning('Bạn chưa thanh toán, không thể xem tiếp sau 10% thời lượng video.', {
                 duration: 3000,
@@ -145,9 +160,8 @@ const FilmDetail = () => {
             return;
         }
         if (videoRef.current) {
-            videoRef.current.play();
+            videoRef.current.play().catch((err) => console.error('Lỗi khi phát video:', err));
             setIsPlaying(true);
-            resetControlsTimer();
         }
     };
 
@@ -181,26 +195,49 @@ const FilmDetail = () => {
         return match ? parseInt(match[0]) : 0;
     };
 
-    const isRestoringProgressRef = useRef(false);
-    const { handleTimeUpdate } = useWatchHistories(selectedEpisode, videoRef, setCurrentTime, isRestoringProgressRef);
+    const { handleTimeUpdate } = useWatchHistories(selectedEpisode, videoRef, setCurrentTime, isRestoringProgressRef, shouldRestoreTimeRef);
     const { handleViewIncrement } = useIncreaseView({ filmId: film?.id, videoRef, selectedEpisode });
 
-    const initializeHLS = (videoUrl: string) => {
+    const initializeHLS = useCallback((videoUrl: string) => {
         if (!videoRef.current) return;
         const video = videoRef.current;
 
+        lastCurrentTimeRef.current = 0;
+        totalSeekedTimeRef.current = 0;
+        console.log('🔧 Khởi tạo HLS, reset lastCurrentTimeRef và totalSeekedTimeRef');
+
         if (hlsRef.current) {
-            hlsRef.current.destroy();
-            hlsRef.current = null;
+            console.log('🔧 HLS đã tồn tại, bỏ qua khởi tạo lại');
+            if (savedCurrentTimeRef.current > 0 && shouldRestoreTimeRef.current) {
+                video.currentTime = savedCurrentTimeRef.current;
+                setCurrentTime(savedCurrentTimeRef.current);
+                if (isPlaying) {
+                    video.play().catch((err) => console.error('Lỗi khi phát video:', err));
+                }
+                shouldRestoreTimeRef.current = false;
+                savedCurrentTimeRef.current = 0;
+            }
+            return;
         }
 
+        console.log('🔧 Khởi tạo HLS mới với URL:', videoUrl);
+        hasInitializedHLSRef.current = true;
         const isM3U8 = videoUrl.includes('.m3u8') || videoUrl.includes('m3u8');
         if (isM3U8) {
             if (video.canPlayType('application/vnd.apple.mpegurl')) {
                 video.src = videoUrl;
+                if (savedCurrentTimeRef.current > 0 && shouldRestoreTimeRef.current) {
+                    video.currentTime = savedCurrentTimeRef.current;
+                    setCurrentTime(savedCurrentTimeRef.current);
+                    if (isPlaying) {
+                        video.play().catch((err) => console.error('Lỗi khi phát video:', err));
+                    }
+                    shouldRestoreTimeRef.current = false;
+                    savedCurrentTimeRef.current = 0;
+                }
             } else if (Hls.isSupported()) {
                 const hls = new Hls({
-                    debug: false,
+                    debug: true,
                     enableWorker: true,
                     lowLatencyMode: true,
                     backBufferLength: 90,
@@ -210,11 +247,24 @@ const FilmDetail = () => {
                 hls.attachMedia(video);
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    console.log('HLS manifest đã được tải thành công');
+                    console.log('📜 HLS manifest tải thành công');
+                    isRestoringProgressRef.current = true;
+                    setTimeout(() => {
+                        isRestoringProgressRef.current = false;
+                    }, 1000);
+                    if (savedCurrentTimeRef.current > 0 && shouldRestoreTimeRef.current) {
+                        video.currentTime = savedCurrentTimeRef.current;
+                        setCurrentTime(savedCurrentTimeRef.current);
+                        if (isPlaying) {
+                            video.play().catch((err) => console.error('Lỗi khi phát video:', err));
+                        }
+                        shouldRestoreTimeRef.current = false;
+                        savedCurrentTimeRef.current = 0;
+                    }
                 });
 
                 hls.on(Hls.Events.ERROR, (event, data) => {
-                    console.error('Lỗi HLS:', data);
+                    console.error('❌ Lỗi HLS:', data);
                     if (data.fatal) {
                         switch (data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
@@ -238,8 +288,17 @@ const FilmDetail = () => {
             }
         } else {
             video.src = videoUrl;
+            if (savedCurrentTimeRef.current > 0 && shouldRestoreTimeRef.current) {
+                video.currentTime = savedCurrentTimeRef.current;
+                setCurrentTime(savedCurrentTimeRef.current);
+                if (isPlaying) {
+                    video.play().catch((err) => console.error('Lỗi khi phát video:', err));
+                }
+                shouldRestoreTimeRef.current = false;
+                savedCurrentTimeRef.current = 0;
+            }
         }
-    };
+    }, [isPlaying]);
 
     const checkPaymentStatus = useCallback(async () => {
         console.log('🔑 Kiểm tra trạng thái thanh toán...');
@@ -251,7 +310,7 @@ const FilmDetail = () => {
                 'http://localhost:8000/api/films/deduct-points',
                 {
                     film_id: film.id,
-                    episode_id: film.film_type ? undefined : selectedEpisode.id, // Không gửi episode_id cho phim bộ
+                    episode_id: film.film_type ? undefined : selectedEpisode.id,
                     only_check: true,
                 },
                 {
@@ -261,16 +320,16 @@ const FilmDetail = () => {
                 }
             );
 
-            console.log('Payment status response:', response.data);
+            console.log('📩 Payment status response:', response.data);
             setPaymentStatus(response.data);
-            setCanWatch(true); // Luôn cho phép xem ít nhất 10% đầu tiên hoặc toàn bộ nếu đã thanh toán
+            setCanWatch(true);
         } catch (error: unknown) {
-            console.error('Lỗi khi kiểm tra trạng thái thanh toán:', error);
+            console.error('❌ Lỗi khi kiểm tra trạng thái thanh toán:', error);
             if (typeof error === 'object' && error !== null && 'response' in error) {
                 const err = error as { response?: { status?: number; data?: { message?: string } } };
                 if (err.response?.status === 403) {
                     setPaymentStatus({
-                        can_watch: true, // Cho phép xem 10% đầu tiên
+                        can_watch: true,
                         already_paid: false,
                         is_premium: true,
                         has_enough_points: false,
@@ -278,13 +337,13 @@ const FilmDetail = () => {
                         user_points: user?.points,
                         message: err.response.data?.message || 'Bạn không đủ điểm để xem phim này',
                     });
-                    setCanWatch(true); // Vẫn cho phép xem 10% đầu tiên
+                    setCanWatch(true);
                     return;
                 }
                 if (err.response?.status !== 401 && err.response?.status !== 403) {
-                    console.error('Lỗi không xác định 401 & 403:', err.response?.data?.message || '401 & 403 Có lỗi xảy ra khi kiểm tra trạng thái thanh toán');
+                    console.error('Lỗi không xác định:', err.response?.data?.message);
                     setCanWatch(true);
-                    if (selectedEpisode.episode_url) {
+                    if (selectedEpisode.episode_url && !hasInitializedHLSRef.current) {
                         initializeHLS(selectedEpisode.episode_url);
                     }
                 }
@@ -296,12 +355,19 @@ const FilmDetail = () => {
 
     const deductPoints = useCallback(async () => {
         if (!film?.id || !selectedEpisode?.id || !isLoggedIn || !film.is_premium) return;
+
+        if (videoRef.current) {
+            savedCurrentTimeRef.current = videoRef.current.currentTime;
+            shouldRestoreTimeRef.current = true;
+            console.log('💾 Lưu currentTime trước khi trừ điểm:', savedCurrentTimeRef.current);
+        }
+
         try {
             const response = await axios.post(
                 'http://localhost:8000/api/films/deduct-points',
                 {
                     film_id: film.id,
-                    episode_id: film.film_type ? undefined : selectedEpisode.id, // Không gửi episode_id cho phim bộ
+                    episode_id: film.film_type ? undefined : selectedEpisode.id,
                 },
                 {
                     headers: {
@@ -309,7 +375,7 @@ const FilmDetail = () => {
                     },
                 }
             );
-            console.log('API deduct-points response:', response.data);
+            console.log('📩 API deduct-points response:', response.data);
             if (response.data.can_watch) {
                 setCanWatch(true);
                 setPaymentStatus((prev) => (prev ? { ...prev, can_watch: true, already_paid: true } : null));
@@ -317,16 +383,33 @@ const FilmDetail = () => {
                     duration: 3000,
                     position: 'top-center',
                 });
-                isPastTenPercentRef.current = false; // Reset để cho phép phát toàn bộ video
+                isPastTenPercentRef.current = false;
+
+                if (videoRef.current && selectedEpisode.episode_url && !hasInitializedHLSRef.current) {
+                    console.log('🔧 Khởi tạo lại HLS sau khi trừ điểm');
+                    initializeHLS(selectedEpisode.episode_url);
+                }
+
+                if (videoRef.current && savedCurrentTimeRef.current > 0) {
+                    console.log('🔄 Khôi phục currentTime ngay sau trừ điểm:', savedCurrentTimeRef.current);
+                    videoRef.current.currentTime = savedCurrentTimeRef.current;
+                    setCurrentTime(savedCurrentTimeRef.current);
+                    videoRef.current.play().catch((err) => console.error('Lỗi khi phát video:', err));
+                    setIsPlaying(true);
+                    shouldRestoreTimeRef.current = false;
+                    savedCurrentTimeRef.current = 0;
+                }
             }
         } catch (error: unknown) {
-            console.error('Lỗi khi trừ điểm:', error);
+            console.error('❌ Lỗi khi trừ điểm:', error);
+            shouldRestoreTimeRef.current = false;
+            savedCurrentTimeRef.current = 0;
+
             let message = 'Lỗi khi trừ điểm. Vui lòng thử lại.';
             if (typeof error === 'object' && error !== null && 'response' in error) {
                 const err = error as { response?: { status?: number; data?: { message?: string } } };
                 if (err.response?.status === 403) {
                     message = 'Bạn không đủ điểm để xem phim này. Vui lòng mua thêm điểm.';
-                    setShowPointsPrompt(true); // Hiển thị hộp thoại mua điểm
                 } else {
                     message = err.response?.data?.message || 'Có lỗi xảy ra khi trừ điểm.';
                 }
@@ -335,10 +418,10 @@ const FilmDetail = () => {
                 duration: 3000,
                 position: 'top-center',
             });
-            setCanWatch(false); // Khóa video nếu không đủ điểm
+            setCanWatch(false);
             pauseVideo();
         }
-    }, [film, selectedEpisode, isLoggedIn]);
+    }, [film, selectedEpisode, isLoggedIn, initializeHLS]);
 
     const checkRewardStatus = useCallback(async () => {
         if (!film?.id || !selectedEpisode?.id || !isLoggedIn || film.is_premium) return;
@@ -348,7 +431,7 @@ const FilmDetail = () => {
                 'http://localhost:8000/api/films/reward-points',
                 {
                     film_id: film.id,
-                    episode_id: selectedEpisode.id,
+                    episode_id: film.film_type ? selectedEpisode.id : undefined,
                     only_check: true,
                 },
                 {
@@ -357,21 +440,29 @@ const FilmDetail = () => {
                     },
                 }
             );
+            console.log('📩 Reward status response:', response.data);
             setHasRewarded(response.data.has_rewarded);
+            if (response.data.has_rewarded) {
+                toast.info('Bạn đã nhận điểm cho tập này.', {
+                    duration: 3000,
+                    position: 'top-center',
+                });
+            }
         } catch (error) {
-            console.error('Lỗi khi kiểm tra trạng thái tích điểm:', error);
+            console.error('❌ Lỗi khi kiểm tra trạng thái tích điểm:', error);
             setHasRewarded(false);
         }
     }, [film?.id, selectedEpisode?.id, isLoggedIn, film?.is_premium]);
 
     const rewardPoints = useCallback(async () => {
-        if (!film?.id || !selectedEpisode?.id || !isLoggedIn || film.is_premium) return;
+        if (!film?.id || !selectedEpisode?.id || !isLoggedIn || film.is_premium || hasRewarded) return;
+
         try {
             const response = await axios.post(
                 'http://localhost:8000/api/films/reward-points',
                 {
                     film_id: film.id,
-                    episode_id: selectedEpisode.id,
+                    episode_id: film.film_type ? selectedEpisode.id : undefined,
                 },
                 {
                     headers: {
@@ -379,76 +470,89 @@ const FilmDetail = () => {
                     },
                 }
             );
+            console.log('📩 Reward points response:', response.data);
             if (response.data.success) {
-                toast.success('Bạn đã được cộng 3 điểm khi xem phim thường!', {
+                setHasRewarded(true);
+                toast.success(`Bạn đã được cộng 3 điểm! Tổng điểm hiện tại: ${response.data.current_points}`, {
                     duration: 3000,
                     position: 'top-center',
                 });
-                setHasRewarded(true);
             }
         } catch (error: unknown) {
-            // Không hiển thị toast lỗi nếu đã tích điểm trước đó
+            console.error('❌ Lỗi khi tích điểm:', error);
+            let message = 'Lỗi khi tích điểm. Vui lòng thử lại.';
+            if (typeof error === 'object' && error !== null && 'response' in error) {
+                const err = error as { response?: { status?: number; data?: { message?: string } } };
+                message = err.response?.data?.message || message;
+            }
+            toast.error(message, {
+                duration: 3000,
+                position: 'top-center',
+            });
         }
-    }, [film, selectedEpisode, isLoggedIn]);
+    }, [film?.id, selectedEpisode?.id, isLoggedIn, film?.is_premium, hasRewarded]);
 
     useEffect(() => {
-        console.log('🔑 Đã đăng ký sự kiện change episode', canWatch);
+        console.log('🔄 Đã đổi tập, reset trạng thái');
         setCanWatch(false);
-        isPastTenPercentRef.current = false; // Reset trạng thái vượt 10%
+        isPastTenPercentRef.current = false;
+        savedCurrentTimeRef.current = 0;
+        shouldRestoreTimeRef.current = false;
+        hasInitializedHLSRef.current = false;
+        setHasRewarded(false);
+        totalSeekedTimeRef.current = 0;
+        lastCurrentTimeRef.current = 0;
 
         if (!film?.is_premium) {
-            console.log('🔑 Đã đăng ký sự kiện Phim thường episode', canWatch);
-            checkRewardStatus();
-            rewardPoints();
             setCanWatch(true);
+            checkRewardStatus();
             return;
         }
 
         if (isLoggedIn) {
-            console.log('🔑 Đã đăng ký sự kiện Phim premium episode', canWatch);
             checkPaymentStatus();
-            // Chỉ reset hasPromptedRef nếu chưa thanh toán
             if (!paymentStatus?.already_paid) {
-                hasPromptedRef.current = false; // Reset trạng thái hộp thoại khi đổi tập
+                hasPromptedRef.current = false;
             }
             return;
         }
-
-        setShowPremiumFunction(true);
-    }, [film?.is_premium, isLoggedIn, checkRewardStatus, checkPaymentStatus, film?.id, selectedEpisode?.id, paymentStatus?.already_paid]);
+    }, [film?.is_premium, isLoggedIn, checkPaymentStatus, film?.id, selectedEpisode?.id, checkRewardStatus]);
 
     useEffect(() => {
-        if (!canWatch || !selectedEpisode?.episode_url || !videoRef.current) return;
-        if (hlsRef.current) return;
-        if (canWatch && selectedEpisode?.episode_url) {
-            console.log('🔑 canWatch = true và có URL, init HLS & seek:', selectedEpisode.episode_url);
+        if (!canWatch || !selectedEpisode?.episode_url || !videoRef.current) {
+            console.log('🚫 Không thể khởi tạo video: canWatch=', canWatch, 'episode_url=', selectedEpisode?.episode_url);
+            return;
+        }
+        if (!hasInitializedHLSRef.current) {
+            console.log('🔧 Khởi tạo HLS với URL:', selectedEpisode.episode_url);
             initializeHLS(selectedEpisode.episode_url);
         }
         return () => {
-            hlsRef.current?.destroy();
-            hlsRef.current = null;
+            console.log('🧹 Dọn dẹp HLS');
+            if (hlsRef.current) {
+                hlsRef.current.destroy();
+                hlsRef.current = null;
+                hasInitializedHLSRef.current = false;
+            }
         };
-    }, [canWatch, selectedEpisode?.episode_url]);
+    }, [canWatch, selectedEpisode?.episode_url, initializeHLS]);
 
     useEffect(() => {
         if (!videoRef.current || !film?.is_premium || !isLoggedIn || !canWatch || (film.film_type && paymentStatus?.already_paid)) return;
 
-        const handleTimeUpdate = () => {
+        const handleTimeUpdateForPayment = () => {
             const duration = videoRef.current!.duration;
             const currentTime = videoRef.current!.currentTime;
 
             if (!duration || isNaN(duration)) return;
 
+            if (isRestoringProgressRef.current || shouldRestoreTimeRef.current) return;
+
             const tenPercentDuration = duration * 0.1;
 
-            if (isRestoringProgressRef.current) {
-                lastCurrentTimeRef.current = currentTime;
-                return;
-            }
-
-            // Kiểm tra nếu người dùng tua quá 10% mà chưa trả điểm
             if (!paymentStatus?.already_paid && currentTime > tenPercentDuration) {
-                videoRef.current!.currentTime = tenPercentDuration; // Kéo về 10%
+                console.log('⏸ Tạm dừng tại 10%:', tenPercentDuration);
+                videoRef.current!.currentTime = tenPercentDuration;
                 setCurrentTime(tenPercentDuration);
                 pauseVideo();
                 toast.warning('Bạn chưa thanh toán, không thể tua quá 10% thời lượng video.', {
@@ -460,20 +564,19 @@ const FilmDetail = () => {
                 return;
             }
 
-            // Chỉ hiển thị prompt nếu chưa thanh toán và chưa hiển thị trước đó
             if (!paymentStatus?.already_paid && !hasPromptedRef.current && currentTime >= tenPercentDuration) {
+                console.log('⏸ Hiển thị hộp thoại trừ điểm tại:', currentTime);
                 pauseVideo();
                 setShowDeductPrompt(true);
                 hasPromptedRef.current = true;
-                isPastTenPercentRef.current = true;
-                videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
+                videoRef.current!.removeEventListener('timeupdate', handleTimeUpdateForPayment);
             }
         };
 
-        videoRef.current.addEventListener('timeupdate', handleTimeUpdate);
+        videoRef.current.addEventListener('timeupdate', handleTimeUpdateForPayment);
 
         return () => {
-            videoRef.current && videoRef.current.removeEventListener('timeupdate', handleTimeUpdate);
+            videoRef.current && videoRef.current.removeEventListener('timeupdate', handleTimeUpdateForPayment);
         };
     }, [film?.is_premium, isLoggedIn, canWatch, paymentStatus?.already_paid, film?.film_type]);
 
@@ -481,6 +584,7 @@ const FilmDetail = () => {
         if (!videoRef.current || film?.is_premium || !isLoggedIn || !canWatch) return;
 
         lastCurrentTimeRef.current = 0;
+        totalSeekedTimeRef.current = 0;
 
         const handleTimeUpdate = () => {
             const duration = videoRef.current!.duration;
@@ -490,14 +594,20 @@ const FilmDetail = () => {
 
             if (isRestoringProgressRef.current) {
                 lastCurrentTimeRef.current = currentTime;
-                if (!hasRewarded && currentTime / duration >= 0.9) {
-                    rewardPoints();
-                    videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
-                }
                 return;
             }
 
-            if (!hasRewarded && Math.abs(currentTime - lastCurrentTimeRef.current) > duration * 0.1) {
+            console.log(`⏰ timeupdate: currentTime=${currentTime}, lastCurrentTime=${lastCurrentTimeRef.current}`);
+
+            const timeDiff = currentTime - lastCurrentTimeRef.current;
+            if (timeDiff > duration * 0.02 && timeDiff < 50) {
+                totalSeekedTimeRef.current += timeDiff;
+                console.log(`⏩ Tua tới: ${timeDiff}, Tổng tua: ${totalSeekedTimeRef.current}`);
+            }
+
+            lastCurrentTimeRef.current = currentTime;
+
+            if (!hasRewarded && totalSeekedTimeRef.current > duration * 0.1) {
                 videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
                 toast.info('Bạn đã tua quá 10% thời lượng video, không thể tích điểm.', {
                     duration: 3000,
@@ -506,9 +616,8 @@ const FilmDetail = () => {
                 return;
             }
 
-            lastCurrentTimeRef.current = currentTime;
-
             if (!hasRewarded && currentTime / duration >= 0.9) {
+                console.log('🏆 Đạt 90% thời lượng, gọi rewardPoints');
                 rewardPoints();
                 videoRef.current!.removeEventListener('timeupdate', handleTimeUpdate);
             }
@@ -589,15 +698,11 @@ const FilmDetail = () => {
                                         ref={videoRef}
                                         className="w-full h-full object-cover"
                                         onLoadedMetadata={handleLoadedMetadata}
-                                        onTimeUpdate={() => {
-                                            handleTimeUpdate();
-                                            handleViewIncrement();
-                                        }}
-                                        poster={film.thumb}
+                                        onTimeUpdate={handleTimeUpdate}
+                                        poster={film?.thumb}
                                         crossOrigin="anonymous"
                                         playsInline
                                         preload="metadata"
-                                        onMouseMove={handleMouseMove}
                                     >
                                         Trình duyệt của bạn không hỗ trợ phát video.
                                     </video>
@@ -1004,6 +1109,11 @@ const FilmDetail = () => {
                     </div>
                 </div>
 
+                {/* Phần gợi ý phim */}
+                <div className="mt-12">
+                    <FilmSuggestions genres={film.genres} />
+                </div>
+
                 {showAuthPrompt && (
                     <div
                         className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-opacity-50 z-50"
@@ -1095,7 +1205,6 @@ const FilmDetail = () => {
                         className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-opacity-50 z-50"
                         onClick={() => {
                             setShowDeductPrompt(false);
-                            setCanWatch(false); // Khóa video
                             pauseVideo();
                         }}
                     >
@@ -1107,7 +1216,6 @@ const FilmDetail = () => {
                                 <button
                                     onClick={() => {
                                         setShowDeductPrompt(false);
-                                        setCanWatch(false); // Khóa video
                                         pauseVideo();
                                     }}
                                     className="px-4 py-2 bg-[#3A3A3A] text-white rounded-md hover:bg-[#4A4A4A] transition-colors duration-300"
@@ -1115,9 +1223,9 @@ const FilmDetail = () => {
                                     Hủy
                                 </button>
                                 <button
-                                    onClick={() => {
+                                    onClick={async () => {
                                         setShowDeductPrompt(false);
-                                        deductPoints();
+                                        await deductPoints();
                                         playVideo();
                                     }}
                                     className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors duration-300"
