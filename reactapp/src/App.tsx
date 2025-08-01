@@ -26,6 +26,7 @@ import InteractionPage from './pages/interact';
 import FilmPage from './pages/film-control';
 import AddPage from './pages/add';
 import RevenuePage from './pages/revenue';
+import AdvertisePage from './pages/advertise';
 import PaymentHistory from './components/PaymentHistory';
 import { ParallaxProvider } from '../src/utils/ParallaxContext';
 import { MUIThemeProvider } from 'src/theme/theme-provider';
@@ -94,6 +95,7 @@ function App() {
                 <Route path="films" element={<FilmPage />} />
                 <Route path="add" element={<AddPage />} />
                 <Route path="revenue" element={<RevenuePage />} />
+                <Route path="advertise" element={<AdvertisePage />} />
               </Route>
             </Route>
 

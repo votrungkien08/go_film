@@ -1,4 +1,7 @@
 <?php
+
+use App\Http\Controllers\AdCampaignController;
+use App\Http\Controllers\AdCustomerController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
@@ -92,7 +95,28 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/admin/favorites', [FavoriteController::class, 'index']);
     // rating
     Route::get('/admin/ratings', [RatingController::class, 'index']);
+
+
+    // ad customer
+    Route::get('/admin/customers', [AdCustomerController::class, 'index']);
+    Route::get('/admin/ads-by-customer/{id}', [AdCustomerController::class, 'getAdsByCustomer']);
+    // add ad
+    Route::post('/admin/ad-campaigns', [AdCampaignController::class, 'store']);
+    // edit ad
+    Route::post('/admin/update-ad/{id}', [AdCampaignController::class, 'update']);
+
+    // add customer
+    Route::post('/admin/add-customer', [AdCustomerController::class, 'store']);
+
+    // 
+    Route::get('/admin/ad-campaign-stats/{id}', [AdCampaignController::class, 'getCampaignStats']);
+
+
 });
+// ads 
+Route::get('/ads/active', [AdCampaignController::class, 'active']);
+
+
 Route::post('/track-ad', [AdEventController::class, 'track']);
 // Route cho người dùng bình thường gửi sự kiện quảng cáo
 // Route::middleware('auth:sanctum')->post('/track-ad', [AdEventController::class, 'track']);

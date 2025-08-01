@@ -71,5 +71,10 @@ export const navData = [
     path: '/dashboard/revenue',
     icon: icon('ic-revenue'),
   },
+    {
+    title: 'Quản Lý Quảng Cáo',
+    path: '/dashboard/advertise',
+    icon: icon('ic-ad'),
+  },
 
 ];

@@ -1,0 +1,38 @@
+[33ma2aa421[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Ignore laravel.log file
+[33mcbdeb6a[m add ad_customer and ad_campaign
+[33m4beba90[m sua lai nghiep vu tru diem
+[33m796fc86[m update film and form cmt favorite rating
+[33m1e29467[m forget pass
+[33m8439cdd[m sua phim bo phim le
+[33md6cc72f[m update history and fix bug
+[33m9d6ebad[m doanh thu
+[33m04382ac[m Thêm lại FilmDetail, MainLayout và các file mới sau khi abort rebase
+[33m353845e[m thong ke theo month
+[33m2419d0b[m save local changes trc khi pull
+[33m2553c6d[m Merge branch 'main' of https://github.com/votrungkien08/go_film
+[33md908c34[m Tạm commit để pull code mới
+[33m370eaf4[m merge code
+[33mecc02b1[m gmail
+[33m7a8d871[m admin control comment and dark mode
+[33me28bf3e[m chatbot co ban
+[33m0cd890c[m chatbot basic
+[33m08b4648[m check point before play video and payment
+[33m7e4a093[m fix loi phat video
+[33meb22f21[m giai quyet xung dot+phatvideo+thanh toan
+[33m00fbb34[m admin controll comment and darkmode
+[33m09b1f23[m them xoa sua + loc
+[33m28e85e7[m Merge branch 'main' of https://github.com/votrungkien08/go_film
+[33m9a6735b[m giai quyet xung dot
+[33m2991aa1[m commit phim de cu and trailer and rank
+[33m225bd11[m sua chuc nang them phim
+[33m2c17b3f[m Add trailer field to films table and update related controllers, models, and frontend
+[33md2b5d43[m giao dien chi tiet phim+binh luan+danhgia
+[33m09ef387[m commit detail film and comment
+[33m5c80d62[m hien thi phim nhung chua nhan vao chi tiet phim duoc
+[33m82e7318[m tao form add phim va da add duoc
+[33mff6101c[m Merge branch 'main' of https://github.com/votrungkien08/go_film
+[33m8b3203e[m save before pull kien
+[33m7cd08ef[m xay dung form dang nhap/dang ky. xay dung fe danh cho admin
+[33m42d100f[m xay dung fe dang nhap va dang ky, xay dung chuc nang khi dang nhap xong hien thi thong tin cua user và kiem tra role cua tai khoan de vao trang admin nhung chua xay dung fe trang admin
+[33m6e73903[m commit login and register
+[33m0bd9009[m first commit

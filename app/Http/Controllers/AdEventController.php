@@ -5,22 +5,57 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\AdEvent;
 use Illuminate\Support\Carbon;
-
+use Illuminate\Support\Facades\Log;
 class AdEventController extends Controller
 {
 
+    // public function track(Request $request)
+    // {
+    //     try{
+    //         Log::info('Track event', $request->all());
+    //         $request->validate([
+    //             'event_type' => 'required|in:view,click',
+    //             'ad_campaign_id' => 'required|exists:ad_campaigns,id',
+    //         ]);
+
+    //         AdEvent::create([
+    //             'event_type' => $request->event_type,
+    //             'ad_campaign_id' => $request->ad_campaign_id,
+    //             'ip_address' => $request->ip(),
+    //         ]);
+
+    //         return response()->json(['message' => 'ok']);
+    //     }catch(\Exception $e) {
+    //         return response()->json([
+    //             'masseage' => $e->getMessage()
+    //         ]);
+    //     }
+    // }
     public function track(Request $request)
     {
-        $request->validate([
-            'event_type' => 'required|in:view,click',
-        ]);
+        try {
+            Log::info('Track request received', $request->all());
 
-        AdEvent::create([
-            'event_type' => $request->event_type,
-            'ip_address' => $request->ip(),
-        ]);
+            $request->validate([
+                'event_type' => 'required|in:view,click',
+                'ad_campaign_id' => 'required|exists:ad_campaigns,id',
+            ]);
 
-        return response()->json(['message' => 'ok']);
+            $event = AdEvent::create([
+                'event_type' => $request->event_type,
+                'ad_campaign_id' => $request->ad_campaign_id,
+                'ip_address' => $request->ip(),
+            ]);
+
+            Log::info('AdEvent created successfully', ['event' => $event]);
+
+            return response()->json(['message' => 'ok']);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi tracking event:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'message' => $e->getMessage()
+            ]);
+        }
     }
     public function revenue() {
         try {
