@@ -88,13 +88,13 @@ export function AddView() {
             {genres.length === 0 ? (
               <Typography color="text.secondary">Chưa có thể loại nào</Typography>
             ) : (
-                <Box sx={{ mt: 1 }}>
-                  {genres.map((genre) => (
-                    <Typography key={genre.id} sx={{ py: 0.5, color: 'grey.300' }}>
-                      {genre.genre_name}
-                    </Typography>
-                  ))}
-                </Box>
+              <Box sx={{ mt: 1 }}>
+                {genres.map((genre) => (
+                  <Typography key={genre.id} sx={{ py: 0.5, color: 'grey.300' }}>
+                    {genre.genre_name}
+                  </Typography>
+                ))}
+              </Box>
             )}
           </Box>
         </Card>
@@ -125,13 +125,13 @@ export function AddView() {
             {countries.length === 0 ? (
               <Typography color="text.secondary">Chưa có quốc gia nào</Typography>
             ) : (
-                <Box sx={{ mt: 1 }}>
-                  {countries.map((country) => (
-                    <Typography key={country.id} sx={{ py: 0.5, color: 'grey.300' }}>
-                      {country.country_name}
-                    </Typography>
-                  ))}
-                </Box>
+              <Box sx={{ mt: 1 }}>
+                {countries.map((country) => (
+                  <Typography key={country.id} sx={{ py: 0.5, color: 'grey.300' }}>
+                    {country.country_name}
+                  </Typography>
+                ))}
+              </Box>
             )}
           </Box>
         </Card>
@@ -164,13 +164,13 @@ export function AddView() {
             {years.length === 0 ? (
               <Typography color="text.secondary">Chưa có năm nào</Typography>
             ) : (
-                <Box sx={{ mt: 1 }}>
-                  {years.map((year) => (
-                    <Typography key={year.id} sx={{ py: 0.5, color: 'grey.300' }}>
-                      {year.release_year}
-                    </Typography>
-                  ))}
-                </Box>
+              <Box sx={{ mt: 1 }}>
+                {years.map((year) => (
+                  <Typography key={year.id} sx={{ py: 0.5, color: 'grey.300' }}>
+                    {year.release_year}
+                  </Typography>
+                ))}
+              </Box>
             )}
           </Box>
         </Card>
@@ -181,7 +181,7 @@ export function AddView() {
   return (
     <DashboardContent>
       <Box sx={{ mb: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4">Quản lý doanh mục</Typography>
+        <Typography variant="h4">Quản lý danh mục</Typography>
       </Box>
       {renderSettingsForm()}
     </DashboardContent>

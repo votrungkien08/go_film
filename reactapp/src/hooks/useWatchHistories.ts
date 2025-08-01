@@ -3,33 +3,34 @@ import axios from 'axios';
 import { WatchHistories } from '../types';
 import { toast } from 'sonner';
 
-
 export const useWatchHistories = (
     selectedEpisode: any,
     videoRef: React.RefObject<HTMLVideoElement>,
     setCurrentTime?: (time: number) => void,
     isRestoringProgressRef?: React.MutableRefObject<boolean>,
-    shouldRestoreTimeRef?: React.MutableRefObject<boolean> // Thêm tham số này
-
+    shouldRestoreTimeRef?: React.MutableRefObject<boolean>
 ) => {
     const [watchHistory, setWatchHistory] = useState<WatchHistories[]>([]);
     const token = localStorage.getItem('token');
-    // useRef 1 ob thuoc tinh current cập nhật mà k render lại component
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-
-    // const isRestoringProgressRef = useRef(false);
     const handleTimeUpdate = async () => {
         try {
-            if (!videoRef.current || !selectedEpisode?.id || !token) return;
+            if (!videoRef.current || !selectedEpisode?.id) return;
+
             const currentTime = Math.floor(videoRef.current.currentTime);
             if (currentTime <= 0) return;
+
+            // Luôn cập nhật thanh tiến trình (dù có đăng nhập hay không)
+            if (setCurrentTime) setCurrentTime(currentTime);
+
+            // Chỉ lưu vào database khi có token
+            if (!token) return;
 
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
 
-            if (setCurrentTime) setCurrentTime(currentTime);
             saveTimeoutRef.current = setTimeout(async () => {
                 try {
                     const response = await axios.post(
@@ -53,7 +54,9 @@ export const useWatchHistories = (
             }, 1000);
         } catch (err: any) {
             console.error('Error in handleTimeUpdate:', err);
-            toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi lưu lịch sử xem phim');
+            if (token) {
+                toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi lưu lịch sử xem phim');
+            }
         }
     };
 
@@ -78,14 +81,13 @@ export const useWatchHistories = (
         fetchWatchHistories();
     }, [token, selectedEpisode?.id]);
 
-
-
     useEffect(() => {
         const video = videoRef.current;
         if (video && selectedEpisode?.id) {
             video.pause();
 
-            const currentHistory = watchHistory.find((item) => item.episodes_id === selectedEpisode.id);
+            // Chỉ khôi phục lịch sử khi có token
+            const currentHistory = token ? watchHistory.find((item) => item.episodes_id === selectedEpisode.id) : null;
 
             const setProgress = () => {
                 // Kiểm tra shouldRestoreTimeRef trước khi khôi phục từ history
@@ -128,7 +130,7 @@ export const useWatchHistories = (
             video.addEventListener('timeupdate', handleTimeUpdate);
             return () => video.removeEventListener('timeupdate', handleTimeUpdate);
         }
-    }, [watchHistory, selectedEpisode, videoRef, setCurrentTime, isRestoringProgressRef, shouldRestoreTimeRef]);
+    }, [watchHistory, selectedEpisode, videoRef, setCurrentTime, isRestoringProgressRef, shouldRestoreTimeRef, token]);
 
     return { watchHistory, handleTimeUpdate };
 };

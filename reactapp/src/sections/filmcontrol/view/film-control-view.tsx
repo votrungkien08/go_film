@@ -1,4 +1,4 @@
-import { useEffect,useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -146,7 +146,7 @@ export function FilmControlView() {
     handleEditFilm,
     resetForm,
   } = useFilmControl([], years, countries, genres); // Khởi tạo với films rỗng, sẽ cập nhật sau
-  console.log('film ne',films);
+  console.log('film ne', films);
   // Sắp xếp phim theo orderBy và order
   const sortedFilms = films.slice().sort((a, b) => {
     const isAsc = table.order === 'asc' ? 1 : -1;
@@ -196,24 +196,24 @@ export function FilmControlView() {
   console.log('Original Films:', table.originalFilms)
   const dataFiltered = table.filterName
     ? table.originalFilms.filter((film) =>
-        film.title_film.toLowerCase().includes(table.filterName.toLowerCase()) ||
-        (film.year?.release_year?.toString() || '').includes(table.filterName) ||
-        (film.country?.country_name || '').toLowerCase().includes(table.filterName.toLowerCase()) ||
-        film.genres.some((genre) => (genre.genre_name || '').toLowerCase().includes(table.filterName.toLowerCase())) ||
-        film.actor.toLowerCase().includes(table.filterName.toLowerCase()) ||
-        film.director.toLowerCase().includes(table.filterName.toLowerCase())
-      ).sort((a, b) => {
-        const isAsc = table.order === 'asc';
-        if (table.orderBy === 'id') return isAsc ? a.id - b.id : b.id - a.id;
-        if (table.orderBy === 'title_film') return isAsc ? a.title_film.localeCompare(b.title_film) : b.title_film.localeCompare(a.title_film);
-        return 0;
-      })
+      film.title_film.toLowerCase().includes(table.filterName.toLowerCase()) ||
+      (film.year?.release_year?.toString() || '').includes(table.filterName) ||
+      (film.country?.country_name || '').toLowerCase().includes(table.filterName.toLowerCase()) ||
+      film.genres.some((genre) => (genre.genre_name || '').toLowerCase().includes(table.filterName.toLowerCase())) ||
+      film.actor.toLowerCase().includes(table.filterName.toLowerCase()) ||
+      film.director.toLowerCase().includes(table.filterName.toLowerCase())
+    ).sort((a, b) => {
+      const isAsc = table.order === 'asc';
+      if (table.orderBy === 'id') return isAsc ? a.id - b.id : b.id - a.id;
+      if (table.orderBy === 'title_film') return isAsc ? a.title_film.localeCompare(b.title_film) : b.title_film.localeCompare(a.title_film);
+      return 0;
+    })
     : table.originalFilms.sort((a, b) => {
-        const isAsc = table.order === 'asc';
-        if (table.orderBy === 'id') return isAsc ? a.id - b.id : b.id - a.id;
-        if (table.orderBy === 'title_film') return isAsc ? a.title_film.localeCompare(b.title_film) : b.title_film.localeCompare(a.title_film);
-        return 0;
-      });
+      const isAsc = table.order === 'asc';
+      if (table.orderBy === 'id') return isAsc ? a.id - b.id : b.id - a.id;
+      if (table.orderBy === 'title_film') return isAsc ? a.title_film.localeCompare(b.title_film) : b.title_film.localeCompare(a.title_film);
+      return 0;
+    });
 
   // const notFound = !dataFiltered.length && !!table.filterName;
 
@@ -252,12 +252,14 @@ export function FilmControlView() {
             fullWidth
           />
           <Box>
-            <Typography variant="body2" gutterBottom>
+            <Typography variant="body2" gutterBottom sx={{ color: 'black' }}>
               File Trailer
             </Typography>
+
             <input
               type="file"
               accept="video/mp4,video/mov,video/avi"
+              style={{ border: '1px solid black', padding: '6px', borderRadius: '4px' }}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
@@ -271,6 +273,7 @@ export function FilmControlView() {
                 }
               }}
             />
+
             {!trailerFile && filmData.trailer && (
               <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
                 Đã có trailer: <a href={filmData.trailer} target="_blank" rel="noopener noreferrer">Xem trailer</a>
@@ -377,7 +380,7 @@ export function FilmControlView() {
                 onChange={(e) => setFilmData((prev) => ({ ...prev, is_premium: e.target.checked }))}
               />
             }
-            label="Phim Premium"
+            label="Phim Premium" sx={{ color: 'black' }}
           />
           <TextField
             label="Số điểm yêu cầu"
@@ -409,12 +412,14 @@ export function FilmControlView() {
                 onChange={(e) => handleEpisodeChange(index, 'episode_title', e.target.value)}
               />
               <Box>
-                <Typography variant="body2" gutterBottom>
+                <Typography variant="body2" sx={{ color: 'black' }} gutterBottom>
                   File Video
                 </Typography>
                 <input
                   type="file"
                   accept="video/mp4,video/mov,video/avi"
+                  style={{ border: '1px solid black', padding: '6px', borderRadius: '4px' }}
+
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
@@ -514,30 +519,30 @@ export function FilmControlView() {
             setFilms(
               value
                 ? table.originalFilms.filter((film) =>
-                    film.title_film.toLowerCase().includes(value.toLowerCase()) ||
-                    (film.year?.release_year?.toString() || '').includes(value) ||
-                    (film.country?.country_name || '').toLowerCase().includes(value.toLowerCase()) ||
-                    film.genres.some((genre) => (genre.genre_name || '').toLowerCase().includes(value.toLowerCase())) ||
-                    film.actor.toLowerCase().includes(value.toLowerCase()) ||
-                    film.director.toLowerCase().includes(value.toLowerCase())
-                  ).sort((a, b) => {
-                    const isAsc = table.order === 'asc';
-                    if (table.orderBy === 'id') return isAsc ? a.id - b.id : b.id - a.id;
-                    if (table.orderBy === 'title_film') return isAsc ? a.title_film.localeCompare(b.title_film) : b.title_film.localeCompare(a.title_film);
-                    return 0;
-                  })
+                  film.title_film.toLowerCase().includes(value.toLowerCase()) ||
+                  (film.year?.release_year?.toString() || '').includes(value) ||
+                  (film.country?.country_name || '').toLowerCase().includes(value.toLowerCase()) ||
+                  film.genres.some((genre) => (genre.genre_name || '').toLowerCase().includes(value.toLowerCase())) ||
+                  film.actor.toLowerCase().includes(value.toLowerCase()) ||
+                  film.director.toLowerCase().includes(value.toLowerCase())
+                ).sort((a, b) => {
+                  const isAsc = table.order === 'asc';
+                  if (table.orderBy === 'id') return isAsc ? a.id - b.id : b.id - a.id;
+                  if (table.orderBy === 'title_film') return isAsc ? a.title_film.localeCompare(b.title_film) : b.title_film.localeCompare(a.title_film);
+                  return 0;
+                })
                 : table.originalFilms.sort((a, b) => {
-                    const isAsc = table.order === 'asc';
-                    if (table.orderBy === 'id') return isAsc ? a.id - b.id : b.id - a.id;
-                    if (table.orderBy === 'title_film') return isAsc ? a.title_film.localeCompare(b.title_film) : b.title_film.localeCompare(a.title_film);
-                    return 0;
-                  })
+                  const isAsc = table.order === 'asc';
+                  if (table.orderBy === 'id') return isAsc ? a.id - b.id : b.id - a.id;
+                  if (table.orderBy === 'title_film') return isAsc ? a.title_film.localeCompare(b.title_film) : b.title_film.localeCompare(a.title_film);
+                  return 0;
+                })
             );
           }}
         />
         <Scrollbar sx={{ width: '100%', height: 'auto', maxHeight: 'none' }}>
           <TableContainer sx={{ height: 'auto', overflow: 'visible' }}>
-            <Table sx={{ minWidth: 1200 , tableLayout: 'fixed' }}>
+            <Table sx={{ minWidth: 1200, tableLayout: 'fixed' }}>
 
               <FilmTableHead
                 order={table.order}
@@ -545,19 +550,19 @@ export function FilmControlView() {
                 rowCount={films.length}
                 onSort={table.onSort}
                 headLabel={[
-                  { id: 'id', label: 'ID',width: 'w-10' },
+                  { id: 'id', label: 'ID', width: 'w-10' },
                   { id: 'title_film', label: 'Tiêu đề', width: 'w-20' },
-                  { id: 'genres', label: 'Thể loại' ,width: 'w-20'},
-                  { id: 'year', label: 'Năm phát hành',width: 'w-20' },
-                  { id: 'country', label: 'Quốc gia',width: 'w-20' },
-                  { id: 'film_type', label: 'Loại phim',width: 'w-20' },
-                  { id: 'director', label: 'Đạo diễn',width: 'w-20' },
+                  { id: 'genres', label: 'Thể loại', width: 'w-20' },
+                  { id: 'year', label: 'Năm phát hành', width: 'w-20' },
+                  { id: 'country', label: 'Quốc gia', width: 'w-20' },
+                  { id: 'film_type', label: 'Loại phim', width: 'w-20' },
+                  { id: 'director', label: 'Đạo diễn', width: 'w-20' },
                   { id: 'actor', label: 'Diễn viên', width: 'w-20' },
                   { id: 'content', label: 'Nội dung', width: 'w-20' },
-                  { id: 'view', label: 'Lượt xem',width: 'w-20' },
-                  { id: 'is_premium', label: 'Premium',width: 'w-20' },
-                  { id: 'point_required', label: 'Điểm yêu cầu',width: 'w-20' },
-                  { id: '', label: 'Hành động',width: 'w-20' },
+                  { id: 'view', label: 'Lượt xem', width: 'w-20' },
+                  { id: 'is_premium', label: 'Premium', width: 'w-20' },
+                  { id: 'point_required', label: 'Điểm yêu cầu', width: 'w-20' },
+                  { id: '', label: 'Hành động', width: 'w-20' },
 
                 ]}
               />
