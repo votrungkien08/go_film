@@ -271,49 +271,158 @@ class FilmController extends Controller
         }
     }
 
+    // public function filter(Request $request)
+    // {
+    //     try {
+    //         $query = Film::with(['year', 'country', 'genres', 'film_episodes']);
+
+    //         if ($request->has('genre')) {
+    //             $genreNames = is_array($request->genre) ? $request->genre : [$request->genre];
+    //             foreach ($genreNames as $genreName) {
+    //                 $query->whereHas(
+    //                     'genres',
+    //                     function ($q) use ($genreName) {
+    //                         $q->where('genre_name', $genreName);
+    //                     }
+    //                 );
+    //             }
+    //         }
+
+    //         if ($request->has('country')) {
+    //             $query->whereHas('country', function ($q) use ($request) {
+    //                 $q->where('country_name', $request->country);
+    //             });
+    //         }
+
+    //         if ($request->has('year')) {
+    //             $query->whereHas('year', function ($q) use ($request) {
+    //                 $q->where('release_year', $request->year);
+    //             });
+    //         }
+
+    //         if ($request->has('type')) {
+    //             $filmType = $request->type === 'phim-bo' ? 1 : 0;
+    //             $query->where('film_type', $filmType);
+    //         }
+
+    //         if ($request->has('search')) {
+    //             $search = $request->search;
+    //             $query->where('title_film', 'like', '%' . $search . '%');
+    //         }
+
+    //         $films = $query->get();
+    //         return response()->json($films, 200);
+    //     } catch (\Exception $e) {
+    //         Log::error('Lỗi khi lọc phim', ['message' => $e->getMessage()]);
+    //         return response()->json(['error' => 'Không thể lọc phim'], 500);
+    //     }
+    // }
+    private function slugToGenreName($slug)
+    {
+        // Normalize slug (convert spaces to hyphens, lowercase)
+        $normalizedSlug = strtolower(str_replace(' ', '-', trim($slug)));
+
+        // Mapping slug to genre name
+        $slugMapping = [
+            'hanh-dong' => 'Hành Động',
+            'phieu-luu' => 'Phiêu Lưu',
+            'vien-tuong' => 'Viễn Tưởng',
+            'chinh-kich' => 'Chính Kịch',
+            'tam-ly' => 'Tâm Lý',
+            'bi-an' => 'Bí Ẩn',
+            'kinh-di' => 'Kinh Dị',
+            'tinh-cam' => 'Tình Cảm',
+            'gia-dinh' => 'Gia Đình',
+            'hai-huoc' => 'Hài Hước',
+            'hinh-su' => 'Hình Sự',
+            'chien-tranh' => 'Chiến Tranh'
+        ];
+
+        // Try normalized slug first
+        if (isset($slugMapping[$normalizedSlug])) {
+            return $slugMapping[$normalizedSlug];
+        }
+
+        // If not found, try original slug
+        if (isset($slugMapping[$slug])) {
+            return $slugMapping[$slug];
+        }
+
+        // Fallback: convert slug back to proper case
+        return ucwords(str_replace(['-', '_'], ' ', $slug));
+    }
     public function filter(Request $request)
     {
         try {
             $query = Film::with(['year', 'country', 'genres', 'film_episodes']);
 
+            // Xử lý tham số genre
             if ($request->has('genre')) {
-                $genreNames = is_array($request->genre) ? $request->genre : [$request->genre];
-                foreach ($genreNames as $genreName) {
-                    $query->whereHas(
-                        'genres',
-                        function ($q) use ($genreName) {
-                            $q->where('genre_name', $genreName);
-                        }
-                    );
+                $genreSlug = trim($request->genre);
+                if ($genreSlug) {
+                    $genreName = $this->slugToGenreName($genreSlug);
+
+                    Log::info('Genre filter', [
+                        'slug' => $genreSlug,
+                        'mapped_name' => $genreName
+                    ]);
+
+                    $query->whereHas('genres', function ($q) use ($genreName) {
+                        $q->where('genre_name', $genreName);
+                    });
+                }
+            }
+            // Xử lý tham số country
+            if ($request->has('country')) {
+                $country = trim($request->country);
+                if ($country) {
+                    $query->whereHas('country', function ($q) use ($country) {
+                        $q->where('country_name', $country);
+                    });
                 }
             }
 
-            if ($request->has('country')) {
-                $query->whereHas('country', function ($q) use ($request) {
-                    $q->where('country_name', $request->country);
-                });
-            }
-
+            // Xử lý tham số year
             if ($request->has('year')) {
-                $query->whereHas('year', function ($q) use ($request) {
-                    $q->where('release_year', $request->year);
-                });
+                $year = trim($request->year);
+                if ($year && is_numeric($year)) {
+                    $query->whereHas('year', function ($q) use ($year) {
+                        $q->where('release_year', $year);
+                    });
+                }
             }
 
+            // Xử lý tham số type
             if ($request->has('type')) {
-                $filmType = $request->type === 'phim-bo' ? 1 : 0;
-                $query->where('film_type', $filmType);
+                $filmType = $request->type === 'phim-bo' ? 1 : ($request->type === 'phim-le' ? 0 : null);
+                if (!is_null($filmType)) {
+                    $query->where('film_type', $filmType);
+                }
             }
 
+            // Xử lý tham số search
             if ($request->has('search')) {
-                $search = $request->search;
-                $query->where('title_film', 'like', '%' . $search . '%');
+                $search = trim($request->search);
+                if ($search) {
+                    $query->where('title_film', 'like', '%' . $search . '%');
+                }
             }
 
-            $films = $query->get();
+            // Loại trừ phim hiện tại nếu có tham số exclude_id
+            if ($request->has('exclude_id')) {
+                $excludeId = trim($request->exclude_id);
+                if (is_numeric($excludeId)) {
+                    $query->where('id', '!=', $excludeId);
+                }
+            }
+
+            // Giới hạn số lượng phim trả về (mặc định 10, phù hợp với gợi ý)
+            $limit = $request->input('limit', 10);
+            $films = $query->take($limit)->get();
+
             return response()->json($films, 200);
         } catch (\Exception $e) {
-            Log::error('Lỗi khi lọc phim', ['message' => $e->getMessage()]);
+            Log::error('Lỗi khi lọc phim', ['message' => $e->getMessage(), 'stack' => $e->getTraceAsString()]);
             return response()->json(['error' => 'Không thể lọc phim'], 500);
         }
     }

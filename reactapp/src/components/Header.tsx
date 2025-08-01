@@ -256,17 +256,19 @@ const Header = () => {
             .toLowerCase()
             .normalize('NFD')
             .replace(/đ/g, 'd')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-')
+            .replace(/Đ/g, 'd')
+            .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+            .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
+            .replace(/\s+/g, '-') // Replace spaces with hyphens
+            .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+            .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
             .trim();
     };
 
     const handleGenreSelect = (genre: Genre) => {
         setShowGenreDropdown(false);
         const genreSlug = createSlug(genre.genre_name);
-        navigate(`/films?genre=${genreSlug}`);
+        navigate(`/films?genre=${encodeURIComponent(genreSlug)}`);
     };
 
     const handleYearSelect = (year: Year) => {

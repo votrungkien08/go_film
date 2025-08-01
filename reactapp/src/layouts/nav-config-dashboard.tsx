@@ -62,7 +62,7 @@ export const navData = [
     icon: icon('ic-comment'),
   },
   {
-    title: 'Quản Lý Doanh Mục',
+    title: 'Quản Lý Danh Mục',
     path: '/dashboard/add',
     icon: icon('ic-add'),
   },

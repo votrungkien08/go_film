@@ -30,6 +30,8 @@ Route::post('/register', [AuthController::class, 'register']);
 // reset pass
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('/send-password-reset', [AuthController::class, 'sendResetLinkEmail']);
+
+Route::get('/films/filter', [FilmController::class, 'filter']);
 Route::middleware('auth:sanctum')->group(function () {
     //user
     Route::post('/logout', [AuthController::class, 'logout']);

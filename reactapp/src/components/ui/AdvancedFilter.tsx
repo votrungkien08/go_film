@@ -97,17 +97,21 @@ const AdvancedFilter = () => {
     }, []); // Chạy một lần khi component mount
 
     // Hàm chuyển đổi chuỗi thành slug để sử dụng trong URL
-    const createSlug = (text: string): string =>
-        text && typeof text === 'string'
-            ? text
-                .toLowerCase() // Chuyển thành chữ thường
-                .normalize('NFD') // Chuẩn hóa Unicode
-                .replace(/[\u0300-\u036f]/g, '') // Xóa dấu tiếng Việt
-                .replace(/[^a-z0-9\s-]/g, '') // Xóa ký tự đặc biệt
-                .replace(/\s+/g, '-') // Thay khoảng trắng bằng dấu gạch ngang
-                .replace(/-+/g, '-') // Xóa nhiều dấu gạch ngang liên tiếp
-                .trim() // Xóa khoảng trắng thừa
-            : '';
+    const createSlug = (text: string): string => {
+        if (!text || typeof text !== 'string') return '';
+
+        return text
+            .toLowerCase()
+            .replace(/đ/g, 'd') // Thay đ thành d trước khi normalize
+            .replace(/Đ/g, 'd') // Thay Đ thành d trước khi normalize  
+            .normalize('NFD') // Chuẩn hóa Unicode
+            .replace(/[\u0300-\u036f]/g, '') // Xóa dấu tiếng Việt
+            .replace(/[^a-z0-9\s-]/g, '') // Xóa ký tự đặc biệt trừ khoảng trắng và gạch ngang
+            .replace(/\s+/g, '-') // Thay khoảng trắng bằng gạch ngang
+            .replace(/-+/g, '-') // Xóa nhiều gạch ngang liên tiếp
+            .replace(/^-+|-+$/g, '') // Xóa gạch ngang ở đầu và cuối
+            .trim();
+    };
 
     // Xử lý thay đổi lựa chọn thể loại
     const handleGenreChange = (selectedOptions: any) => {
