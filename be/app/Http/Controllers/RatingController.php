@@ -1,0 +1,103 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Rating;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+class RatingController extends Controller
+{
+    public function index()
+    {
+        try {
+            $ratings = Rating::with('user', 'film')->get();
+            return response()->json([
+                'message' => 'Ratings fetched successfully',
+                'ratings' => $ratings,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching ratings: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Error fetching ratings',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    public function postRating(Request $request)
+    {
+        Log::info('Gửi đánh giá:', $request->all());
+        try {
+            $user = $request->user();
+            if (!$user) {
+                return response()->json([
+                    'error' => 'Unauthenticated',
+                ], 401);
+            }
+            $request->validate([
+                'film_id' => 'required|integer',
+                'rating' => 'required|integer|min:1|max:10',
+            ]);
+            $rating = Rating::updateOrCreate(
+                ['user_id' => $user->id, 'film_id' => $request->film_id],
+                ['rating' => $request->rating, 'updated_at' => now()]
+            );
+            return response()->json([
+                'message' => 'Rating submitted successfully',
+                'rating' => $rating,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+    public function getUserRating(Request $request, $filmId)
+    {
+        try {
+            $user = $request->user();
+            if (!$user) {
+                return response()->json([
+                    'error' => 'Unauthenticated',
+                ], 401);
+            }
+
+            $rating = Rating::where('user_id', $user->id)
+                ->where('film_id', $filmId)
+                ->first();
+
+            if (!$rating) {
+                return response()->json([
+                    'message' => 'No rating found',
+                    'rating' => null,
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => 'Rating fetched successfully',
+                'rating' => $rating->rating,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching rating',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    public function getRating(Request $request, $filmId)
+    {
+        try {
+            $rating = Rating::where('film_id', $filmId)->get();
+
+            return response()->json([
+                'message' => 'success',
+                'rating' => $rating
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Get rating error: ' . $e->getMessage());
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+}

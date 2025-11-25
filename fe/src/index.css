@@ -1,0 +1,91 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none; /* IE và Edge */
+    scrollbar-width: none; /* Firefox */
+}
+/* html.system {
+  background-color: #333333 !important;
+  color: #fff !important;
+} */
+h2:active {
+    pointer-events: none;
+}
+/* Chiều rộng thanh cuộn */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+/* Thanh cuộn track */
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+/* Thanh cuộn thumb (phần kéo) */
+::-webkit-scrollbar-thumb {
+    background: #ff0000;
+    border-radius: 5px;
+}
+
+html.light {
+    background-color: #f5f5f5 !important;
+    color: #111 !important;
+}
+
+html.dark {
+    background-color: #000000 !important;
+    color: white !important;
+}
+// bg ssystem
+.system {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+.system body {
+    /* background-color: #333333; */
+    background: linear-gradient(to bottom right, #111827, #6f757a, #1f2937);
+    border-left: 1px solid rgba(55, 65, 81, 0.5);
+    color: #ffffff;
+}
+
+/* Dropdown menu styles*/
+.system .bg-popover {
+    background-color: #404040 !important;
+}
+
+.system .text-popover-foreground {
+    color: #ffffff !important;
+}
+
+/* button */
+.system .border.bg-background {
+    background-color: #404040 !important;
+    border-color: #525252 !important;
+    color: #ffffff !important;
+}
+
+.system .border.bg-background:hover {
+    background-color: #525252 !important;
+}
+
+.simplebar-placeholder {
+    height: 50px !important;
+}
+
+// text
+@media (prefers-color-scheme: dark) {
+    .system-placeholder\:text-white::placeholder {
+        color: white;
+    }
+}
+@media (prefers-color-scheme: light) {
+    .system-placeholder\:text-black::placeholder {
+        color: black;
+    }
+}
